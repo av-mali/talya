@@ -4,7 +4,7 @@
 // .env dosyasındaki DATABASE_URL'i gerçek bir Postgres adresine çevirmen yeterli.
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
