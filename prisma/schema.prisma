@@ -1,0 +1,31 @@
+// Bu dosya veritabanının "planı"dır: hangi tablolar, hangi sütunlar var.
+// Geliştirme sırasında SQLite (tek dosya, kurulum gerektirmez) kullanıyoruz.
+// Canlıya (production) alırken sadece aşağıdaki provider'ı "postgresql" yapıp
+// .env dosyasındaki DATABASE_URL'i gerçek bir Postgres adresine çevirmen yeterli.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime  @default(now())
+  messages     Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  role      String   // "user" ya da "assistant"
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+}
