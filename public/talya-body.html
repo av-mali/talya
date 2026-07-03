@@ -1,0 +1,271 @@
+
+<!-- ═══════ HOME SCREEN ═══════ -->
+<div id="homeScreen">
+  <nav class="home-nav">
+    <div class="home-logo">
+      <div class="home-logo-mark">T</div>
+      <div>
+        <div class="home-logo-name">Talya</div>
+        <span class="home-logo-tag">Hukuk AI · v2.0</span>
+      </div>
+    </div>
+    <div class="home-nav-right">
+      <button class="cmdk-trigger" onclick="openCmdk()"><i class="fa-solid fa-magnifying-glass" style="font-size:10px;"></i> Araç ara… <kbd>⌘K</kbd></button>
+      <button class="dm-toggle" id="dmToggleHome" onclick="toggleDark()" title="Karanlık/Aydınlık mod"><i class="fa-solid fa-moon" id="dmIconHome"></i></button>
+      <div class="notif-wrap">
+        <button class="notif-bell" id="notifBellHome" onclick="toggleNotifHome(event)" title="Bildirimler">
+          <i class="fa-solid fa-bell"></i>
+        </button>
+        <div class="notif-badge" id="notifBadgeHome">3</div>
+        <div class="notif-dropdown" id="notifDropdownHome">
+          <div class="nd-head">
+            <div class="nd-title">Bildirimler</div>
+            <div class="nd-actions">
+              <button class="nd-act-btn" onclick="markAllRead()">Tümünü okundu işaretle</button>
+            </div>
+          </div>
+          <div class="nd-filter" id="ndFilterHome">
+            <div class="nd-chip active" data-filter="all" onclick="filterNotifHome(this,'all')"><i class="fa-solid fa-layer-group"></i> Tümü</div>
+            <div class="nd-chip" data-filter="sure" onclick="filterNotifHome(this,'sure')"><i class="fa-solid fa-clock"></i> Süre</div>
+            <div class="nd-chip" data-filter="tebligat" onclick="filterNotifHome(this,'tebligat')"><i class="fa-solid fa-envelope"></i> Tebligat</div>
+            <div class="nd-chip" data-filter="ai" onclick="filterNotifHome(this,'ai')"><i class="fa-solid fa-microchip"></i> AI</div>
+            <div class="nd-chip" data-filter="sistem" onclick="filterNotifHome(this,'sistem')"><i class="fa-solid fa-circle-info"></i> Sistem</div>
+          </div>
+          <div class="nd-list" id="ndListHome"></div>
+          <div class="nd-settings">
+            <div class="nd-settings-title">Bildirim Tercihleri</div>
+            <div class="nd-toggle-row"><span>Süre uyarıları</span><label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('sure',this.checked)"><span class="nd-slider"></span></label></div>
+            <div class="nd-toggle-row"><span>Tebligat bildirimleri</span><label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('tebligat',this.checked)"><span class="nd-slider"></span></label></div>
+            <div class="nd-toggle-row"><span>AI önerileri</span><label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('ai',this.checked)"><span class="nd-slider"></span></label></div>
+            <div class="nd-toggle-row"><span>Sistem bildirimleri</span><label class="nd-toggle"><input type="checkbox" onchange="saveNotifPref('sistem',this.checked)"><span class="nd-slider"></span></label></div>
+          </div>
+        </div>
+      </div>
+      <div class="nav-pill" id="userEmailPill" style="pointer-events:none;"></div>
+      <div class="nav-pill gold" onclick="window.location.href='/api/auth/signout'">Çıkış Yap</div>
+    </div>
+  </nav>
+
+  <div class="home-body">
+    <div class="hero-mark" aria-hidden="true">
+      <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg">
+        <g class="beam-arm">
+          <line class="beam-hi" x1="180" y1="190" x2="1020" y2="190"/>
+          <line class="beam" x1="600" y1="60" x2="600" y2="190"/>
+          <line class="beam" x1="180" y1="190" x2="180" y2="330"/>
+          <line class="beam" x1="140" y1="330" x2="220" y2="330"/>
+          <line class="beam" x1="1020" y1="190" x2="1020" y2="330"/>
+          <line class="beam" x1="980" y1="330" x2="1060" y2="330"/>
+          <path class="tick" d="M 155 240 Q 180 270 205 240" fill="none"/>
+          <path class="tick" d="M 995 240 Q 1020 270 1045 240" fill="none"/>
+        </g>
+        <line class="beam" x1="600" y1="60" x2="600" y2="600"/>
+        <line class="beam-hi" x1="520" y1="600" x2="680" y2="600"/>
+      </svg>
+    </div>
+    <div class="home-hero">
+      <div class="hero-badge"><i class="fa-solid fa-circle" style="font-size:6px;animation:breathe 2s infinite;"></i> Türkiye'nin En Gelişmiş Hukuk AI'ı</div>
+      <div class="hero-title">Hukukun gücünü<br><em>yapay zeka</em> ile taşıyın</div>
+      <div class="hero-sub">Dilekçeden analize, hesaplamadan UYAP entegrasyonuna — tüm hukuki iş akışınız tek platformda.</div>
+    </div>
+
+    <div class="dash-wrap">
+      <div class="dash-grid">
+        <div class="dash-card">
+          <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-hourglass-half"></i> Yaklaşan Süreler</div><div class="dash-link" onclick="openModule('buro')">Tümünü gör →</div></div>
+          <div id="dashDeadlines"></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-chart-simple"></i> Bu Ay AI Kullanımı</div></div>
+          <div class="dash-bars">
+            <div class="dbar-row"><span class="dbar-lbl">Dilekçe</span><div class="dbar-track"><div class="dbar-fill" data-w="82"></div></div><span class="dbar-val">82%</span></div>
+            <div class="dbar-row"><span class="dbar-lbl">Hesaplama</span><div class="dbar-track"><div class="dbar-fill" data-w="65"></div></div><span class="dbar-val">65%</span></div>
+            <div class="dbar-row"><span class="dbar-lbl">UYAP</span><div class="dbar-track"><div class="dbar-fill" data-w="58"></div></div><span class="dbar-val">58%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modules-grid">
+      <!-- Belge & Analiz -->
+      <div class="module-card gold-card" onclick="openModule('belge')">
+        <div class="mc-count">8 araç</div>
+        <div class="mc-ico g"><i class="fa-solid fa-scroll"></i></div>
+        <div class="mc-name">Belge & Analiz</div>
+        <div class="mc-desc">Dilekçe, emsal, sözleşme, risk analizi ve duruşma hazırlığı</div>
+      </div>
+      <!-- Büro Yönetimi -->
+      <div class="module-card blue-card" onclick="openModule('buro')">
+        <div class="mc-count">6 araç</div>
+        <div class="mc-ico b"><i class="fa-solid fa-briefcase"></i></div>
+        <div class="mc-name">Büro Yönetimi</div>
+        <div class="mc-desc">Müvekkil, takvim, arşiv, fatura ve büro analitiği</div>
+      </div>
+      <!-- UYAP -->
+      <div class="module-card teal-card" onclick="openModule('uyap')">
+        <div class="mc-count">4 araç</div>
+        <div class="mc-ico t"><i class="fa-solid fa-building-columns"></i></div>
+        <div class="mc-name">UYAP Entegrasyonu</div>
+        <div class="mc-desc">Dilekçe gönder, dosya sorgula, tebligat ve harç hesapla</div>
+      </div>
+      <!-- Hesaplama -->
+      <div class="module-card purple-card" onclick="openModule('hesap')">
+        <div class="mc-count">11 araç</div>
+        <div class="mc-ico p"><i class="fa-solid fa-calculator"></i></div>
+        <div class="mc-name">Hesaplama Araçları</div>
+        <div class="mc-desc">Kıdem, ihbar, faiz, nafaka, kira artışı ve zamanaşımı</div>
+      </div>
+      <!-- Üyelik -->
+      <div class="module-card gray-card" onclick="openModule('uyelik')">
+        <div class="mc-ico gr"><i class="fa-solid fa-user-circle"></i></div>
+        <div class="mc-name">Üyelik & Hesap</div>
+        <div class="mc-desc">Plan yönetimi, fatura geçmişi ve hesap ayarları</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-footer">© 2026 Talya · KVKK Uyumlu · Şifreli İletim</div>
+</div>
+
+<!-- ═══════ APP SCREEN ═══════ -->
+<div id="appScreen">
+  <div style="display:flex;flex-direction:column;width:100%;height:100%;">
+    <div class="app-topbar">
+      <div class="app-top-left">
+        <button class="home-btn" onclick="goHome()"><i class="fa-solid fa-house"></i> Ana Sayfa</button>
+        <div class="app-breadcrumb">
+          <span id="appModuleName">Belge &amp; Analiz</span>
+          <span style="opacity:.35">›</span>
+          <span class="cur" id="appItemName">Dilekçe Sihirbazı</span>
+        </div>
+      </div>
+      <div class="app-top-right">
+        <button class="cmdk-trigger" onclick="openCmdk()"><i class="fa-solid fa-magnifying-glass" style="font-size:10px;"></i> Araç ara… <kbd>⌘K</kbd></button>
+        <button class="dm-toggle" id="dmToggleApp" onclick="toggleDark()" title="Karanlık/Aydınlık mod"><i class="fa-solid fa-moon" id="dmIconApp"></i></button>
+        <!-- NOTIFICATION BELL -->
+        <div class="notif-wrap">
+          <button class="notif-bell" id="notifBell" onclick="toggleNotif(event)" title="Bildirimler">
+            <i class="fa-solid fa-bell"></i>
+          </button>
+          <div class="notif-badge" id="notifBadge">3</div>
+          <div class="notif-dropdown" id="notifDropdown">
+            <div class="nd-head">
+              <div class="nd-title">Bildirimler</div>
+              <div class="nd-actions">
+                <button class="nd-act-btn" onclick="markAllRead()">Tümünü okundu işaretle</button>
+              </div>
+            </div>
+            <div class="nd-filter" id="ndFilter">
+              <div class="nd-chip active" data-filter="all" onclick="filterNotif(this,'all')"><i class="fa-solid fa-layer-group"></i> Tümü</div>
+              <div class="nd-chip" data-filter="sure" onclick="filterNotif(this,'sure')"><i class="fa-solid fa-clock"></i> Süre</div>
+              <div class="nd-chip" data-filter="tebligat" onclick="filterNotif(this,'tebligat')"><i class="fa-solid fa-envelope"></i> Tebligat</div>
+              <div class="nd-chip" data-filter="ai" onclick="filterNotif(this,'ai')"><i class="fa-solid fa-microchip"></i> AI</div>
+              <div class="nd-chip" data-filter="sistem" onclick="filterNotif(this,'sistem')"><i class="fa-solid fa-circle-info"></i> Sistem</div>
+            </div>
+            <div class="nd-list" id="ndList"></div>
+            <div class="nd-settings">
+              <div class="nd-settings-title">Bildirim Tercihleri</div>
+              <div class="nd-toggle-row">
+                <span>Süre uyarıları</span>
+                <label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('sure',this.checked)"><span class="nd-slider"></span></label>
+              </div>
+              <div class="nd-toggle-row">
+                <span>Tebligat bildirimleri</span>
+                <label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('tebligat',this.checked)"><span class="nd-slider"></span></label>
+              </div>
+              <div class="nd-toggle-row">
+                <span>AI önerileri</span>
+                <label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('ai',this.checked)"><span class="nd-slider"></span></label>
+              </div>
+              <div class="nd-toggle-row">
+                <span>Sistem bildirimleri</span>
+                <label class="nd-toggle"><input type="checkbox" onchange="saveNotifPref('sistem',this.checked)"><span class="nd-slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <span class="status-pill live"><i class="fa-solid fa-circle fa-xs"></i> Talya AI Aktif</span>
+        <span class="status-pill sec"><i class="fa-solid fa-shield-halved"></i> KVKK Güvenli</span>
+      </div>
+    </div>
+
+    <div class="app-body">
+      <!-- SIDEBAR -->
+      <div class="app-sidebar">
+        <div class="sidebar-head">
+          <div class="sidebar-mod-label" id="sidebarLabel">Belge &amp; Analiz</div>
+          <div class="sidebar-mod-name" id="sidebarName">Belge &amp; <em class="g">Analiz</em></div>
+        </div>
+        <div class="s-nav" id="sidebarNav"></div>
+      </div>
+
+      <!-- MIDDLE TOOL PANEL -->
+      <div class="tool-panel">
+        <div class="tool-panel-head">
+          <div class="pop-badge g" id="popBadge"><span id="popBadgeText">HMK · Dava Dilekçesi</span></div>
+          <div class="pop-title" id="popTitle">Dilekçe <em class="g">Sihirbazı</em></div>
+          <div class="pop-desc" id="popDesc">Olay özetini girin; yapay zeka HMK uyumlu taslağı oluştursun.</div>
+        </div>
+        <div class="tool-panel-body" id="popBody"></div>
+        <div class="tool-panel-cta">
+          <button class="pop-cta-btn g" id="popBtn" onclick="submitPopup()">
+            <i class="fa-solid fa-gears" id="popBtnIco"></i><span id="popBtnLbl">Dilekçeyi Taslakla</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI PANE -->
+      <div class="ai-pane">
+        <div class="ai-pane-head">
+          <div class="ai-ring"><i class="fa-solid fa-microchip" id="aiIco"></i></div>
+          <div class="ai-head-label" id="aiLabel">Talya AI</div>
+          <div class="ai-head-sub">HMK · TBK · TCK · İş K. · UYAP</div>
+        </div>
+
+        <div class="chat-msgs" id="chatMsgs">
+          <div class="chat-empty" id="chatEmpty">
+            <div class="chat-empty-ico"><i class="fa-solid fa-scale-balanced"></i></div>
+            <div class="chat-empty-title">Talya AI Hazır</div>
+            <div class="chat-empty-sub">Soldaki menüden bir araç seçin — ya da doğrudan sorunuzu yazın.</div>
+            <div class="qp-chips">
+              <div class="qp" onclick="sendQ('İşe iade davası dilekçesi taslağı oluştur')"><i class="fa-solid fa-scroll"></i> İşe iade dilekçesi</div>
+              <div class="qp" onclick="sendQ('Temyiz süresini hesapla, tebliğ tarihi bugün')"><i class="fa-solid fa-clock"></i> Temyiz süresi</div>
+              <div class="qp" onclick="sendQ('Kira alacağı ihtarnamesi örneği yaz')"><i class="fa-solid fa-file-lines"></i> Kira ihtarnamesi</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <div class="chat-input-row">
+            <textarea id="chatIn" rows="1" placeholder="Sorunuzu yazın veya sol menüden araç seçin…" onkeydown="ckEnter(event)" oninput="autoH(this)"></textarea>
+            <button class="send-btn" id="sendBtn" onclick="sendChat()"><i class="fa-solid fa-arrow-up"></i></button>
+          </div>
+          <div class="chat-foot">
+            <div class="chat-foot-note"><i class="fa-solid fa-lock"></i> Şifreli iletim — veriler saklanmaz</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ COMMAND PALETTE ═══════ -->
+<div class="cmdk-scrim" id="cmdkScrim" onclick="if(event.target===this)closeCmdk()">
+  <div class="cmdk-box">
+    <div class="cmdk-inrow">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="cmdkInput" placeholder="Araç, modül veya hesaplama ara…" oninput="cmdkFilter()" onkeydown="cmdkKey(event)">
+      <span class="cmdk-esc">ESC</span>
+    </div>
+    <div class="cmdk-list" id="cmdkList"></div>
+    <div class="cmdk-foot">
+      <span class="cmdk-hint"><kbd>↑↓</kbd> gezin</span>
+      <span class="cmdk-hint"><kbd>↵</kbd> aç</span>
+      <span class="cmdk-hint"><kbd>ESC</kbd> kapat</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ TOASTS ═══════ -->
+<div class="toast-stack" id="toastStack"></div>
+
