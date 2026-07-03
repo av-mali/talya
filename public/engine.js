@@ -82,13 +82,6 @@ function openPopup(id) {
   if (btnIcoEl) btnIcoEl.className = 'fa-solid ' + popCfg.btnIco;
   const btnLblEl = document.getElementById('popBtnLbl');
   if (btnLblEl) btnLblEl.textContent = popCfg.btnLbl;
-
-  const ctaWrap = document.querySelector('.tool-panel-cta');
-  if (ctaWrap) ctaWrap.style.display = popCfg.hideCta ? 'none' : '';
-
-  if (typeof popCfg.onOpen === 'function') {
-    try { popCfg.onOpen(); } catch (e) { console.error(e); }
-  }
 }
 
 function closePopup() {
