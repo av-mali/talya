@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
-// Bu uç nokta yeni kullanıcı kaydı içindir.
-// Tarayıcıdan gelen şifreyi asla olduğu gibi saklamayız; önce hash'leriz.
 export async function POST(req: Request) {
   try {
     const { email, password, name } = await req.json();
@@ -31,7 +29,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ id: user.id, email: user.email });
   } catch (err) {
     return NextResponse.json(
-      { error: "Kayıt sırasında bir hata oluştu.", debug: String(err)  },
+      { error: "Kayıt sırasında bir hata oluştu.", debug: String(err) },
       { status: 500 }
     );
   }
