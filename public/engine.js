@@ -236,15 +236,18 @@ function renderDashDeadlines() {
     </div>`).join('');
 }
 
-// ── BİLDİRİMLER (örnek veri, tüm sayfalarda ortak) ──
-const NOTIFS = [
-  { id: 1, type: 'sure', ico: 'fa-hourglass-half', level: 'danger', label: 'Kritik Süre', text: 'Temyiz süresi dolmak üzere — Yılmaz / Devlet Hastanesi (2024/4521)', time: '2 saat önce', read: false },
-  { id: 2, type: 'tebligat', ico: 'fa-envelope-open-text', level: 'warn', label: 'Yeni Tebligat', text: "UYAP'tan 2 yeni elektronik tebligat alındı, inceleme bekliyor.", time: '3 saat önce', read: false },
-  { id: 3, type: 'ai', ico: 'fa-microchip', level: 'info', label: 'AI Önerisi', text: 'Kira artış hesabında TÜFE oranı güncellendi — yeniden hesaplama önerilir.', time: '5 saat önce', read: false },
-  { id: 4, type: 'sure', ico: 'fa-calendar-xmark', level: 'warn', label: 'Süre Uyarısı', text: 'İstinaf başvurusu için son 3 gün — Koç Ltd. davası (2024/887)', time: 'Dün', read: true },
-  { id: 5, type: 'sistem', ico: 'fa-circle-info', level: 'success', label: 'Sistem', text: 'Talya v2.1 güncellendi — yeni özellikler: sözleşme şablon kütüphanesi genişletildi.', time: '2 gün önce', read: true },
-  { id: 6, type: 'tebligat', ico: 'fa-paper-plane', level: 'success', label: 'Tebligat Gönderildi', text: 'Alioğlu / Merkez AŞ dosyasına ihtarname başarıyla UYAP\'a iletildi.', time: '3 gün önce', read: true },
-];
+// ── BİLDİRİMLER (gerçek veri: yaklaşan duruşma/ödeme tarihleri) ──
+let NOTIFS = [];
+
+async function loadRealNotifications() {
+  try {
+    const res = await fetch('/api/notifications');
+    if (!res.ok) return;
+    const data = await res.json();
+    NOTIFS = (data.notifications || []).map((n, i) => ({ ...n, id: n.id || i }));
+    renderNotifs();
+  } catch (e) { /* sessizce geç */ }
+}
 
 let notifPrefs = { sure: true, tebligat: true, ai: true, sistem: false };
 let activeFilter = 'all';
@@ -460,4 +463,5 @@ if (window.CURRENT_MODULE) {
   runCountUp();
   renderDashDeadlines();
 }
+loadRealNotifications();
 if (window.__talyaReady) window.__talyaReady();

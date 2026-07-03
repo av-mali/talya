@@ -19,6 +19,7 @@ model User {
   name         String?
   createdAt    DateTime  @default(now())
   messages     Message[]
+  clients      Client[]
 }
 
 model Message {
@@ -28,4 +29,48 @@ model Message {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  notes     String?   // genel not (dava konusu vb.)
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  logs      ClientLog[]
+  invoices  Invoice[]
+  events    ClientEvent[]
+}
+
+// "Ne zaman ne konuşmuşuz" — görüşme / iletişim kaydı
+model ClientLog {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+}
+
+model Invoice {
+  id        String   @id @default(cuid())
+  amount    Float
+  note      String?
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+}
+
+// Duruşma tarihi ya da ödeme tarihi — takvime düşen ve bildirim üreten kayıt
+model ClientEvent {
+  id        String   @id @default(cuid())
+  type      String   // "durusma" | "odeme"
+  title     String
+  dueDate   DateTime
+  notified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
 }
