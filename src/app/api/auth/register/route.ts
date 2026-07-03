@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ id: user.id, email: user.email });
   } catch (err) {
     return NextResponse.json(
-      { error: "Kayıt sırasında bir hata oluştu." },
+      { error: "Kayıt sırasında bir hata oluştu.", debug: String(err)  },
       { status: 500 }
     );
   }
