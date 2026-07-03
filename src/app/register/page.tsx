@@ -24,7 +24,7 @@ export default function RegisterPage() {
     const data = await res.json();
     setLoading(false);
     if (!res.ok) {
-      setError((data.error || "Bir hata oluştu.") + (data.debug ? " | " + data.debug : ""));
+      setError(data.error || "Bir hata oluştu.");
       return;
     }
     router.push("/login");

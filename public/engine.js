@@ -1,0 +1,463 @@
+// ══════════════════════════════════════════════════════════
+// ORTAK MOTOR — Bu dosya TÜM sayfalarda (ana ekran + 5 modül)
+// paylaşılır: sohbet, bildirimler, karanlık mod, komut paleti,
+// popup açma/kapama motoru. Modüle özel içerik (formlar,
+// hesaplayıcılar) burada YOK — onlar module-*.js dosyalarında.
+// Bu dosyayı değiştirmek TÜM sayfaları etkiler, dikkatli ol.
+// ══════════════════════════════════════════════════════════
+
+// ── STATE ──
+let currentPopup = '';
+const chatHistory = [];
+let cmdkItems = [];
+let cmdkSel = 0;
+
+// ── NAV (sayfa geçişleri artık gerçek Next.js route'ları) ──
+function openModule(modId) {
+  window.location.href = '/dashboard/' + modId;
+}
+function goHome() {
+  window.location.href = '/dashboard';
+}
+
+// Modül sayfası yüklendiğinde (module-*.js zaten window.CURRENT_MODULE'ü doldurmuş olmalı)
+function initModulePage() {
+  const cfg = window.CURRENT_MODULE;
+  if (!cfg) return;
+  const nameEl = document.getElementById('appModuleName');
+  if (nameEl) nameEl.innerHTML = cfg.label;
+  const sbLabel = document.getElementById('sidebarLabel');
+  if (sbLabel) sbLabel.innerHTML = cfg.label;
+  const sbName = document.getElementById('sidebarName');
+  if (sbName) sbName.innerHTML = cfg.nameHtml;
+
+  const nav = document.getElementById('sidebarNav');
+  if (nav) {
+    nav.innerHTML = cfg.items.map(item => `
+      <div class="s-item" id="si-${item.id}" onclick="openPopup('${item.id}')">
+        <span class="ico"><i class="fa-solid ${item.icon}"></i></span>
+        ${item.name}
+        ${item.badge ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;background:var(--bg2);color:var(--t3);">${item.badge}</span>` : ''}
+      </div>`).join('');
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const openId = params.get('open') || cfg.items[0].id;
+  setTimeout(() => openPopup(openId), 150);
+}
+
+// ── POPUP / TOOL PANEL ──
+function openPopup(id) {
+  const cfg = window.CURRENT_MODULE;
+  if (!cfg) return;
+
+  document.querySelectorAll('.s-item').forEach(el => {
+    el.classList.remove('active-g', 'active-b', 'active-t', 'active-p');
+  });
+  const si = document.getElementById('si-' + id);
+  if (si) si.classList.add('active-' + cfg.color);
+
+  const popCfg = cfg.popups[id];
+  if (!popCfg) return;
+  currentPopup = id;
+
+  const name = cfg.items.find(i => i.id === id)?.name || id;
+  const itemNameEl = document.getElementById('appItemName');
+  if (itemNameEl) itemNameEl.textContent = name;
+
+  const badge = document.getElementById('popBadge');
+  if (badge) {
+    badge.className = 'pop-badge ' + popCfg.badge;
+    badge.innerHTML = `<span>${popCfg.badgeText}</span>`;
+  }
+  const titleEl = document.getElementById('popTitle');
+  if (titleEl) titleEl.innerHTML = popCfg.titleHtml;
+  const descEl = document.getElementById('popDesc');
+  if (descEl) descEl.textContent = popCfg.desc;
+  const bodyEl = document.getElementById('popBody');
+  if (bodyEl) bodyEl.innerHTML = popCfg.body;
+  const btnEl = document.getElementById('popBtn');
+  if (btnEl) btnEl.className = 'pop-cta-btn ' + popCfg.btnClass;
+  const btnIcoEl = document.getElementById('popBtnIco');
+  if (btnIcoEl) btnIcoEl.className = 'fa-solid ' + popCfg.btnIco;
+  const btnLblEl = document.getElementById('popBtnLbl');
+  if (btnLblEl) btnLblEl.textContent = popCfg.btnLbl;
+}
+
+function closePopup() {
+  // no-op — panel her zaman görünür
+}
+
+function submitPopup() {
+  const cfg = window.CURRENT_MODULE;
+  if (!cfg) return;
+  const popCfg = cfg.popups[currentPopup];
+  if (!popCfg) return;
+  let prompt = '';
+  try { prompt = popCfg.prompt(); } catch (e) { prompt = popCfg.btnLbl + ' isteği'; }
+  toast('Talya AI\'ya iletildi', 'fa-solid fa-paper-plane', true);
+  setTimeout(() => sendQ(prompt), 100);
+}
+
+// ── CHAT ──
+function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+function ckEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }
+
+function appendMsg(role, text) {
+  const empty = document.getElementById('chatEmpty');
+  if (empty) empty.style.display = 'none';
+  const msgs = document.getElementById('chatMsgs');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const ico = role === 'ai' ? 'fa-microchip' : 'fa-user-tie';
+  const actions = role === 'ai' ? `<div class="msg-actions">
+      <span class="msg-act-btn" onclick="copyMsg(this)"><i class="fa-solid fa-copy"></i> Kopyala</span>
+      <span class="msg-act-btn" onclick="toast('Belge indirildi','fa-solid fa-download')"><i class="fa-solid fa-download"></i> İndir</span>
+    </div>` : '';
+  div.innerHTML = `<div class="msg-av"><i class="fa-solid ${ico}"></i></div><div class="msg-bbl">${text}${actions}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function copyMsg(btn) {
+  const bbl = btn.closest('.msg-bbl');
+  const clone = bbl.cloneNode(true);
+  clone.querySelector('.msg-actions')?.remove();
+  navigator.clipboard?.writeText(clone.innerText).then(() => toast('Panoya kopyalandı', 'fa-solid fa-check'));
+}
+
+function showTyping() {
+  const empty = document.getElementById('chatEmpty');
+  if (empty) empty.style.display = 'none';
+  const msgs = document.getElementById('chatMsgs');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = 'typing';
+  div.innerHTML = `<div class="msg-av"><i class="fa-solid fa-microchip"></i></div><div class="msg-bbl"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+function fmtAI(t) {
+  return t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+)$/gm, '<strong style="color:var(--gold)">$1</strong>')
+    .replace(/^## (.+)$/gm, '<strong style="font-size:14px;color:var(--gold)">$1</strong>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)+/g, '<ul>$&</ul>')
+    .replace(/\n\n/g, '</p><p>').replace(/^(?!<)(.+)$/gm, '<p>$1</p>').replace(/<p><\/p>/g, '').trim();
+}
+
+async function sendQ(text) {
+  const inp = document.getElementById('chatIn');
+  if (inp) inp.value = text;
+  await sendChat();
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chatIn');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+  appendMsg('user', text.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+  chatHistory.push({ role: 'user', content: text });
+  const btn = document.getElementById('sendBtn');
+  if (btn) btn.disabled = true;
+  showTyping();
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    removeTyping();
+    if (!res.ok) {
+      appendMsg('ai', '<span style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i> ' + (data.error || 'Bir hata oluştu.') + '</span>');
+      if (btn) btn.disabled = false;
+      return;
+    }
+    const reply = data.reply || 'Bir hata oluştu, tekrar deneyin.';
+    chatHistory.push({ role: 'assistant', content: reply });
+    appendMsg('ai', fmtAI(reply));
+  } catch (e) {
+    removeTyping();
+    appendMsg('ai', '<span style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i> Bağlantı hatası. Lütfen tekrar deneyin.</span>');
+  }
+  if (btn) btn.disabled = false;
+}
+
+// ── TOASTS ──
+function toast(text, ico, gold) {
+  const stack = document.getElementById('toastStack');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = 'toast' + (gold ? ' gold' : '');
+  el.innerHTML = `<div class="tico"><i class="${ico || 'fa-solid fa-check'}"></i></div><span>${text}</span>`;
+  stack.appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 200); }, 3200);
+}
+
+// ── HERO COUNT-UP (sadece ana ekran) ──
+function runCountUp() {
+  document.querySelectorAll('.count-up').forEach(el => {
+    const target = parseInt(el.dataset.target, 10) || 0;
+    const suffix = el.dataset.suffix || '';
+    const dur = 1400;
+    const start = performance.now();
+    function step(now) {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(eased * target).toLocaleString('tr-TR') + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+  document.querySelectorAll('.dbar-fill').forEach(el => {
+    requestAnimationFrame(() => { el.style.width = el.dataset.w + '%'; });
+  });
+}
+
+// ── ANA EKRAN: YAKLAŞAN SÜRELER ──
+function renderDashDeadlines() {
+  const wrap = document.getElementById('dashDeadlines');
+  if (!wrap) return;
+  const deadlines = [
+    { tag: '2 GÜN', level: 'crit', text: 'Temyiz süresi — Yılmaz / Devlet Hastanesi (2024/4521)', days: '2 gün kaldı' },
+    { tag: '5 GÜN', level: 'warn', text: 'İstinaf başvurusu — Koç Ltd. davası (2024/887)', days: '5 gün kaldı' },
+    { tag: '12 GÜN', level: 'warn', text: 'Cevap dilekçesi süresi — Alioğlu / Merkez AŞ', days: '12 gün kaldı' },
+  ];
+  wrap.innerHTML = deadlines.map(d => `
+    <div class="dl-row">
+      <span class="dl-tag ${d.level}">${d.tag}</span>
+      <span class="dl-text">${d.text}</span>
+      <span class="dl-days">${d.days}</span>
+    </div>`).join('');
+}
+
+// ── BİLDİRİMLER (örnek veri, tüm sayfalarda ortak) ──
+const NOTIFS = [
+  { id: 1, type: 'sure', ico: 'fa-hourglass-half', level: 'danger', label: 'Kritik Süre', text: 'Temyiz süresi dolmak üzere — Yılmaz / Devlet Hastanesi (2024/4521)', time: '2 saat önce', read: false },
+  { id: 2, type: 'tebligat', ico: 'fa-envelope-open-text', level: 'warn', label: 'Yeni Tebligat', text: "UYAP'tan 2 yeni elektronik tebligat alındı, inceleme bekliyor.", time: '3 saat önce', read: false },
+  { id: 3, type: 'ai', ico: 'fa-microchip', level: 'info', label: 'AI Önerisi', text: 'Kira artış hesabında TÜFE oranı güncellendi — yeniden hesaplama önerilir.', time: '5 saat önce', read: false },
+  { id: 4, type: 'sure', ico: 'fa-calendar-xmark', level: 'warn', label: 'Süre Uyarısı', text: 'İstinaf başvurusu için son 3 gün — Koç Ltd. davası (2024/887)', time: 'Dün', read: true },
+  { id: 5, type: 'sistem', ico: 'fa-circle-info', level: 'success', label: 'Sistem', text: 'Talya v2.1 güncellendi — yeni özellikler: sözleşme şablon kütüphanesi genişletildi.', time: '2 gün önce', read: true },
+  { id: 6, type: 'tebligat', ico: 'fa-paper-plane', level: 'success', label: 'Tebligat Gönderildi', text: 'Alioğlu / Merkez AŞ dosyasına ihtarname başarıyla UYAP\'a iletildi.', time: '3 gün önce', read: true },
+];
+
+let notifPrefs = { sure: true, tebligat: true, ai: true, sistem: false };
+let activeFilter = 'all';
+
+function getVisibleNotifs() {
+  return NOTIFS.filter(n => {
+    if (!notifPrefs[n.type]) return false;
+    if (activeFilter !== 'all' && n.type !== activeFilter) return false;
+    return true;
+  });
+}
+
+function renderNotifs() {
+  const list = document.getElementById('ndList');
+  if (!list) return;
+  const visible = getVisibleNotifs();
+  if (!visible.length) {
+    list.innerHTML = `<div class="nd-empty"><i class="fa-solid fa-bell-slash"></i>Bildirim yok</div>`;
+  } else {
+    list.innerHTML = visible.map(n => `
+      <div class="nd-item ${n.read ? '' : 'unread'}" onclick="readNotif(${n.id})">
+        <div class="nd-dot ${n.read ? 'read' : n.level}"></div>
+        <div class="nd-ico ${n.level}"><i class="fa-solid ${n.ico}"></i></div>
+        <div class="nd-content">
+          <div class="nd-label">${n.label}</div>
+          <div class="nd-text">${n.text}</div>
+          <div class="nd-time">${n.time}</div>
+        </div>
+      </div>`).join('');
+  }
+  const listHome = document.getElementById('ndListHome');
+  if (listHome) listHome.innerHTML = list.innerHTML;
+  updateBadge();
+}
+
+function updateBadge() {
+  const unread = NOTIFS.filter(n => !n.read && notifPrefs[n.type]).length;
+  ['notifBadge', 'notifBadgeHome'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    if (unread > 0) { badge.textContent = unread; badge.classList.remove('hidden'); }
+    else { badge.classList.add('hidden'); }
+  });
+}
+
+function readNotif(id) {
+  const n = NOTIFS.find(n => n.id === id);
+  if (n) n.read = true;
+  renderNotifs();
+}
+
+function markAllRead() {
+  NOTIFS.forEach(n => n.read = true);
+  renderNotifs();
+  toast('Tüm bildirimler okundu işaretlendi', 'fa-solid fa-check-double');
+}
+
+function filterNotif(el, filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.nd-chip').forEach(c => {
+    c.className = 'nd-chip';
+    if (c.dataset.filter === filter) {
+      if (filter === 'sure') c.classList.add('active-danger');
+      else if (filter === 'tebligat') c.classList.add('active-blue');
+      else if (filter === 'ai') c.classList.add('active-teal');
+      else c.classList.add('active');
+    }
+  });
+  renderNotifs();
+}
+
+function saveNotifPref(type, val) {
+  notifPrefs[type] = val;
+  renderNotifs();
+}
+
+function toggleNotif(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('notifDropdown');
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  document.getElementById('notifDropdownHome')?.classList.remove('open');
+  dd.classList.toggle('open');
+  if (!isOpen) renderNotifs();
+}
+
+function toggleNotifHome(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('notifDropdownHome');
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  document.getElementById('notifDropdown')?.classList.remove('open');
+  dd.classList.toggle('open');
+  if (!isOpen) renderNotifs();
+}
+
+function filterNotifHome(el, filter) {
+  activeFilter = filter;
+  document.querySelectorAll('#ndFilterHome .nd-chip').forEach(c => {
+    c.className = 'nd-chip';
+    if (c.dataset.filter === filter) {
+      if (filter === 'sure') c.classList.add('active-danger');
+      else if (filter === 'tebligat') c.classList.add('active-blue');
+      else if (filter === 'ai') c.classList.add('active-teal');
+      else c.classList.add('active');
+    }
+  });
+  renderNotifs();
+}
+
+document.addEventListener('click', e => {
+  document.querySelectorAll('.notif-wrap').forEach(wrap => {
+    const dd = wrap.querySelector('.notif-dropdown');
+    if (!wrap.contains(e.target) && dd) dd.classList.remove('open');
+  });
+});
+
+// ── KARANLIK MOD ──
+function toggleDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  const icon = isDark ? 'fa-moon' : 'fa-sun';
+  const h = document.getElementById('dmIconHome'); if (h) h.className = 'fa-solid ' + icon;
+  const a = document.getElementById('dmIconApp'); if (a) a.className = 'fa-solid ' + icon;
+  localStorage.setItem('talya-theme', isDark ? '' : 'dark');
+}
+(function () {
+  const saved = localStorage.getItem('talya-theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    const h = document.getElementById('dmIconHome'); if (h) h.className = 'fa-solid fa-sun';
+    const a = document.getElementById('dmIconApp'); if (a) a.className = 'fa-solid fa-sun';
+  }
+})();
+
+// ── KOMUT PALETİ (⌘K) — tüm modüllerde arama yapar ──
+function openCmdk() {
+  if (!cmdkItems.length) cmdkItems = window.CMDK_INDEX || [];
+  document.getElementById('cmdkScrim')?.classList.add('open');
+  const inp = document.getElementById('cmdkInput');
+  if (!inp) return;
+  inp.value = '';
+  cmdkSel = 0;
+  cmdkRenderList(cmdkItems);
+  setTimeout(() => inp.focus(), 30);
+}
+function closeCmdk() {
+  document.getElementById('cmdkScrim')?.classList.remove('open');
+}
+function cmdkFilter() {
+  const q = document.getElementById('cmdkInput').value.trim().toLowerCase();
+  const filtered = q ? cmdkItems.filter(i => i.name.toLowerCase().includes(q) || i.modLabel.toLowerCase().includes(q)) : cmdkItems;
+  cmdkSel = 0;
+  cmdkRenderList(filtered);
+}
+function cmdkRenderList(list) {
+  const el = document.getElementById('cmdkList');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = `<div class="cmdk-empty"><i class="fa-solid fa-magnifying-glass" style="display:block;margin-bottom:8px;opacity:.4;"></i>Sonuç bulunamadı</div>`;
+    return;
+  }
+  let lastMod = '';
+  let html = '';
+  list.forEach((item, idx) => {
+    if (item.modLabel !== lastMod) {
+      html += `<div class="cmdk-group-lbl">${item.modLabel}</div>`;
+      lastMod = item.modLabel;
+    }
+    html += `<div class="cmdk-item ${idx === cmdkSel ? 'sel' : ''}" data-idx="${idx}" onclick="cmdkChoose('${item.modId}','${item.id}')">
+      <span class="cico"><i class="fa-solid ${item.icon}"></i></span>
+      <span class="cmdk-item-name">${item.name}</span>
+      <span class="cmdk-item-mod">${item.modLabel}</span>
+    </div>`;
+  });
+  el.innerHTML = html;
+  el._list = list;
+}
+function cmdkKey(e) {
+  const list = document.getElementById('cmdkList')?._list || [];
+  if (e.key === 'ArrowDown') { e.preventDefault(); cmdkSel = Math.min(cmdkSel + 1, list.length - 1); cmdkRenderList(list); cmdkScrollSel(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); cmdkSel = Math.max(cmdkSel - 1, 0); cmdkRenderList(list); cmdkScrollSel(); }
+  else if (e.key === 'Enter') { e.preventDefault(); const it = list[cmdkSel]; if (it) cmdkChoose(it.modId, it.id); }
+  else if (e.key === 'Escape') { closeCmdk(); }
+}
+function cmdkScrollSel() {
+  const selEl = document.querySelector('.cmdk-item.sel');
+  if (selEl) selEl.scrollIntoView({ block: 'nearest' });
+}
+function cmdkChoose(modId, itemId) {
+  closeCmdk();
+  // Aynı modüldeysek sayfa yenilemeden aç, farklı modülse o sayfaya git.
+  if (window.CURRENT_MODULE && window.CURRENT_MODULE.key === modId) {
+    openPopup(itemId);
+  } else {
+    window.location.href = '/dashboard/' + modId + '?open=' + itemId;
+  }
+}
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    const scrim = document.getElementById('cmdkScrim');
+    if (!scrim) return;
+    scrim.classList.contains('open') ? closeCmdk() : openCmdk();
+  }
+});
+
+// ── INIT ──
+cmdkItems = window.CMDK_INDEX || [];
+if (window.CURRENT_MODULE) {
+  initModulePage();
+} else {
+  runCountUp();
+  renderDashDeadlines();
+}
+if (window.__talyaReady) window.__talyaReady();
