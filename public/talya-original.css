@@ -440,7 +440,49 @@ textarea{resize:none;line-height:1.6;}
 @media(max-width:980px){
   .dash-grid{grid-template-columns:1fr;}
   .hero-stats{flex-wrap:wrap;}
+  .modules-grid{grid-template-columns:repeat(3,1fr);}
 }
+
+/* ═══════ MOBİL UYUMLULUK (max-width:720px) ═══════ */
+@media(max-width:720px){
+  /* Ana ekran üst menü */
+  .home-nav{padding:0 14px;height:52px;}
+  .home-logo-tag{display:none;}
+  .home-nav .nav-pill:not(.gold){display:none;}
+  .home-nav .nav-pill.gold{font-size:11px;padding:6px 10px;}
+
+  /* Hero ve modül kartları */
+  .home-hero{padding:0 14px;}
+  .hero-title{font-size:22px;}
+  .hero-sub{font-size:12.5px;padding:0 6px;}
+  .modules-grid{grid-template-columns:repeat(2,1fr);gap:10px;padding:0 14px;max-width:100%;}
+  .dash-wrap{padding:0 14px;}
+
+  /* Uygulama üst çubuğu */
+  .app-topbar{padding:0 10px;flex-wrap:wrap;height:auto;min-height:48px;}
+  .app-breadcrumb{font-size:9px;}
+  .cmdk-trigger span,.cmdk-trigger kbd{display:none;}
+  .status-pill{display:none;}
+  #userEmailPill{display:none;}
+  .app-top-right .nav-pill.gold{font-size:10px;padding:5px 8px;}
+
+  /* 3 sütunlu uygulama düzeni → alt alta tek sütun */
+  .app-body{flex-direction:column;overflow-y:auto;}
+  .app-sidebar{width:100%;max-height:180px;border-right:none;border-bottom:1px solid var(--border);}
+  .tool-panel{width:100% !important;max-width:100% !important;flex-shrink:0;border-right:none;border-bottom:1px solid var(--border);}
+  .ai-pane{width:100%;min-height:60vh;}
+
+  /* Bildirim ve komut paleti pencereleri */
+  .notif-dropdown{width:92vw;right:-8px;}
+  .cmdk-box{width:92vw;}
+
+  /* Genel form alanları küçük ekranda daralmasın */
+  .fg input[type=text],.fg input[type=date],.fg select,.fg textarea{font-size:14px;}
+}
+@media(max-width:480px){
+  .modules-grid{grid-template-columns:1fr;}
+}
+
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
 }

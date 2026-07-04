@@ -76,7 +76,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid var(--border)",
     borderRadius: 14,
     padding: 32,
-    width: 340,
+    width: "min(340px, 90vw)",
     display: "flex",
     flexDirection: "column",
     gap: 12,
