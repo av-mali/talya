@@ -14,7 +14,7 @@ export async function GET() {
   const now = new Date();
   const in14days = new Date(now.getTime() + 14 * 86400000);
 
-  const [events, tasks] = await Promise.all([
+  const [events, tasks, readRows] = await Promise.all([
     prisma.clientEvent.findMany({
       where: { case: { client: { userId } }, dueDate: { lte: in14days } },
       include: { case: { include: { client: true } } },
@@ -24,7 +24,10 @@ export async function GET() {
       where: { userId, done: false, dueDate: { not: null, lte: in14days } },
       orderBy: { dueDate: "asc" },
     }),
+    prisma.notificationRead.findMany({ where: { userId }, select: { notifId: true } }),
   ]);
+
+  const readIds = new Set(readRows.map((r) => r.notifId));
 
   const TYPE_LABELS: Record<string, string> = {
     durusma: "Duruşma", odeme: "Ödeme", gorusme: "Görüşme",
@@ -35,8 +38,9 @@ export async function GET() {
     const daysLeft = Math.ceil((e.dueDate.getTime() - now.getTime()) / 86400000);
     const overdue = daysLeft < 0;
     const label = TYPE_LABELS[e.type] || e.type;
+    const id = "ev-" + e.id;
     return {
-      id: "ev-" + e.id,
+      id,
       type: e.type === "durusma" || e.type === "istinaf" || e.type === "temyiz" ? "sure" : "tebligat",
       ico: e.type === "odeme" ? "fa-turkish-lira-sign" : "fa-gavel",
       level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
@@ -44,15 +48,16 @@ export async function GET() {
       text: `${e.case.client.name} (${e.case.title}) — ${e.title}`,
       time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
       dueDate: e.dueDate,
-      read: false,
+      read: readIds.has(id),
     };
   });
 
   const taskNotifs = tasks.map((t) => {
     const daysLeft = Math.ceil((t.dueDate!.getTime() - now.getTime()) / 86400000);
     const overdue = daysLeft < 0;
+    const id = "task-" + t.id;
     return {
-      id: "task-" + t.id,
+      id,
       type: "sure",
       ico: "fa-list-check",
       level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
@@ -60,7 +65,7 @@ export async function GET() {
       text: t.title,
       time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
       dueDate: t.dueDate!,
-      read: false,
+      read: readIds.has(id),
     };
   });
 

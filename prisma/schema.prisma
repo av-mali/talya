@@ -25,6 +25,19 @@ model User {
   notes        Note[]
   transactions Transaction[]
   templates    Template[]
+  readNotifs   NotificationRead[]
+}
+
+// Bir bildirimin (duruşma/ödeme/görev tarihinin) okundu olarak işaretlenmesi.
+// notifId, /api/notifications'ın ürettiği "ev-xxx" veya "task-xxx" kimliğidir.
+model NotificationRead {
+  id        String   @id @default(cuid())
+  notifId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  @@unique([userId, notifId])
 }
 
 model Message {

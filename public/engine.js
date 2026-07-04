@@ -371,12 +371,23 @@ function readNotif(id) {
   const n = NOTIFS.find(n => n.id === id);
   if (n) n.read = true;
   renderNotifs();
+  fetch('/api/notifications/read', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  }).catch(() => {});
 }
 
 function markAllRead() {
+  const ids = NOTIFS.map(n => n.id);
   NOTIFS.forEach(n => n.read = true);
   renderNotifs();
   toast('Tüm bildirimler okundu işaretlendi', 'fa-solid fa-check-double');
+  if (ids.length) {
+    fetch('/api/notifications/read-all', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    }).catch(() => {});
+  }
 }
 
 function filterNotif(el, filter) {
