@@ -236,6 +236,45 @@ function runCountUp() {
   });
 }
 
+// ── ANA EKRAN: YAKLAŞAN SÜRELER — TAM LİSTE POPUP ──
+async function openDeadlinesModal() {
+  const scrim = document.getElementById('deadlinesScrim');
+  if (!scrim) return;
+  scrim.style.display = 'flex';
+  const list = document.getElementById('deadlinesModalList');
+  list.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--t3);font-size:13px;">Yükleniyor…</div>`;
+  try {
+    const res = await fetch('/api/events');
+    const data = await res.json();
+    const now = new Date();
+    const upcoming = (data.events || [])
+      .filter(e => new Date(e.dueDate) >= new Date(now.toDateString()))
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+    if (!upcoming.length) {
+      list.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--t3);font-size:13px;">Yaklaşan duruşma, ödeme veya görev yok.</div>`;
+      return;
+    }
+    list.innerHTML = upcoming.map(e => {
+      const days = Math.ceil((new Date(e.dueDate).getTime() - now.getTime()) / 86400000);
+      const level = days <= 3 ? 'crit' : days <= 7 ? 'warn' : '';
+      const tag = days === 0 ? 'BUGÜN' : days + ' GÜN';
+      return `<div class="dl-row">
+        <span class="dl-tag ${level}">${tag}</span>
+        <span class="dl-text">${e.clientName} — ${e.title}</span>
+        <span class="dl-days">${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function closeDeadlinesModal() {
+  const scrim = document.getElementById('deadlinesScrim');
+  if (scrim) scrim.style.display = 'none';
+}
+
 // ── ANA EKRAN: YAKLAŞAN SÜRELER (gerçek veri) ──
 async function renderDashDeadlines() {
   const wrap = document.getElementById('dashDeadlines');
@@ -486,6 +525,10 @@ document.addEventListener('keydown', e => {
     const scrim = document.getElementById('cmdkScrim');
     if (!scrim) return;
     scrim.classList.contains('open') ? closeCmdk() : openCmdk();
+  }
+  if (e.key === 'Escape') {
+    const dScrim = document.getElementById('deadlinesScrim');
+    if (dScrim && dScrim.style.display === 'flex') closeDeadlinesModal();
   }
 });
 

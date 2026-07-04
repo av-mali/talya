@@ -71,7 +71,7 @@
     <div class="dash-wrap">
       <div class="dash-grid">
         <div class="dash-card">
-          <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-hourglass-half"></i> Yaklaşan Süreler</div><div class="dash-link" onclick="openModule('buro')">Tümünü gör →</div></div>
+          <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-hourglass-half"></i> Yaklaşan Süreler</div><div class="dash-link" onclick="openDeadlinesModal()">Tümünü gör →</div></div>
           <div id="dashDeadlines"></div>
         </div>
         <div class="dash-card">
@@ -124,6 +124,17 @@
   </div>
 
   <div class="home-footer">© 2026 Talya · KVKK Uyumlu · Şifreli İletim</div>
+</div>
+
+<!-- ═══════ YAKLAŞAN SÜRELER POPUP ═══════ -->
+<div id="deadlinesScrim" onclick="if(event.target===this)closeDeadlinesModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border-radius:14px;width:520px;max-width:90vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);">
+      <div class="serif" style="font-size:19px;"><i class="fa-solid fa-hourglass-half" style="color:var(--gold);margin-right:8px;"></i>Yaklaşan Süreler</div>
+      <div style="cursor:pointer;color:var(--t3);font-size:18px;" onclick="closeDeadlinesModal()"><i class="fa-solid fa-xmark"></i></div>
+    </div>
+    <div id="deadlinesModalList" style="padding:16px 22px;overflow-y:auto;flex:1;"></div>
+  </div>
 </div>
 
 <!-- ═══════ COMMAND PALETTE ═══════ -->
