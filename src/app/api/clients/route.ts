@@ -24,11 +24,23 @@ export async function GET(req: Request) {
     },
     orderBy: { name: "asc" },
     include: {
-      events: { orderBy: { dueDate: "asc" }, where: { dueDate: { gte: new Date() } }, take: 1 },
+      cases: {
+        include: {
+          events: { orderBy: { dueDate: "asc" }, where: { dueDate: { gte: new Date() } }, take: 1 },
+        },
+      },
     },
   });
 
-  return NextResponse.json({ clients });
+  // Her müvekkil için, tüm dosyalarındaki en yakın tarihi tek bir alana indir
+  const withNextEvent = clients.map((c) => {
+    const upcoming = c.cases
+      .flatMap((cs) => cs.events)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    return { ...c, events: upcoming.slice(0, 1) };
+  });
+
+  return NextResponse.json({ clients: withNextEvent });
 }
 
 // Yeni müvekkil oluştur

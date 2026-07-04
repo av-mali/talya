@@ -11,8 +11,8 @@ export async function DELETE(
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const userId = (session.user as any).id as string;
 
-  const client = await prisma.client.findFirst({ where: { id: params.id, userId } });
-  if (!client) return NextResponse.json({ error: "Müvekkil bulunamadı." }, { status: 404 });
+  const found = await prisma.case.findFirst({ where: { id: params.id, client: { userId } } });
+  if (!found) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });
 
   await prisma.invoice.delete({ where: { id: params.invoiceId } });
   return NextResponse.json({ ok: true });

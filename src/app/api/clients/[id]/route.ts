@@ -18,8 +18,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     where: { id: params.id, userId },
     include: {
       logs: { orderBy: { createdAt: "desc" } },
-      invoices: { orderBy: { createdAt: "desc" } },
-      events: { orderBy: { dueDate: "asc" } },
+      cases: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          events: { orderBy: { dueDate: "asc" } },
+          invoices: { orderBy: { createdAt: "desc" } },
+          timeEntries: { orderBy: { date: "desc" } },
+        },
+      },
     },
   });
 

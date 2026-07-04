@@ -16,8 +16,8 @@ export async function GET() {
 
   const [events, tasks] = await Promise.all([
     prisma.clientEvent.findMany({
-      where: { client: { userId }, dueDate: { lte: in14days } },
-      include: { client: true },
+      where: { case: { client: { userId } }, dueDate: { lte: in14days } },
+      include: { case: { include: { client: true } } },
       orderBy: { dueDate: "asc" },
     }),
     prisma.task.findMany({
@@ -41,7 +41,7 @@ export async function GET() {
       ico: e.type === "odeme" ? "fa-turkish-lira-sign" : "fa-gavel",
       level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
       label,
-      text: `${e.client.name} — ${e.title}`,
+      text: `${e.case.client.name} (${e.case.title}) — ${e.title}`,
       time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
       dueDate: e.dueDate,
       read: false,

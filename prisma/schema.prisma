@@ -46,11 +46,10 @@ model Client {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   logs      ClientLog[]
-  invoices  Invoice[]
-  events    ClientEvent[]
+  cases     Case[]
 }
 
-// "Ne zaman ne konuşmuşuz" — görüşme / iletişim kaydı
+// "Ne zaman ne konuşmuşuz" — müvekkille genel görüşme / iletişim kaydı
 model ClientLog {
   id        String   @id @default(cuid())
   content   String
@@ -59,13 +58,27 @@ model ClientLog {
   clientId  String
 }
 
+// Bir müvekkilin birden fazla dosyası/davası olabilir — her dosyanın
+// kendi tarihleri, faturaları ve zaman kayıtları vardır.
+model Case {
+  id         String    @id @default(cuid())
+  title      String    // ör. "Boşanma Davası", "Tazminat Davası"
+  status     String    @default("acik") // "acik" | "kapali"
+  createdAt  DateTime  @default(now())
+  client     Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId   String
+  events     ClientEvent[]
+  invoices   Invoice[]
+  timeEntries TimeEntry[]
+}
+
 model Invoice {
   id        String   @id @default(cuid())
   amount    Float
   note      String?
   createdAt DateTime @default(now())
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId  String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId    String
 }
 
 // Duruşma tarihi ya da ödeme tarihi — takvime düşen ve bildirim üreten kayıt
@@ -76,8 +89,20 @@ model ClientEvent {
   dueDate   DateTime
   notified  Boolean  @default(false)
   createdAt DateTime @default(now())
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId  String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId    String
+}
+
+// Zaman takibi — bir dosyaya harcanan süre (saatlik ücretlendirme için)
+model TimeEntry {
+  id          String   @id @default(cuid())
+  hours       Float
+  hourlyRate  Float?
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId      String
 }
 
 // Bürodaki genel (müvekkilden bağımsız) yapılacaklar listesi

@@ -335,13 +335,14 @@ function getVisibleNotifs() {
 
 function renderNotifs() {
   const list = document.getElementById('ndList');
-  if (!list) return;
+  const listHome = document.getElementById('ndListHome');
+  if (!list && !listHome) return;
+
   const visible = getVisibleNotifs();
-  if (!visible.length) {
-    list.innerHTML = `<div class="nd-empty"><i class="fa-solid fa-bell-slash"></i>Bildirim yok</div>`;
-  } else {
-    list.innerHTML = visible.map(n => `
-      <div class="nd-item ${n.read ? '' : 'unread'}" onclick="readNotif(${n.id})">
+  const html = !visible.length
+    ? `<div class="nd-empty"><i class="fa-solid fa-bell-slash"></i>Bildirim yok</div>`
+    : visible.map(n => `
+      <div class="nd-item ${n.read ? '' : 'unread'}" onclick="readNotif('${n.id}')">
         <div class="nd-dot ${n.read ? 'read' : n.level}"></div>
         <div class="nd-ico ${n.level}"><i class="fa-solid ${n.ico}"></i></div>
         <div class="nd-content">
@@ -350,9 +351,9 @@ function renderNotifs() {
           <div class="nd-time">${n.time}</div>
         </div>
       </div>`).join('');
-  }
-  const listHome = document.getElementById('ndListHome');
-  if (listHome) listHome.innerHTML = list.innerHTML;
+
+  if (list) list.innerHTML = html;
+  if (listHome) listHome.innerHTML = html;
   updateBadge();
 }
 

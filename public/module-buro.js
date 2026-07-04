@@ -179,6 +179,8 @@ function detailPlaceholder(text) {
 // ══════════════════════════════════════════════════════
 let mvSelectedId = null;
 let mvLastQuery = '';
+let mvClientCache = null;
+let mvOpenCaseId = null;
 
 const EVENT_TYPE_LABELS = {
   durusma: 'Duruşma', odeme: 'Ödeme', gorusme: 'Görüşme',
@@ -260,12 +262,19 @@ function mvBackToList() {
 
 async function mvSelect(id) {
   mvSelectedId = id;
+  mvOpenCaseId = null;
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
   const res = await fetch('/api/clients/' + id);
   const data = await res.json();
   if (!data.client) { dp.innerHTML = detailPlaceholder(); return; }
-  const c = data.client;
+  mvClientCache = data.client;
+  mvRenderClientView();
+}
+
+function mvRenderClientView() {
+  const c = mvClientCache;
+  const dp = document.getElementById('detailPane');
 
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
@@ -294,8 +303,70 @@ async function mvSelect(id) {
         </div>
       </div>
 
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-folder-open"></i> Dosyalar (${c.cases.length})</div>
+      <div id="mv-cases">${c.cases.length ? c.cases.map(cs => {
+        const nextEv = cs.events.filter(e => new Date(e.dueDate) >= new Date()).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate))[0];
+        return `<div class="s-item" style="margin:0 0 4px;" onclick="mvOpenCase('${cs.id}')">
+          <span class="ico"><i class="fa-solid fa-folder"></i></span>${cs.title}
+          ${cs.status==='kapali' ? '<span style="margin-left:6px;font-size:9px;color:var(--t3);">(kapalı)</span>' : ''}
+          ${nextEv ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg2);color:var(--t3);">${new Date(nextEv.dueDate).toLocaleDateString('tr-TR')}</span>` : ''}
+        </div>`;
+      }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz dosya eklenmedi.</div>'}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <input type="text" id="mv-case-title" placeholder="Yeni dosya adı (ör. Boşanma Davası)…" style="flex:1;">
+        <button class="pop-cta-btn p" style="padding:6px 12px;" onclick="mvAddCase()"><span>Ekle</span></button>
+      </div>
+
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 6px;"><i class="fa-solid fa-comments"></i> Genel Görüşme Geçmişi</div>
+      <div id="mv-logs">${c.logs.length ? c.logs.map(l => `<div style="padding:6px 0;border-bottom:1px solid var(--border);"><div style="font-size:10px;color:var(--t3);">${new Date(l.createdAt).toLocaleString('tr-TR')}</div><div style="font-size:12.5px;">${l.content}</div></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz görüşme kaydı yok.</div>'}</div>
+      <textarea id="mv-log-text" rows="2" placeholder="Ne konuşuldu, ne karar verildi…" style="margin-top:8px;"></textarea>
+      <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvAddLog()"><span>Notu Kaydet</span></button>
+    </div>
+  `;
+}
+
+async function mvAddCase() {
+  if (!mvSelectedId) return;
+  const title = document.getElementById('mv-case-title').value.trim();
+  if (!title) { toast('Dosya adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/clients/' + mvSelectedId + '/cases', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title })
+  });
+  toast('Dosya eklendi', 'fa-solid fa-check', true);
+  mvSelect(mvSelectedId);
+}
+
+async function mvOpenCase(caseId) {
+  mvOpenCaseId = caseId;
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  const res = await fetch('/api/cases/' + caseId);
+  const data = await res.json();
+  if (!data.case) { mvRenderClientView(); return; }
+  const cs = data.case;
+
+  const toplamSaat = cs.timeEntries.reduce((s, t) => s + t.hours, 0);
+  const toplamUcret = cs.timeEntries.reduce((s, t) => s + (t.hours * (t.hourlyRate || 0)), 0);
+
+  dp.innerHTML = `
+    <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="mvRenderClientView()">
+        <i class="fa-solid fa-arrow-left"></i> ${cs.client.name} — Müvekkile Dön
+      </div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div style="font-family:'Instrument Serif',serif;font-size:19px;">${cs.title}</div>
+        <div style="display:flex;gap:6px;">
+          <select onchange="mvSetCaseStatus('${cs.id}', this.value)" style="width:110px;font-size:11px;">
+            <option value="acik" ${cs.status==='acik'?'selected':''}>Açık</option>
+            <option value="kapali" ${cs.status==='kapali'?'selected':''}>Kapalı</option>
+          </select>
+          <button class="pop-cta-btn" style="padding:5px 10px;background:var(--danger);" onclick="mvDeleteCase('${cs.id}')"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Tarihler</div>
-      <div id="mv-events">${c.events.length ? c.events.map(ev => {
+      <div id="mv-events">${cs.events.length ? cs.events.map(ev => {
         const dl = mvDaysLeft(ev.dueDate);
         return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(ev.type).toUpperCase()}</span><span class="dl-text">${ev.title} — ${new Date(ev.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span><span style="cursor:pointer;color:var(--t3);margin-left:8px;" onclick="mvDeleteEvent('${ev.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz tarih eklenmedi.</div>'}</div>
@@ -316,14 +387,42 @@ async function mvSelect(id) {
       </div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Faturalar</div>
-      <div id="mv-invoices">${c.invoices.length ? c.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span><span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
+      <div id="mv-invoices">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span><span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <input type="text" id="mv-inv-amount" placeholder="Tutar (TL)" style="width:120px;">
+        <input type="text" id="mv-inv-note" placeholder="Açıklama…" style="flex:1;">
+        <button class="pop-cta-btn g" style="padding:6px 12px;" onclick="mvAddInvoice()"><span>Fatura Oluştur</span></button>
+      </div>
 
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-comments"></i> Görüşme Geçmişi</div>
-      <div id="mv-logs">${c.logs.length ? c.logs.map(l => `<div style="padding:6px 0;border-bottom:1px solid var(--border);"><div style="font-size:10px;color:var(--t3);">${new Date(l.createdAt).toLocaleString('tr-TR')}</div><div style="font-size:12.5px;">${l.content}</div></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz görüşme kaydı yok.</div>'}</div>
-      <textarea id="mv-log-text" rows="2" placeholder="Ne konuşuldu, ne karar verildi…" style="margin-top:8px;"></textarea>
-      <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvAddLog()"><span>Notu Kaydet</span></button>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-stopwatch"></i> Zaman Takibi</div>
+      <div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--t2);">
+        <span>Toplam: <strong>${toplamSaat.toFixed(1)} saat</strong></span>
+        ${toplamUcret > 0 ? `<span>Tahmini ücret: <strong style="color:var(--gold);">${fmtTL(toplamUcret)}</strong></span>` : ''}
+      </div>
+      <div id="mv-time">${cs.timeEntries.length ? cs.timeEntries.map(t => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(t.date).toLocaleDateString('tr-TR')} — ${t.hours} saat${t.description?(' — '+t.description):''}</span><span style="display:flex;align-items:center;gap:8px;">${t.hourlyRate?`<span style="font-family:'JetBrains Mono',monospace;color:var(--t3);">${fmtTL(t.hours*t.hourlyRate)}</span>`:''}<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteTime('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz zaman kaydı yok.</div>'}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <input type="text" id="mv-time-hours" placeholder="Saat (ör. 1.5)" style="width:110px;">
+        <input type="text" id="mv-time-rate" placeholder="Saatlik ücret (ops.)" style="width:150px;">
+        <input type="text" id="mv-time-desc" placeholder="Açıklama…" style="flex:1;min-width:120px;">
+        <button class="pop-cta-btn b" style="padding:6px 12px;" onclick="mvAddTime()"><span>Ekle</span></button>
+      </div>
     </div>
   `;
+}
+
+async function mvSetCaseStatus(caseId, status) {
+  await fetch('/api/cases/' + caseId, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  toast('Dosya durumu güncellendi', 'fa-solid fa-check', true);
+}
+
+async function mvDeleteCase(caseId) {
+  if (!confirm('Bu dosyayı ve içindeki tüm tarih/fatura/zaman kayıtlarını silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/cases/' + caseId, { method: 'DELETE' });
+  toast('Dosya silindi', 'fa-solid fa-trash');
+  mvSelect(mvSelectedId);
 }
 
 function mvToggleCustomType() {
@@ -355,7 +454,7 @@ async function mvSaveEdit() {
 
 async function mvDeleteClient() {
   if (!mvSelectedId) return;
-  if (!confirm('Bu müvekkili ve tüm kayıtlarını silmek istediğinize emin misiniz?')) return;
+  if (!confirm('Bu müvekkili ve tüm dosyalarını silmek istediğinize emin misiniz?')) return;
   await fetch('/api/clients/' + mvSelectedId, { method: 'DELETE' });
   toast('Müvekkil silindi', 'fa-solid fa-trash');
   mvSelectedId = null;
@@ -363,34 +462,69 @@ async function mvDeleteClient() {
 }
 
 async function mvAddEvent() {
-  if (!mvSelectedId) return;
+  if (!mvOpenCaseId) return;
   const sel = document.getElementById('mv-ev-type').value;
   const type = sel === '__custom' ? (document.getElementById('mv-ev-custom').value.trim() || 'Diğer') : sel;
   const title = document.getElementById('mv-ev-title').value.trim();
   const dueDate = document.getElementById('mv-ev-date').value;
   if (!title || !dueDate) { toast('Başlık ve tarih girin', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/clients/' + mvSelectedId + '/events', {
+  await fetch('/api/cases/' + mvOpenCaseId + '/events', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type, title, dueDate })
   });
   toast('Tarih eklendi — takvime düştü', 'fa-solid fa-calendar-check', true);
-  mvSelect(mvSelectedId);
+  mvOpenCase(mvOpenCaseId);
 }
 
 async function mvDeleteEvent(eventId) {
-  if (!mvSelectedId) return;
+  if (!mvOpenCaseId) return;
   if (!confirm('Bu tarihi silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/clients/' + mvSelectedId + '/events/' + eventId, { method: 'DELETE' });
+  await fetch('/api/cases/' + mvOpenCaseId + '/events/' + eventId, { method: 'DELETE' });
   toast('Tarih silindi', 'fa-solid fa-trash');
-  mvSelect(mvSelectedId);
+  mvOpenCase(mvOpenCaseId);
+}
+
+async function mvAddInvoice() {
+  if (!mvOpenCaseId) return;
+  const amount = document.getElementById('mv-inv-amount').value;
+  const note = document.getElementById('mv-inv-note').value;
+  if (!amount) { toast('Tutar girin', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/cases/' + mvOpenCaseId + '/invoices', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount, note })
+  });
+  toast('Fatura oluşturuldu', 'fa-solid fa-check', true);
+  mvOpenCase(mvOpenCaseId);
 }
 
 async function mvDeleteInvoice(invoiceId) {
-  if (!mvSelectedId) return;
+  if (!mvOpenCaseId) return;
   if (!confirm('Bu faturayı silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/clients/' + mvSelectedId + '/invoices/' + invoiceId, { method: 'DELETE' });
+  await fetch('/api/cases/' + mvOpenCaseId + '/invoices/' + invoiceId, { method: 'DELETE' });
   toast('Fatura silindi', 'fa-solid fa-trash');
-  mvSelect(mvSelectedId);
+  mvOpenCase(mvOpenCaseId);
+}
+
+async function mvAddTime() {
+  if (!mvOpenCaseId) return;
+  const hours = document.getElementById('mv-time-hours').value;
+  const hourlyRate = document.getElementById('mv-time-rate').value;
+  const description = document.getElementById('mv-time-desc').value;
+  if (!hours) { toast('Süre girin', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/cases/' + mvOpenCaseId + '/time', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hours, hourlyRate: hourlyRate || null, description })
+  });
+  toast('Zaman kaydı eklendi', 'fa-solid fa-check', true);
+  mvOpenCase(mvOpenCaseId);
+}
+
+async function mvDeleteTime(entryId) {
+  if (!mvOpenCaseId) return;
+  if (!confirm('Bu zaman kaydını silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/cases/' + mvOpenCaseId + '/time/' + entryId, { method: 'DELETE' });
+  toast('Zaman kaydı silindi', 'fa-solid fa-trash');
+  mvOpenCase(mvOpenCaseId);
 }
 
 async function mvAddLog() {
@@ -522,9 +656,11 @@ async function rpSelect(id) {
   if (!data.client) { dp.innerHTML = detailPlaceholder(); return; }
   const c = data.client;
 
-  const toplamFatura = c.invoices.reduce((s, i) => s + i.amount, 0);
-  const gecmisEv = c.events.filter(e => new Date(e.dueDate) < new Date());
-  const gelecekEv = c.events.filter(e => new Date(e.dueDate) >= new Date());
+  const allEvents = c.cases.flatMap(cs => cs.events.map(e => ({ ...e, caseTitle: cs.title })));
+  const allInvoices = c.cases.flatMap(cs => cs.invoices);
+  const toplamFatura = allInvoices.reduce((s, i) => s + i.amount, 0);
+  const gecmisEv = allEvents.filter(e => new Date(e.dueDate) < new Date());
+  const gelecekEv = allEvents.filter(e => new Date(e.dueDate) >= new Date());
 
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
@@ -536,14 +672,17 @@ async function rpSelect(id) {
         <span style="font-family:'JetBrains Mono',monospace;font-weight:600;">${toplamFatura ? fmtTL(toplamFatura) : 'Belirtilmedi'}</span>
       </div>
 
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-folder-open"></i> Dosyalar (${c.cases.length})</div>
+      ${c.cases.length ? c.cases.map(cs => `<div style="font-size:12.5px;padding:4px 0;">${cs.title} ${cs.status==='kapali'?'<span style="color:var(--t3);font-size:10px;">(kapalı)</span>':''}</div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz dosya yok.</div>'}
+
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Yaklaşan Tarihler</div>
       ${gelecekEv.length ? gelecekEv.map(e => {
         const dl = mvDaysLeft(e.dueDate);
-        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
+        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${e.caseTitle} — ${e.title} (${new Date(e.dueDate).toLocaleDateString('tr-TR')})</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Yaklaşan tarih yok.</div>'}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Tarihler</div>
-      ${gecmisEv.length ? gecmisEv.map(e => `<div class="dl-row"><span class="dl-tag" style="background:var(--bg2);color:var(--t3);">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:var(--t3);">Tamamlandı</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Geçmiş kayıt yok.</div>'}
+      ${gecmisEv.length ? gecmisEv.map(e => `<div class="dl-row"><span class="dl-tag" style="background:var(--bg2);color:var(--t3);">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${e.caseTitle} — ${e.title} (${new Date(e.dueDate).toLocaleDateString('tr-TR')})</span><span class="dl-days" style="color:var(--t3);">Tamamlandı</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Geçmiş kayıt yok.</div>'}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-comments"></i> Son Görüşme</div>
       ${c.logs.length ? `<div style="font-size:12.5px;">${c.logs[0].content}</div><div style="font-size:10px;color:var(--t3);margin-top:2px;">${new Date(c.logs[0].createdAt).toLocaleString('tr-TR')}</div>` : '<div style="font-size:12px;color:var(--t3);">Görüşme kaydı yok.</div>'}
@@ -555,9 +694,11 @@ async function rpSelect(id) {
 // FATURA & TAHSİLAT — sağ panelde fatura oluştur + yazdır
 // ══════════════════════════════════════════════════════
 let fatSelectedId = null;
+let fatSelectedCaseId = null;
 
 function fatOnOpen() {
   fatSelectedId = null;
+  fatSelectedCaseId = null;
   loadClientList('fat-list', '', 'fatSelect');
 }
 
@@ -568,44 +709,75 @@ function fatSearch() {
 
 async function fatSelect(id) {
   fatSelectedId = id;
+  fatSelectedCaseId = null;
   loadClientList('fat-list', document.getElementById('fat-search')?.value || '', 'fatSelect', id);
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
   const res = await fetch('/api/clients/' + id);
   const data = await res.json();
   if (!data.client) { dp.innerHTML = detailPlaceholder(); return; }
-  fatRenderPane(data.client);
+  fatRenderCaseList(data.client);
 }
 
-function fatRenderPane(c) {
+function fatRenderCaseList(c) {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
       <div style="font-family:'Instrument Serif',serif;font-size:20px;">${c.name}</div>
       <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">${c.phone||''}${c.email?(' · '+c.email):''}</div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Fatura oluşturmak için bir dosya seçin</div>
+      ${c.cases.length ? c.cases.map(cs => `
+        <div class="s-item" style="margin:0 0 4px;" onclick="fatSelectCase('${c.id}','${cs.id}')">
+          <span class="ico"><i class="fa-solid fa-folder"></i></span>${cs.title}
+        </div>
+      `).join('') : `<div style="font-size:12px;color:var(--t3);">Bu müvekkilin henüz dosyası yok. Önce Müvekkil Yönetimi'nden bir dosya ekleyin.</div>`}
+    </div>
+  `;
+}
+
+async function fatSelectCase(clientId, caseId) {
+  fatSelectedCaseId = caseId;
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  const res = await fetch('/api/cases/' + caseId);
+  const data = await res.json();
+  if (!data.case) { dp.innerHTML = detailPlaceholder(); return; }
+  fatRenderPane(data.case);
+}
+
+function fatRenderPane(cs) {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `
+    <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="fatSelect('${cs.client.id}')">
+        <i class="fa-solid fa-arrow-left"></i> Dosyalara Dön
+      </div>
+      <div style="font-family:'Instrument Serif',serif;font-size:19px;">${cs.client.name}</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">Dosya: ${cs.title}</div>
       <div class="fg"><div class="fl">Tutar (TL)</div><input type="text" id="fat-amount" placeholder="15000"></div>
       <div class="fg"><div class="fl">Açıklama (opsiyonel)</div><input type="text" id="fat-note" placeholder="Vekâlet ücreti…"></div>
-      <button class="pop-cta-btn g" style="width:100%;" onclick="fatCreate('${c.id}')">
+      <button class="pop-cta-btn g" style="width:100%;" onclick="fatCreate('${cs.id}')">
         <i class="fa-solid fa-file-invoice-dollar"></i><span>Fatura Oluştur</span>
       </button>
       <div id="fat-preview" style="margin-top:20px;"></div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 6px;"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Faturalar</div>
-      <div id="fat-history">${c.invoices.length ? c.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
+      <div id="fat-history">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
     </div>
   `;
 }
 
-async function fatCreate(clientId) {
+async function fatCreate(caseId) {
   const amount = document.getElementById('fat-amount').value;
   const note = document.getElementById('fat-note').value;
   if (!amount) { toast('Tutar girin', 'fa-solid fa-triangle-exclamation'); return; }
 
-  const clientRes = await fetch('/api/clients/' + clientId);
-  const clientData = await clientRes.json();
-  const clientName = clientData.client ? clientData.client.name : '';
+  const caseRes = await fetch('/api/cases/' + caseId);
+  const caseData = await caseRes.json();
+  const clientName = caseData.case ? caseData.case.client.name : '';
+  const caseTitle = caseData.case ? caseData.case.title : '';
 
-  const res = await fetch('/api/clients/' + clientId + '/invoices', {
+  const res = await fetch('/api/cases/' + caseId + '/invoices', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ amount, note })
   });
@@ -618,6 +790,7 @@ async function fatCreate(clientId) {
       <div style="font-family:'Instrument Serif',serif;font-size:20px;color:var(--gold);margin-bottom:2px;">Talya Hukuk Bürosu</div>
       <div style="font-size:11px;color:var(--t3);margin-bottom:16px;">Vekâlet Ücreti Fatura Belgesi</div>
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Müvekkil</span><strong>${clientName}</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Dosya</span><strong>${caseTitle}</strong></div>
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Tarih</span><strong>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}</strong></div>
       ${note ? `<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Açıklama</span><strong>${note}</strong></div>` : ''}
       <div style="display:flex;justify-content:space-between;font-size:16px;margin-top:12px;padding-top:12px;border-top:1px solid #ddd;"><span>Toplam Tutar</span><strong style="color:var(--gold);">${fmtTL(inv.amount)}</strong></div>
@@ -630,12 +803,11 @@ async function fatCreate(clientId) {
   document.getElementById('fat-amount').value = '';
   document.getElementById('fat-note').value = '';
 
-  // Sadece geçmiş listesini tazele — önizlemeyi (fat-preview) kaybetme.
-  const fresh = await fetch('/api/clients/' + clientId);
+  const fresh = await fetch('/api/cases/' + caseId);
   const freshData = await fresh.json();
-  if (freshData.client) {
-    document.getElementById('fat-history').innerHTML = freshData.client.invoices.length
-      ? freshData.client.invoices.map(inv2 => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv2.createdAt).toLocaleDateString('tr-TR')}${inv2.note?(' — '+inv2.note):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv2.amount)}</span></div>`).join('')
+  if (freshData.case) {
+    document.getElementById('fat-history').innerHTML = freshData.case.invoices.length
+      ? freshData.case.invoices.map(inv2 => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv2.createdAt).toLocaleDateString('tr-TR')}${inv2.note?(' — '+inv2.note):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv2.amount)}</span></div>`).join('')
       : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>';
   }
 }

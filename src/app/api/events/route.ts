@@ -12,8 +12,8 @@ export async function GET() {
 
   const [events, tasks] = await Promise.all([
     prisma.clientEvent.findMany({
-      where: { client: { userId } },
-      include: { client: true },
+      where: { case: { client: { userId } } },
+      include: { case: { include: { client: true } } },
       orderBy: { dueDate: "asc" },
     }),
     prisma.task.findMany({
@@ -27,8 +27,8 @@ export async function GET() {
     type: e.type,
     title: e.title,
     dueDate: e.dueDate,
-    clientId: e.clientId,
-    clientName: e.client.name,
+    clientId: e.case.clientId,
+    clientName: `${e.case.client.name} — ${e.case.title}`,
   }));
 
   const taskItems = tasks.map((t) => ({

@@ -3,18 +3,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-async function requireOwnedClient(clientId: string) {
+async function requireOwnedCase(caseId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
   const userId = (session.user as any).id as string;
-  const client = await prisma.client.findFirst({ where: { id: clientId, userId } });
-  return client ? userId : null;
+  const found = await prisma.case.findFirst({ where: { id: caseId, client: { userId } } });
+  return found ? userId : null;
 }
 
-// Duruşma ya da ödeme tarihi ekle — bu tarih yaklaşınca bildirim olarak görünür
 export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const ok = await requireOwnedClient(params.id);
-  if (!ok) return NextResponse.json({ error: "Yetkisiz veya müvekkil bulunamadı." }, { status: 401 });
+  const ok = await requireOwnedCase(params.id);
+  if (!ok) return NextResponse.json({ error: "Yetkisiz veya dosya bulunamadı." }, { status: 401 });
 
   const { type, title, dueDate } = await req.json();
   if (!type || !title || !dueDate) {
@@ -26,8 +25,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 
   const event = await prisma.clientEvent.create({
-    data: { type, title, dueDate: parsed, clientId: params.id },
+    data: { type, title, dueDate: parsed, caseId: params.id },
   });
-
   return NextResponse.json({ event });
 }
