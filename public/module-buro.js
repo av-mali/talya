@@ -312,8 +312,8 @@ function mvRenderClientView() {
           ${nextEv ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg2);color:var(--t3);">${new Date(nextEv.dueDate).toLocaleDateString('tr-TR')}</span>` : ''}
         </div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz dosya eklenmedi.</div>'}</div>
-      <div style="display:flex;gap:6px;margin-top:8px;">
-        <input type="text" id="mv-case-title" placeholder="Yeni dosya adı (ör. Boşanma Davası)…" style="flex:1;">
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <input type="text" id="mv-case-title" placeholder="Yeni dosya adı (ör. Boşanma Davası)…" style="flex:1;min-width:220px;">
         <button class="pop-cta-btn p" style="padding:6px 12px;" onclick="mvAddCase()"><span>Ekle</span></button>
       </div>
 
@@ -388,9 +388,9 @@ async function mvOpenCase(caseId) {
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Faturalar</div>
       <div id="mv-invoices">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span><span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
-      <div style="display:flex;gap:6px;margin-top:8px;">
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <input type="text" id="mv-inv-amount" placeholder="Tutar (TL)" style="width:120px;">
-        <input type="text" id="mv-inv-note" placeholder="Açıklama…" style="flex:1;">
+        <input type="text" id="mv-inv-note" placeholder="Açıklama…" style="flex:1;min-width:160px;">
         <button class="pop-cta-btn g" style="padding:6px 12px;" onclick="mvAddInvoice()"><span>Fatura Oluştur</span></button>
       </div>
 
