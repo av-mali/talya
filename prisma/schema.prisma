@@ -23,6 +23,8 @@ model User {
   clients      Client[]
   tasks        Task[]
   notes        Note[]
+  transactions Transaction[]
+  templates    Template[]
 }
 
 model Message {
@@ -92,6 +94,30 @@ model Task {
 // Bürodaki genel (müvekkilden bağımsız) notlar/hatırlatıcılar
 model Note {
   id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+}
+
+// Gelir-gider takibi (büronun genel kasası — kira, personel, aidat vb.
+// giderler ve gelen tüm gelirler; müvekkil faturalarından bağımsız)
+model Transaction {
+  id          String   @id @default(cuid())
+  type        String   // "gelir" | "gider"
+  amount      Float
+  description String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+}
+
+// Şablon kütüphanesi — sadece metin (dosya değil), sık kullanılan
+// dilekçe/ihtarname vb. taslak metinleri saklamak için
+model Template {
+  id        String   @id @default(cuid())
+  title     String
   content   String
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

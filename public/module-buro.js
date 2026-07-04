@@ -12,7 +12,9 @@ window.CURRENT_MODULE = {
     {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu"},
     {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"},
     {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
-    {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"}
+    {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"},
+    {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
+    {"id": "sablonlar", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"}
   ],
   popups: {
     // ── MÜVEKKİL YÖNETİMİ ── orta: arama+liste, sağ: seçilen müvekkilin detayı
@@ -94,6 +96,37 @@ window.CURRENT_MODULE = {
       `,
       onOpen: () => noteOnOpen(),
       prompt: () => ''
+    },
+    // ── GELİR-GİDER ── büronun genel kasası (müvekkil faturalarından ayrı)
+    gelirgider: {
+      badge: 'b', badgeText: 'Büro Kasası', titleHtml: 'Gelir-<em class="b">Gider</em>',
+      desc: 'Büronun genel gelir ve giderlerini (kira, personel, aidat vb.) kaydedin.',
+      btnClass: 'b', btnIco: 'fa-scale-balanced', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg">
+          <div class="fl">Tür</div>
+          <select id="tx-type"><option value="gelir">Gelir</option><option value="gider">Gider</option></select>
+        </div>
+        <div class="fg"><div class="fl">Tutar (TL)</div><input type="text" id="tx-amount" placeholder="5000"></div>
+        <div class="fg"><div class="fl">Açıklama</div><input type="text" id="tx-desc" placeholder="Ofis kirası, personel maaşı…"></div>
+        <div class="fg"><div class="fl">Tarih</div><input type="date" id="tx-date"></div>
+        <button class="pop-cta-btn b" style="width:100%;" onclick="txAdd()"><i class="fa-solid fa-plus"></i><span>Kaydet</span></button>
+      `,
+      onOpen: () => txOnOpen(),
+      prompt: () => ''
+    },
+    // ── ŞABLON KÜTÜPHANESİ ── sadece metin, dosya değil
+    sablonlar: {
+      badge: 'b', badgeText: 'Metin Şablonları', titleHtml: 'Şablon <em class="b">Kütüphanesi</em>',
+      desc: 'Sık kullandığınız dilekçe/ihtarname metinlerini burada saklayın.',
+      btnClass: 'b', btnIco: 'fa-layer-group', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><input type="text" id="tpl-title" placeholder="Şablon adı (ör. Kira İhtarnamesi)…"></div>
+        <div class="fg"><textarea id="tpl-content" rows="5" placeholder="Şablon metnini buraya yazın…"></textarea></div>
+        <button class="pop-cta-btn b" style="width:100%;" onclick="tplAdd()"><i class="fa-solid fa-plus"></i><span>Şablonu Kaydet</span></button>
+      `,
+      onOpen: () => tplOnOpen(),
+      prompt: () => ''
     }
   }
 };
@@ -149,7 +182,7 @@ let mvLastQuery = '';
 
 const EVENT_TYPE_LABELS = {
   durusma: 'Duruşma', odeme: 'Ödeme', gorusme: 'Görüşme',
-  arabuluculuk: 'Arabuluculuk', istinaf: 'İstinaf', temyiz: 'Temyiz'
+  arabuluculuk: 'Arabuluculuk', istinaf: 'İstinaf', temyiz: 'Temyiz', gorev: 'Görev'
 };
 function eventTypeLabel(type) { return EVENT_TYPE_LABELS[type] || type; }
 
@@ -747,4 +780,161 @@ async function noteAdd() {
 async function noteDelete(id) {
   await fetch('/api/notes/' + id, { method: 'DELETE' });
   noteRenderList();
+}
+
+// ══════════════════════════════════════════════════════
+// GELİR-GİDER — büronun genel kasası
+// ══════════════════════════════════════════════════════
+async function txOnOpen() {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  await txRenderList();
+}
+
+async function txRenderList() {
+  const dp = document.getElementById('detailPane');
+  try {
+    const res = await fetch('/api/transactions');
+    const data = await res.json();
+    const txs = data.transactions || [];
+    const toplamGelir = txs.filter(t => t.type === 'gelir').reduce((s, t) => s + t.amount, 0);
+    const toplamGider = txs.filter(t => t.type === 'gider').reduce((s, t) => s + t.amount, 0);
+    const net = toplamGelir - toplamGider;
+
+    dp.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+          <div style="background:var(--bg2);border-radius:var(--r);padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">Gelir</div>
+            <div style="font-family:'JetBrains Mono',monospace;color:var(--success);font-weight:600;">${fmtTL(toplamGelir)}</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:var(--r);padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">Gider</div>
+            <div style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:600;">${fmtTL(toplamGider)}</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:var(--r);padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">Net</div>
+            <div style="font-family:'JetBrains Mono',monospace;color:${net>=0?'var(--gold)':'var(--danger)'};font-weight:600;">${fmtTL(net)}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Hareketler (${txs.length})</div>
+        ${txs.length ? txs.map(t => `
+          <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">
+            <span>
+              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${t.type==='gelir'?'var(--success)':'var(--danger)'};margin-right:6px;"></span>
+              ${t.description} <span style="color:var(--t3);font-size:11px;">— ${new Date(t.date).toLocaleDateString('tr-TR')}</span>
+            </span>
+            <span style="display:flex;align-items:center;gap:8px;">
+              <span style="font-family:'JetBrains Mono',monospace;color:${t.type==='gelir'?'var(--success)':'var(--danger)'};">${t.type==='gelir'?'+':'-'}${fmtTL(t.amount)}</span>
+              <span style="cursor:pointer;color:var(--t3);" onclick="txDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+            </span>
+          </div>
+        `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz kayıt yok.</div>'}
+      </div>
+    `;
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+async function txAdd() {
+  const type = document.getElementById('tx-type').value;
+  const amount = document.getElementById('tx-amount').value;
+  const description = document.getElementById('tx-desc').value.trim();
+  const date = document.getElementById('tx-date').value;
+  if (!amount || !description) { toast('Tutar ve açıklama girin', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/transactions', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, amount, description, date: date || null })
+  });
+  document.getElementById('tx-amount').value = '';
+  document.getElementById('tx-desc').value = '';
+  document.getElementById('tx-date').value = '';
+  toast('Kayıt eklendi', 'fa-solid fa-check', true);
+  txRenderList();
+}
+
+async function txDelete(id) {
+  await fetch('/api/transactions/' + id, { method: 'DELETE' });
+  txRenderList();
+}
+
+// ══════════════════════════════════════════════════════
+// ŞABLON KÜTÜPHANESİ — sadece metin
+// ══════════════════════════════════════════════════════
+let tplSelectedId = null;
+
+async function tplOnOpen() {
+  tplSelectedId = null;
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  await tplRenderList();
+}
+
+async function tplRenderList() {
+  const dp = document.getElementById('detailPane');
+  try {
+    const res = await fetch('/api/templates');
+    const data = await res.json();
+    const templates = data.templates || [];
+    if (!templates.length) {
+      dp.innerHTML = `<div style="padding:30px 24px;color:var(--t3);font-size:13px;">Henüz şablon eklenmedi.</div>`;
+      return;
+    }
+    if (!tplSelectedId) {
+      dp.innerHTML = `<div style="padding:20px 24px;overflow-y:auto;height:100%;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Şablonlar (${templates.length})</div>
+        ${templates.map(t => `<div class="s-item" style="margin:0 0 4px;" onclick="tplView('${t.id}')">
+          <span class="ico"><i class="fa-solid fa-file-lines"></i></span>${t.title}
+        </div>`).join('')}
+      </div>`;
+    } else {
+      const tpl = templates.find(t => t.id === tplSelectedId);
+      if (!tpl) { tplSelectedId = null; return tplRenderList(); }
+      dp.innerHTML = `<div style="padding:22px 24px;overflow-y:auto;height:100%;">
+        <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="tplBack()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div style="font-family:'Instrument Serif',serif;font-size:19px;margin-bottom:12px;">${tpl.title}</div>
+          <div style="display:flex;gap:6px;">
+            <button class="pop-cta-btn b" style="padding:5px 10px;" onclick="tplCopy('${tpl.id}')"><i class="fa-solid fa-copy"></i></button>
+            <button class="pop-cta-btn" style="padding:5px 10px;background:var(--danger);" onclick="tplDelete('${tpl.id}')"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+        <div id="tpl-content-${tpl.id}" style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:16px;line-height:1.6;">${tpl.content}</div>
+      </div>`;
+    }
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function tplView(id) { tplSelectedId = id; tplRenderList(); }
+function tplBack() { tplSelectedId = null; tplRenderList(); }
+
+async function tplCopy(id) {
+  const el = document.getElementById('tpl-content-' + id);
+  if (!el) return;
+  navigator.clipboard?.writeText(el.innerText).then(() => toast('Panoya kopyalandı', 'fa-solid fa-check', true));
+}
+
+async function tplDelete(id) {
+  if (!confirm('Bu şablonu silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/templates/' + id, { method: 'DELETE' });
+  tplSelectedId = null;
+  toast('Şablon silindi', 'fa-solid fa-trash');
+  tplRenderList();
+}
+
+async function tplAdd() {
+  const title = document.getElementById('tpl-title').value.trim();
+  const content = document.getElementById('tpl-content').value.trim();
+  if (!title || !content) { toast('Başlık ve içerik gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/templates', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, content })
+  });
+  document.getElementById('tpl-title').value = '';
+  document.getElementById('tpl-content').value = '';
+  toast('Şablon kaydedildi', 'fa-solid fa-check', true);
+  tplRenderList();
 }
