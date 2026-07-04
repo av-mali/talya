@@ -226,21 +226,38 @@ function runCountUp() {
   });
 }
 
-// ── ANA EKRAN: YAKLAŞAN SÜRELER ──
-function renderDashDeadlines() {
+// ── ANA EKRAN: YAKLAŞAN SÜRELER (gerçek veri) ──
+async function renderDashDeadlines() {
   const wrap = document.getElementById('dashDeadlines');
   if (!wrap) return;
-  const deadlines = [
-    { tag: '2 GÜN', level: 'crit', text: 'Temyiz süresi — Yılmaz / Devlet Hastanesi (2024/4521)', days: '2 gün kaldı' },
-    { tag: '5 GÜN', level: 'warn', text: 'İstinaf başvurusu — Koç Ltd. davası (2024/887)', days: '5 gün kaldı' },
-    { tag: '12 GÜN', level: 'warn', text: 'Cevap dilekçesi süresi — Alioğlu / Merkez AŞ', days: '12 gün kaldı' },
-  ];
-  wrap.innerHTML = deadlines.map(d => `
-    <div class="dl-row">
-      <span class="dl-tag ${d.level}">${d.tag}</span>
-      <span class="dl-text">${d.text}</span>
-      <span class="dl-days">${d.days}</span>
-    </div>`).join('');
+  wrap.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  try {
+    const res = await fetch('/api/events');
+    const data = await res.json();
+    const now = new Date();
+    const upcoming = (data.events || [])
+      .filter(e => new Date(e.dueDate) >= new Date(now.toDateString()))
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+      .slice(0, 5);
+
+    if (!upcoming.length) {
+      wrap.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Yaklaşan duruşma/ödeme tarihi yok.</div>`;
+      return;
+    }
+
+    wrap.innerHTML = upcoming.map(e => {
+      const days = Math.ceil((new Date(e.dueDate).getTime() - now.getTime()) / 86400000);
+      const level = days <= 3 ? 'crit' : days <= 7 ? 'warn' : '';
+      const tag = days === 0 ? 'BUGÜN' : days + ' GÜN';
+      return `<div class="dl-row">
+        <span class="dl-tag ${level}">${tag}</span>
+        <span class="dl-text">${e.clientName} — ${e.title}</span>
+        <span class="dl-days">${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    wrap.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--danger);">Yüklenemedi.</div>`;
+  }
 }
 
 // ── BİLDİRİMLER (gerçek veri: yaklaşan duruşma/ödeme tarihleri) ──

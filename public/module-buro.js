@@ -196,13 +196,34 @@ async function mvSelect(id) {
 
   detail.innerHTML = `
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-      <div style="font-family:'Instrument Serif',serif;font-size:18px;">${c.name}</div>
-      <div style="font-size:12px;color:var(--t2);margin-bottom:12px;">${c.phone||'—'} ${c.email?(' · '+c.email):''}</div>
+      <div id="mv-view-${c.id}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+          <div>
+            <div style="font-family:'Instrument Serif',serif;font-size:18px;">${c.name}</div>
+            <div style="font-size:12px;color:var(--t2);">${c.phone||'—'} ${c.email?(' · '+c.email):''}</div>
+            ${c.notes ? `<div style="font-size:12px;color:var(--t2);margin-top:4px;">${c.notes}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="pop-cta-btn b" style="padding:5px 10px;" onclick="mvEditToggle()"><i class="fa-solid fa-pen"></i></button>
+            <button class="pop-cta-btn" style="padding:5px 10px;background:var(--danger);" onclick="mvDeleteClient()"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      </div>
+      <div id="mv-edit-form" style="display:none;margin-top:10px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);">
+        <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-e-name" value="${c.name.replace(/"/g,'&quot;')}"></div>
+        <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-e-phone" value="${(c.phone||'').replace(/"/g,'&quot;')}"></div>
+        <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-e-email" value="${(c.email||'').replace(/"/g,'&quot;')}"></div>
+        <div class="fg"><div class="fl">Not</div><textarea id="mv-e-note" rows="2">${(c.notes||'')}</textarea></div>
+        <div style="display:flex;gap:6px;">
+          <button class="pop-cta-btn b" style="flex:1;" onclick="mvSaveEdit()"><span>Kaydet</span></button>
+          <button class="pop-cta-btn" style="flex:1;" onclick="mvEditToggle()"><span>Vazgeç</span></button>
+        </div>
+      </div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:14px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Duruşma & Ödeme Tarihleri</div>
       <div id="mv-events">${c.events.length ? c.events.map(ev => {
         const dl = mvDaysLeft(ev.dueDate);
-        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${ev.type==='durusma'?'DURUŞMA':'ÖDEME'}</span><span class="dl-text">${ev.title} — ${new Date(ev.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
+        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${ev.type==='durusma'?'DURUŞMA':'ÖDEME'}</span><span class="dl-text">${ev.title} — ${new Date(ev.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span><span style="cursor:pointer;color:var(--t3);margin-left:8px;" onclick="mvDeleteEvent('${ev.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz tarih eklenmedi.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <select id="mv-ev-type" style="width:110px;"><option value="durusma">Duruşma</option><option value="odeme">Ödeme</option></select>
@@ -212,7 +233,7 @@ async function mvSelect(id) {
       </div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Faturalar</div>
-      <div id="mv-invoices">${c.invoices.length ? c.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
+      <div id="mv-invoices">${c.invoices.length ? c.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span><span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;">
         <input type="text" id="mv-inv-amount" placeholder="Tutar (TL)" style="width:120px;">
         <input type="text" id="mv-inv-note" placeholder="Açıklama…" style="flex:1;">
@@ -225,6 +246,57 @@ async function mvSelect(id) {
       <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvAddLog()"><span>Notu Kaydet</span></button>
     </div>
   `;
+}
+
+function mvEditToggle() {
+  const view = document.querySelector('#mv-detail > div > div');
+  const form = document.getElementById('mv-edit-form');
+  if (!form) return;
+  const showing = form.style.display !== 'none';
+  form.style.display = showing ? 'none' : 'block';
+}
+
+async function mvSaveEdit() {
+  if (!mvSelectedId) return;
+  const name = document.getElementById('mv-e-name').value.trim();
+  const phone = document.getElementById('mv-e-phone').value;
+  const email = document.getElementById('mv-e-email').value;
+  const notes = document.getElementById('mv-e-note').value;
+  if (!name) { toast('Müvekkil adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/clients/' + mvSelectedId, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, phone, email, notes })
+  });
+  toast('Bilgiler güncellendi', 'fa-solid fa-check', true);
+  mvSelect(mvSelectedId);
+  mvLoadList(document.getElementById('mv-search')?.value || '');
+}
+
+async function mvDeleteClient() {
+  if (!mvSelectedId) return;
+  if (!confirm('Bu müvekkili ve tüm kayıtlarını (görüşme, fatura, tarih) silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/clients/' + mvSelectedId, { method: 'DELETE' });
+  toast('Müvekkil silindi', 'fa-solid fa-trash');
+  mvSelectedId = null;
+  document.getElementById('mv-detail').innerHTML = '';
+  mvLoadList(document.getElementById('mv-search')?.value || '');
+}
+
+async function mvDeleteEvent(eventId) {
+  if (!mvSelectedId) return;
+  if (!confirm('Bu tarihi silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/clients/' + mvSelectedId + '/events/' + eventId, { method: 'DELETE' });
+  toast('Tarih silindi', 'fa-solid fa-trash');
+  mvSelect(mvSelectedId);
+  mvLoadList(document.getElementById('mv-search')?.value || '');
+}
+
+async function mvDeleteInvoice(invoiceId) {
+  if (!mvSelectedId) return;
+  if (!confirm('Bu faturayı silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/clients/' + mvSelectedId + '/invoices/' + invoiceId, { method: 'DELETE' });
+  toast('Fatura silindi', 'fa-solid fa-trash');
+  mvSelect(mvSelectedId);
 }
 
 async function mvAddEvent() {
