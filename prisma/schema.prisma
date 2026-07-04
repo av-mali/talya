@@ -21,6 +21,8 @@ model User {
   createdAt    DateTime  @default(now())
   messages     Message[]
   clients      Client[]
+  tasks        Task[]
+  notes        Note[]
 }
 
 model Message {
@@ -67,11 +69,31 @@ model Invoice {
 // Duruşma tarihi ya da ödeme tarihi — takvime düşen ve bildirim üreten kayıt
 model ClientEvent {
   id        String   @id @default(cuid())
-  type      String   // "durusma" | "odeme"
+  type      String   // "durusma" | "odeme" | "gorusme" | "arabuluculuk" | "istinaf" | "temyiz" | özel metin
   title     String
   dueDate   DateTime
   notified  Boolean  @default(false)
   createdAt DateTime @default(now())
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId  String
+}
+
+// Bürodaki genel (müvekkilden bağımsız) yapılacaklar listesi
+model Task {
+  id        String    @id @default(cuid())
+  title     String
+  done      Boolean   @default(false)
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+}
+
+// Bürodaki genel (müvekkilden bağımsız) notlar/hatırlatıcılar
+model Note {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
 }

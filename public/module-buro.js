@@ -10,7 +10,9 @@ window.CURRENT_MODULE = {
     {"id": "muvekkil", "icon": "fa-users", "name": "Müvekkil Yönetimi"},
     {"id": "sure", "icon": "fa-calendar-xmark", "name": "Süre & Takvim"},
     {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu"},
-    {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"}
+    {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"},
+    {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
+    {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"}
   ],
   popups: {
     // ── MÜVEKKİL YÖNETİMİ ── orta: arama+liste, sağ: seçilen müvekkilin detayı
@@ -66,6 +68,31 @@ window.CURRENT_MODULE = {
         <div id="fat-list"></div>
       `,
       onOpen: () => fatOnOpen(),
+      prompt: () => ''
+    },
+    // ── GÖREVLER ── müvekkilden bağımsız, kişisel yapılacaklar listesi
+    gorevler: {
+      badge: 'b', badgeText: 'Yapılacaklar', titleHtml: '<em class="b">Görevler</em>',
+      desc: 'Müvekkilden bağımsız, kişisel iş takibiniz.',
+      btnClass: 'b', btnIco: 'fa-list-check', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><input type="text" id="task-title" placeholder="Yeni görev…" onkeydown="if(event.key==='Enter')taskAdd()"></div>
+        <div class="fg"><input type="date" id="task-date"></div>
+        <button class="pop-cta-btn b" style="width:100%;" onclick="taskAdd()"><i class="fa-solid fa-plus"></i><span>Görev Ekle</span></button>
+      `,
+      onOpen: () => taskOnOpen(),
+      prompt: () => ''
+    },
+    // ── NOTLAR ── müvekkilden bağımsız, serbest notlar/hatırlatıcılar
+    notlar: {
+      badge: 'b', badgeText: 'Hatırlatıcılar', titleHtml: '<em class="b">Notlar</em>',
+      desc: 'Müvekkilden bağımsız, kendinize özel notlar.',
+      btnClass: 'b', btnIco: 'fa-note-sticky', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><textarea id="note-text" rows="4" placeholder="Bir not yazın…"></textarea></div>
+        <button class="pop-cta-btn b" style="width:100%;" onclick="noteAdd()"><i class="fa-solid fa-plus"></i><span>Notu Kaydet</span></button>
+      `,
+      onOpen: () => noteOnOpen(),
       prompt: () => ''
     }
   }
@@ -356,14 +383,14 @@ async function calOnOpen() {
   calSelectedDay = null;
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `
-    <div style="padding:22px 24px;">
-      <div id="cal-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <button class="pop-cta-btn b" style="padding:6px 12px;" onclick="calNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="cal-month-label" style="font-family:'Instrument Serif',serif;font-size:18px;"></div>
-        <button class="pop-cta-btn b" style="padding:6px 12px;" onclick="calNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    <div style="padding:22px 24px;display:flex;flex-direction:column;align-items:center;">
+      <div id="cal-head" style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:18px;width:100%;max-width:560px;">
+        <button onclick="calNav(-1)" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--border2);background:var(--card);color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;"><i class="fa-solid fa-chevron-left"></i></button>
+        <div id="cal-month-label" style="font-family:'Instrument Serif',serif;font-size:24px;min-width:180px;text-align:center;"></div>
+        <button onclick="calNav(1)" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--border2);background:var(--card);color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
-      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px;max-width:560px;"></div>
-      <div id="cal-agenda"></div>
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px;width:100%;max-width:560px;"></div>
+      <div id="cal-agenda" style="width:100%;max-width:560px;"></div>
     </div>
   `;
   const res = await fetch('/api/events');
@@ -588,4 +615,136 @@ function fatPrint() {
   w.document.close();
   w.focus();
   setTimeout(() => { w.print(); }, 300);
+}
+
+// ══════════════════════════════════════════════════════
+// GÖREVLER — müvekkilden bağımsız yapılacaklar listesi
+// ══════════════════════════════════════════════════════
+async function taskOnOpen() {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  await taskRenderList();
+}
+
+async function taskRenderList() {
+  const dp = document.getElementById('detailPane');
+  try {
+    const res = await fetch('/api/tasks');
+    const data = await res.json();
+    const tasks = data.tasks || [];
+    const acikGorevler = tasks.filter(t => !t.done);
+    const bitenGorevler = tasks.filter(t => t.done);
+
+    dp.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">
+          Açık Görevler (${acikGorevler.length})
+        </div>
+        ${acikGorevler.length ? acikGorevler.map(t => taskRow(t)).join('') : '<div style="font-size:12px;color:var(--t3);margin-bottom:16px;">Açık görev yok.</div>'}
+
+        ${bitenGorevler.length ? `
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 10px;">
+            Tamamlanan (${bitenGorevler.length})
+          </div>
+          ${bitenGorevler.map(t => taskRow(t)).join('')}
+        ` : ''}
+      </div>
+    `;
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function taskRow(t) {
+  const overdue = t.dueDate && !t.done && new Date(t.dueDate) < new Date(new Date().toDateString());
+  return `<div class="cr-row" style="padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+    <span style="display:flex;align-items:flex-start;gap:8px;">
+      <input type="checkbox" ${t.done ? 'checked' : ''} onchange="taskToggle('${t.id}', this.checked)" style="margin-top:3px;">
+      <span style="${t.done ? 'text-decoration:line-through;color:var(--t3);' : ''}">
+        ${t.title}
+        ${t.dueDate ? `<div style="font-size:10px;color:${overdue ? 'var(--danger)' : 'var(--t3)'};margin-top:2px;">${new Date(t.dueDate).toLocaleDateString('tr-TR')}${overdue ? ' — süresi geçti' : ''}</div>` : ''}
+      </span>
+    </span>
+    <span style="cursor:pointer;color:var(--t3);" onclick="taskDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+  </div>`;
+}
+
+async function taskAdd() {
+  const title = document.getElementById('task-title').value.trim();
+  const dueDate = document.getElementById('task-date').value;
+  if (!title) { toast('Görev başlığı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/tasks', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, dueDate: dueDate || null })
+  });
+  document.getElementById('task-title').value = '';
+  document.getElementById('task-date').value = '';
+  toast('Görev eklendi', 'fa-solid fa-check', true);
+  taskRenderList();
+}
+
+async function taskToggle(id, done) {
+  await fetch('/api/tasks/' + id, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ done })
+  });
+  taskRenderList();
+}
+
+async function taskDelete(id) {
+  await fetch('/api/tasks/' + id, { method: 'DELETE' });
+  taskRenderList();
+}
+
+// ══════════════════════════════════════════════════════
+// NOTLAR — müvekkilden bağımsız serbest notlar
+// ══════════════════════════════════════════════════════
+async function noteOnOpen() {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  await noteRenderList();
+}
+
+async function noteRenderList() {
+  const dp = document.getElementById('detailPane');
+  try {
+    const res = await fetch('/api/notes');
+    const data = await res.json();
+    const notes = data.notes || [];
+    dp.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">
+          Notlarınız (${notes.length})
+        </div>
+        ${notes.length ? notes.map(n => `
+          <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+            <div>
+              <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">${new Date(n.createdAt).toLocaleString('tr-TR')}</div>
+              <div style="font-size:13px;white-space:pre-wrap;">${n.content}</div>
+            </div>
+            <span style="cursor:pointer;color:var(--t3);flex-shrink:0;" onclick="noteDelete('${n.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+          </div>
+        `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz not yok.</div>'}
+      </div>
+    `;
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+async function noteAdd() {
+  const content = document.getElementById('note-text').value.trim();
+  if (!content) return;
+  await fetch('/api/notes', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content })
+  });
+  document.getElementById('note-text').value = '';
+  toast('Not kaydedildi', 'fa-solid fa-check', true);
+  noteRenderList();
+}
+
+async function noteDelete(id) {
+  await fetch('/api/notes/' + id, { method: 'DELETE' });
+  noteRenderList();
 }
