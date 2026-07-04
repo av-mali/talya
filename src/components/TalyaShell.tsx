@@ -36,8 +36,12 @@ export default function TalyaShell({
       const pill = document.getElementById("userEmailPill");
       if (pill && session?.user?.email) pill.textContent = session.user.email;
 
-      for (const src of scripts) {
-        await new Promise<void>((resolve) => {
+      // engine.js diğer script'lere (CURRENT_MODULE, CMDK_INDEX) ihtiyaç
+      // duyduğu için en son çalışmalı — ama ondan öncekiler birbirinden
+      // bağımsız, paralel indirilebilir. Bu, büyük modül dosyalarının
+      // (ör. büro ~60KB) diğer küçük dosyaları bloklamasını önler.
+      const loadScript = (src: string) =>
+        new Promise<void>((resolve) => {
           const s = document.createElement("script");
           s.src = src;
           s.async = false;
@@ -45,7 +49,12 @@ export default function TalyaShell({
           s.onerror = () => resolve();
           document.body.appendChild(s);
         });
-      }
+
+      const engineIdx = scripts.findIndex((s) => s.includes("engine.js"));
+      const parallelScripts = engineIdx >= 0 ? scripts.filter((_, i) => i !== engineIdx) : scripts;
+      await Promise.all(parallelScripts.map(loadScript));
+      if (engineIdx >= 0) await loadScript(scripts[engineIdx]);
+
       if (!cancelled) setLoaded(true);
     })();
 
