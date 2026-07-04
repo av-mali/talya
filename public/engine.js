@@ -86,9 +86,19 @@ function openPopup(id) {
   const ctaWrap = document.querySelector('.tool-panel-cta');
   if (ctaWrap) ctaWrap.style.display = popCfg.hideCta ? 'none' : '';
 
+  resetDetailPane();
   if (typeof popCfg.onOpen === 'function') {
     try { popCfg.onOpen(); } catch (e) { console.error(e); }
   }
+}
+
+function resetDetailPane() {
+  const dp = document.getElementById('detailPane');
+  if (!dp) return;
+  dp.innerHTML = `<div style="padding:40px 24px;text-align:center;color:var(--t3);margin-top:60px;">
+    <i class="fa-solid fa-arrow-left" style="font-size:20px;opacity:.3;display:block;margin-bottom:10px;"></i>
+    Soldaki listeden bir öğe seçin.
+  </div>`;
 }
 
 function closePopup() {
