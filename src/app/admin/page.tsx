@@ -10,10 +10,10 @@ type AdminUser = {
   name: string | null;
   isAdmin: boolean;
   createdAt: string;
-  _count: { clients: number; messages: number };
+  _count: { messages: number };
 };
 
-type Stats = { userCount: number; clientCount: number; messageCount: number; totalInvoiced: number };
+type Stats = { userCount: number; messageCount: number };
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -83,7 +83,7 @@ export default function AdminPage() {
             <div className="app-breadcrumb">
               <span>Yönetici</span>
               <span style={{ opacity: 0.35 }}>›</span>
-              <span className="cur">Kullanıcılar</span>
+              <span className="cur">Müşteriler</span>
             </div>
           </div>
           <div className="app-top-right">
@@ -95,33 +95,29 @@ export default function AdminPage() {
         </div>
 
         <div style={{ padding: "28px 32px", maxWidth: 1100, margin: "0 auto", width: "100%" }}>
-          <div className="serif" style={{ fontSize: 26, marginBottom: 18 }}>
-            Yönetici <em style={{ color: "var(--gold)" }}>Paneli</em>
+          <div className="serif" style={{ fontSize: 26, marginBottom: 4 }}>
+            Müşteri <em style={{ color: "var(--gold)" }}>Yönetimi</em>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--t2)", marginBottom: 18 }}>
+            Talya'ya kayıt olan tüm kullanıcılar — sizin gerçek müşterileriniz.
           </div>
 
-          {/* İSTATİSTİK KARTLARI */}
+          {/* İSTATİSTİK KARTLARI — sadece Talya'nın kendi ticari verisi */}
           <div style={styles.statGrid}>
-            <StatCard icon="fa-users" label="Toplam Kullanıcı" value={stats?.userCount} />
-            <StatCard icon="fa-address-book" label="Toplam Müvekkil" value={stats?.clientCount} />
-            <StatCard icon="fa-comments" label="Toplam Mesaj (AI)" value={stats?.messageCount} />
-            <StatCard
-              icon="fa-turkish-lira-sign"
-              label="Toplam Faturalanan"
-              value={stats ? new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(stats.totalInvoiced) : undefined}
-              isText
-            />
+            <StatCard icon="fa-users" label="Toplam Müşteri" value={stats?.userCount} />
+            <StatCard icon="fa-comments" label="Toplam AI Kullanımı (Mesaj)" value={stats?.messageCount} />
           </div>
 
-          {/* KULLANICI TABLOSU */}
+          {/* MÜŞTERİ TABLOSU */}
           <div className="dash-card" style={{ marginTop: 24 }}>
             <div className="dash-head">
-              <div className="dash-title"><i className="fa-solid fa-users"></i> Kayıtlı Kullanıcılar</div>
+              <div className="dash-title"><i className="fa-solid fa-users"></i> Kayıtlı Müşteriler</div>
             </div>
 
             {!users ? (
               <div style={{ padding: 20, fontSize: 13, color: "var(--t3)" }}>Yükleniyor…</div>
             ) : users.length === 0 ? (
-              <div style={{ padding: 20, fontSize: 13, color: "var(--t3)" }}>Henüz kullanıcı yok.</div>
+              <div style={{ padding: 20, fontSize: 13, color: "var(--t3)" }}>Henüz müşteri yok.</div>
             ) : (
               <div style={{ overflowX: "auto" }}>
                 <table style={styles.table}>
@@ -130,8 +126,8 @@ export default function AdminPage() {
                       <th style={styles.th}>E-posta</th>
                       <th style={styles.th}>Ad</th>
                       <th style={styles.th}>Kayıt Tarihi</th>
-                      <th style={styles.th}>Müvekkil</th>
-                      <th style={styles.th}>Mesaj</th>
+                      <th style={styles.th}>AI Mesaj</th>
+                      <th style={styles.th}>Plan</th>
                       <th style={styles.th}>Rol</th>
                       <th style={styles.th}></th>
                     </tr>
@@ -142,13 +138,13 @@ export default function AdminPage() {
                         <td style={styles.td}>{u.email}</td>
                         <td style={styles.td}>{u.name || "—"}</td>
                         <td style={styles.td}>{new Date(u.createdAt).toLocaleDateString("tr-TR")}</td>
-                        <td style={styles.td}>{u._count.clients}</td>
                         <td style={styles.td}>{u._count.messages}</td>
+                        <td style={styles.td}><span style={{ color: "var(--t3)" }}>— (yakında)</span></td>
                         <td style={styles.td}>
                           {u.isAdmin ? (
                             <span style={styles.adminBadge}>Yönetici</span>
                           ) : (
-                            <span style={{ color: "var(--t3)" }}>Kullanıcı</span>
+                            <span style={{ color: "var(--t3)" }}>Müşteri</span>
                           )}
                         </td>
                         <td style={styles.td}>

@@ -22,7 +22,7 @@ export async function GET() {
       name: true,
       isAdmin: true,
       createdAt: true,
-      _count: { select: { clients: true, messages: true } },
+      _count: { select: { messages: true } },
     },
   });
 
