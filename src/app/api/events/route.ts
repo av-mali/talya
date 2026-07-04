@@ -35,7 +35,7 @@ export async function GET() {
     id: t.id,
     type: "gorev",
     title: t.title,
-    dueDate: t.dueDate,
+    dueDate: t.dueDate!,
     clientId: null,
     clientName: "Görev",
   }));

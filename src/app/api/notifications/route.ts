@@ -59,7 +59,7 @@ export async function GET() {
       label: "Görev",
       text: t.title,
       time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
-      dueDate: t.dueDate,
+      dueDate: t.dueDate!,
       read: false,
     };
   });
