@@ -25,9 +25,10 @@ window.CURRENT_MODULE = {
       badge:'p', badgeText:'İş K. Md.14 · Güncel Tavan', titleHtml:'Kıdem <em class="p">Tazminatı</em>',
       desc:'İşe giriş, çıkış ve maaş girin; net kıdem tazminatı hesaplansın.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
-      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> İşe Giriş</div><input type="text" id="k-giris" placeholder="GG/AA/YYYY" oninput="cKidem()"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-xmark"></i> İşten Çıkış</div><input type="text" id="k-cikis" placeholder="GG/AA/YYYY" oninput="cKidem()"></div>
+      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> İşe Giriş</div><input type="date" id="k-giris" oninput="cKidem()"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-xmark"></i> İşten Çıkış</div><input type="date" id="k-cikis" oninput="cKidem()"></div>
         <div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Brüt Aylık Maaş (TL)</div><input type="text" id="k-maas" placeholder="45000" oninput="cKidem()"></div>
+        <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cKidem()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="k-res">
           <div class="cr-lbl">Kıdem Tazminatı</div>
           <div class="cr-val" id="k-top">—</div>
@@ -43,9 +44,10 @@ window.CURRENT_MODULE = {
       badge:'p', badgeText:'İş K. Md.17', titleHtml:'İhbar <em class="p">Tazminatı</em>',
       desc:'Kıdeme göre ihbar süresi ve tazminatı hesaplayın.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
-      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> İşe Giriş</div><input type="text" id="i-giris" placeholder="GG/AA/YYYY" oninput="cIhbar()"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-xmark"></i> Çıkış</div><input type="text" id="i-cikis" placeholder="GG/AA/YYYY" oninput="cIhbar()"></div>
+      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> İşe Giriş</div><input type="date" id="i-giris" oninput="cIhbar()"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-xmark"></i> Çıkış</div><input type="date" id="i-cikis" oninput="cIhbar()"></div>
         <div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Brüt Günlük Ücret (TL)</div><input type="text" id="i-gun" placeholder="1500" oninput="cIhbar()"></div>
+        <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cIhbar()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="i-res">
           <div class="cr-lbl">İhbar Tazminatı (Brüt)</div>
           <div class="cr-val" id="i-top">—</div>
@@ -65,6 +67,7 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">Haftalık Fazla Saat</div><input type="text" id="ms-h" placeholder="10" oninput="cMesai()"></div>
         <div class="fg"><div class="fl">Kaç Ay</div><input type="text" id="ms-a" placeholder="12" oninput="cMesai()"></div>
         <div class="fg"><div class="fl">Zam Oranı</div><div class="sw"><select id="ms-o" onchange="cMesai()"><option value="1.5">%50 zamlı — fazla çalışma (hafta içi)</option><option value="2">%100 zamlı — hafta tatili/genel tatil çalışması</option></select></div></div>
+        <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cMesai()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="ms-res"><div class="cr-lbl">Fazla Mesai Alacağı</div><div class="cr-val" id="ms-top">—</div><div class="cr-rows"><div class="cr-row"><span>Toplam saat</span><span id="ms-r1">—</span></div></div></div>`,
       prompt: () => ''
     },
@@ -72,9 +75,10 @@ window.CURRENT_MODULE = {
       badge:'p', badgeText:'İş K. Md.53', titleHtml:'Yıllık <em class="p">İzin</em>',
       desc:'Kıdeme göre yıllık izin hakkını hesaplayın.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
-      body:`<div class="fg"><div class="fl">İşe Giriş</div><input type="text" id="iz-g" placeholder="GG/AA/YYYY" oninput="cIzin()"></div>
+      body:`<div class="fg"><div class="fl">İşe Giriş</div><input type="date" id="iz-g" oninput="cIzin()"></div>
         <div class="fg"><div class="fl">Yaş</div><input type="text" id="iz-y" placeholder="35" oninput="cIzin()"></div>
         <div class="fg"><div class="fl">Kullanılan İzin (gün)</div><input type="text" id="iz-k" placeholder="0" oninput="cIzin()"></div>
+        <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cIzin()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="iz-res"><div class="cr-lbl">İzin Hakkı</div><div class="cr-val" id="iz-top">—</div><div class="cr-rows"><div class="cr-row"><span>Yasal hak</span><span id="iz-r1">—</span></div><div class="cr-row"><span>Kullanılmamış</span><span id="iz-r2">—</span></div></div></div>`,
       prompt: () => ''
     },
@@ -83,7 +87,8 @@ window.CURRENT_MODULE = {
       desc:'Alacak ve tarih aralığı girin; işlemiş faiz hesaplansın.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Faiz Hesapla', hideCta: true,
       body:`<div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Asıl Alacak (TL)</div><input type="text" id="f-asl" placeholder="100000" oninput="cFaiz()"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> Başlangıç Tarihi</div><input type="text" id="f-bas" placeholder="GG/AA/YYYY" oninput="cFaiz()"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> Başlangıç Tarihi</div><input type="date" id="f-bas" oninput="cFaiz()"></div>
+        <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cFaiz()"><i class="fa-solid fa-calculator"></i><span>Faiz Hesapla</span></button>
         <div class="cr" id="f-res">
           <div class="cr-lbl">Hesaplanan Faiz</div>
           <div class="cr-val" id="f-top">—</div>
@@ -101,7 +106,8 @@ window.CURRENT_MODULE = {
       desc:'Temerrüt tarihinden itibaren gecikme faizi hesaplayın.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
       body:`<div class="fg"><div class="fl">Borç Miktarı (TL)</div><input type="text" id="gf-b" placeholder="50000" oninput="cGecikme()"></div>
-        <div class="fg"><div class="fl">Temerrüt Tarihi</div><input type="text" id="gf-t" placeholder="GG/AA/YYYY" oninput="cGecikme()"></div>
+        <div class="fg"><div class="fl">Temerrüt Tarihi</div><input type="date" id="gf-t" oninput="cGecikme()"></div>
+        <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cGecikme()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="gf-res"><div class="cr-lbl">Gecikme Faizi</div><div class="cr-val" id="gf-top">—</div><div class="cr-rows"><div class="cr-row"><span>Uygulanan oran</span><span id="gf-r0">—</span></div><div class="cr-row"><span>Süre</span><span id="gf-r1">—</span></div><div class="cr-row"><span>Toplam</span><span id="gf-r2">—</span></div></div></div>`,
       prompt: () => ''
     },
@@ -110,6 +116,7 @@ window.CURRENT_MODULE = {
       desc:'Yasal azami kira artışı, güncel TÜFE oranıyla otomatik hesaplanır.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
       body:`<div class="fg"><div class="fl">Mevcut Kira (TL/ay)</div><input type="text" id="ka-k" placeholder="15000" oninput="cKira()"></div>
+        <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cKira()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="ka-res"><div class="cr-lbl">Yeni Azami Kira</div><div class="cr-val" id="ka-top">—</div><div class="cr-rows"><div class="cr-row"><span>Uygulanan TÜFE oranı</span><span id="ka-r0">—</span></div><div class="cr-row"><span>Artış miktarı</span><span id="ka-r1">—</span></div></div></div>
         <div class="ic"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Not</div><p>2022-2024 arasında konut kiralarında geçerli olan %25 sınırlaması 1 Temmuz 2024'te tamamen kalktı — tek yasal sınır artık TÜFE 12 aylık ortalamasıdır. Bu oran her ay değiştiği için Yönetici Paneli'nden güncel tutulmalıdır.</p></div>`,
       prompt: () => ''
@@ -125,7 +132,7 @@ window.CURRENT_MODULE = {
           <option value="haksizfiil">Haksız fiil (TBK 72) — 2 yıl / azami 10 yıl</option>
           <option value="0.164">İdari dava açma süresi (İYUK m.7) — 60 gün</option>
         </select></div></div>
-        <div class="fg"><div class="fl">Hakkın Doğduğu / Öğrenildiği Tarih</div><input type="text" id="za-d" placeholder="GG/AA/YYYY" oninput="cZa()"></div>
+        <div class="fg"><div class="fl">Hakkın Doğduğu / Öğrenildiği Tarih</div><input type="date" id="za-d" oninput="cZa()"></div>
         <div class="cr" id="za-res"><div class="cr-lbl" id="za-lbl">Zamanaşımı Dolum Tarihi</div><div class="cr-val" id="za-top" style="font-size:19px">—</div><div class="cr-rows"><div class="cr-row"><span>Kalan süre</span><span id="za-r1" style="color:var(--warn)">—</span></div><div class="cr-row" id="za-r2-row" style="display:none;"><span>Azami süre (olay tarihinden)</span><span id="za-r2">—</span></div></div></div>
         <div class="ic"><div class="ic-t"><i class="fa-solid fa-triangle-exclamation"></i> Not</div><p>Haksız fiilde kısa süre (2 yıl) zararın ve failin öğrenildiği tarihten, azami süre (10 yıl) ise fiilin işlendiği tarihten işler. İdari dava süresi teknik olarak zamanaşımı değil, hak düşürücü dava açma süresidir.</p></div>`,
       prompt: () => ''
@@ -135,7 +142,14 @@ window.CURRENT_MODULE = {
 
 // ── Bu modüle özel hesaplama fonksiyonları ──
 function fmt(n){return new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',maximumFractionDigits:0}).format(n);}
-function pDate(s){if(!s)return null;const p=s.split('/');if(p.length!==3)return null;return new Date(+p[2],+p[1]-1,+p[0]);}
+function pDate(s){
+  if(!s) return null;
+  // <input type="date"> her zaman YYYY-AA-GG formatında değer verir.
+  const p=s.split('-');
+  if(p.length!==3) return null;
+  const d=new Date(+p[0],+p[1]-1,+p[2]);
+  return isNaN(d.getTime()) ? null : d;
+}
 function daysBetween(d1,d2){return Math.floor((d2-d1)/(86400000));}
 
 // Hukuki sabitler (kıdem tavanı, faiz oranı, kira TÜFE oranı) veritabanından
