@@ -73,7 +73,7 @@
       </div>
 
       <!-- MIDDLE TOOL PANEL -->
-      <div class="tool-panel">
+      <div class="tool-panel" style="width:auto;flex:1;max-width:820px;margin:0 auto;">
         <div class="tool-panel-head">
           <div class="pop-badge g" id="popBadge"><span id="popBadgeText">…</span></div>
           <div class="pop-title" id="popTitle">…</div>
@@ -87,36 +87,6 @@
         </div>
       </div>
 
-      <!-- AI PANE -->
-      <div class="ai-pane">
-        <div class="ai-pane-head">
-          <div class="ai-ring"><i class="fa-solid fa-microchip" id="aiIco"></i></div>
-          <div class="ai-head-label" id="aiLabel">Talya AI</div>
-          <div class="ai-head-sub">HMK · TBK · TCK · İş K. · UYAP</div>
-        </div>
-
-        <div class="chat-msgs" id="chatMsgs">
-          <div class="chat-empty" id="chatEmpty">
-            <div class="chat-empty-ico"><i class="fa-solid fa-scale-balanced"></i></div>
-            <div class="chat-empty-title">Talya AI Hazır</div>
-            <div class="chat-empty-sub">Soldaki menüden bir araç seçin — ya da doğrudan sorunuzu yazın.</div>
-            <div class="qp-chips">
-              <div class="qp" onclick="sendQ('İşe iade davası dilekçesi taslağı oluştur')"><i class="fa-solid fa-scroll"></i> İşe iade dilekçesi</div>
-              <div class="qp" onclick="sendQ('Temyiz süresini hesapla, tebliğ tarihi bugün')"><i class="fa-solid fa-clock"></i> Temyiz süresi</div>
-              <div class="qp" onclick="sendQ('Kira alacağı ihtarnamesi örneği yaz')"><i class="fa-solid fa-file-lines"></i> Kira ihtarnamesi</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="chat-input-area">
-          <div class="chat-input-row">
-            <textarea id="chatIn" rows="1" placeholder="Sorunuzu yazın veya sol menüden araç seçin…" onkeydown="ckEnter(event)" oninput="autoH(this)"></textarea>
-            <button class="send-btn" id="sendBtn" onclick="sendChat()"><i class="fa-solid fa-arrow-up"></i></button>
-          </div>
-          <div class="chat-foot">
-            <div class="chat-foot-note"><i class="fa-solid fa-lock"></i> Şifreli iletim — veriler saklanmaz</div>
-          </div>
-        </div>
       </div>
     </div>
   </div>

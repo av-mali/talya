@@ -161,3 +161,14 @@ model Template {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
 }
+
+// Sık değişen hukuki sabitler (kıdem tavanı, yasal faiz oranı, kira TÜFE
+// oranı). Tek satırlık bir tablo — yönetici panelinden güncellenir,
+// tüm hesaplama araçları buradan okur. Kod değişikliği gerekmez.
+model LegalConstants {
+  id              String   @id @default("singleton")
+  kidemTavani     Float    @default(73729.84)
+  faizOrani       Float    @default(24)
+  kiraTufeOrani   Float    @default(32.03)
+  updatedAt       DateTime @updatedAt
+}

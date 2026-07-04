@@ -2,11 +2,13 @@
 
 import TalyaShell from "@/components/TalyaShell";
 
-// Hesaplama Araçları modülü. İçeriği değiştirmek için: /public/module-hesap.js
+// Hesaplama Araçları modülü — sağ taraftaki sohbet paneli kaldırıldı,
+// sonuçlar zaten formda gösteriliyor. İçeriği değiştirmek için:
+// /public/module-hesap.js
 export default function HesapModulu() {
   return (
     <TalyaShell
-      bodyUrl="/module-body.html"
+      bodyUrl="/module-body-noai.html"
       scripts={["/module-hesap.js", "/cmdk-index.js", "/engine.js"]}
     />
   );

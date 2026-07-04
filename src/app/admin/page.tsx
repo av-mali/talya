@@ -14,6 +14,7 @@ type AdminUser = {
 };
 
 type Stats = { userCount: number; messageCount: number };
+type Constants = { kidemTavani: number; faizOrani: number; kiraTufeOrani: number };
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -21,9 +22,15 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [forbidden, setForbidden] = useState(false);
+  const [constants, setConstants] = useState<Constants | null>(null);
+  const [savingConstants, setSavingConstants] = useState(false);
 
   const load = useCallback(async () => {
-    const [uRes, sRes] = await Promise.all([fetch("/api/admin/users"), fetch("/api/admin/stats")]);
+    const [uRes, sRes, cRes] = await Promise.all([
+      fetch("/api/admin/users"),
+      fetch("/api/admin/stats"),
+      fetch("/api/constants"),
+    ]);
     if (uRes.status === 403 || sRes.status === 403) {
       setForbidden(true);
       return;
@@ -32,12 +39,35 @@ export default function AdminPage() {
     const sData = await sRes.json();
     setUsers(uData.users || []);
     setStats(sData);
+    if (cRes.ok) {
+      const cData = await cRes.json();
+      setConstants(cData.constants);
+    }
   }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
     if (status === "authenticated") load();
   }, [status, router, load]);
+
+  async function handleSaveConstants(e: React.FormEvent) {
+    e.preventDefault();
+    if (!constants) return;
+    setSavingConstants(true);
+    const res = await fetch("/api/admin/constants", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(constants),
+    });
+    setSavingConstants(false);
+    if (res.ok) {
+      const data = await res.json();
+      setConstants(data.constants);
+      alert("Sabitler güncellendi.");
+    } else {
+      alert("Güncellenemedi.");
+    }
+  }
 
   async function handleDelete(id: string, email: string) {
     if (!confirm(`${email} hesabını ve tüm verilerini (müvekkiller, mesajlar) kalıcı olarak silmek istediğinize emin misiniz?`)) return;
@@ -106,6 +136,54 @@ export default function AdminPage() {
           <div style={styles.statGrid}>
             <StatCard icon="fa-users" label="Toplam Müşteri" value={stats?.userCount} />
             <StatCard icon="fa-comments" label="Toplam AI Kullanımı (Mesaj)" value={stats?.messageCount} />
+          </div>
+
+          {/* HUKUKİ SABİTLER */}
+          <div className="dash-card" style={{ marginTop: 24 }}>
+            <div className="dash-head">
+              <div className="dash-title"><i className="fa-solid fa-scale-balanced"></i> Hukuki Sabitler</div>
+            </div>
+            <div style={{ padding: "4px 4px 16px", fontSize: 12.5, color: "var(--t2)" }}>
+              Bu rakamlar sık değişir (kıdem tavanı ve kira TÜFE oranı 6 ayda/ayda bir güncellenir). Burada değiştirdiğinde tüm hesaplama araçları anında yeni değeri kullanır — kod değişikliği gerekmez.
+            </div>
+            {!constants ? (
+              <div style={{ padding: 12, fontSize: 13, color: "var(--t3)" }}>Yükleniyor…</div>
+            ) : (
+              <form onSubmit={handleSaveConstants} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+                <div>
+                  <label style={styles.constLabel}>Kıdem Tazminatı Tavanı (TL)</label>
+                  <input
+                    type="number" step="0.01"
+                    value={constants.kidemTavani}
+                    onChange={(e) => setConstants({ ...constants, kidemTavani: parseFloat(e.target.value) })}
+                    style={styles.constInput}
+                  />
+                </div>
+                <div>
+                  <label style={styles.constLabel}>Yasal / Ticari Faiz Oranı (%)</label>
+                  <input
+                    type="number" step="0.01"
+                    value={constants.faizOrani}
+                    onChange={(e) => setConstants({ ...constants, faizOrani: parseFloat(e.target.value) })}
+                    style={styles.constInput}
+                  />
+                </div>
+                <div>
+                  <label style={styles.constLabel}>Kira Artışı TÜFE Oranı (%)</label>
+                  <input
+                    type="number" step="0.01"
+                    value={constants.kiraTufeOrani}
+                    onChange={(e) => setConstants({ ...constants, kiraTufeOrani: parseFloat(e.target.value) })}
+                    style={styles.constInput}
+                  />
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-end" }}>
+                  <button type="submit" disabled={savingConstants} style={styles.btn}>
+                    {savingConstants ? "Kaydediliyor…" : "Kaydet"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* MÜŞTERİ TABLOSU */}
@@ -183,7 +261,9 @@ function StatCard({ icon, label, value, isText }: { icon: string; label: string;
 const styles: Record<string, React.CSSProperties> = {
   wrap: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" },
   forbiddenCard: { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: 36, width: 360, textAlign: "center" },
-  btn: { padding: "10px 16px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#fff", fontWeight: 500 },
+  btn: { padding: "10px 16px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#fff", fontWeight: 500, cursor: "pointer" },
+  constLabel: { display: "block", fontSize: 11, color: "var(--t3)", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 },
+  constInput: { width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid var(--border2)", fontSize: 13, fontFamily: "'JetBrains Mono',monospace", background: "var(--bg2)" },
   statGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 },
   table: { width: "100%", borderCollapse: "collapse", fontSize: 13 },
   th: { textAlign: "left", padding: "10px 12px", fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--t3)" },
