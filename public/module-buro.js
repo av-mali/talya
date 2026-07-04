@@ -8,9 +8,7 @@ window.CURRENT_MODULE = {
   color: 'b',
   items: [
     {"id": "muvekkil", "icon": "fa-users", "name": "Müvekkil Yönetimi"},
-    {"id": "sure", "icon": "fa-calendar-xmark", "name": "Süre & Takvim", "badge": "3"},
-    {"id": "arsiv", "icon": "fa-box-archive", "name": "Belge Arşivi"},
-    {"id": "ucret", "icon": "fa-calculator", "name": "Ücret Hesaplayıcı"},
+    {"id": "sure", "icon": "fa-calendar-xmark", "name": "Süre & Takvim"},
     {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu"},
     {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"}
   ],
@@ -18,7 +16,7 @@ window.CURRENT_MODULE = {
     // ── MÜVEKKİL YÖNETİMİ ── orta: arama+liste, sağ: seçilen müvekkilin detayı
     muvekkil: {
       badge: 'b', badgeText: 'Büro CRM · Canlı Veri', titleHtml: 'Müvekkil <em class="b">Yönetimi</em>',
-      desc: 'Bir müvekkil seçin; bilgileri sağda görünsün.',
+      desc: 'Yeni müvekkil ekleyin; liste ve detaylar sağda görünsün.',
       btnClass: 'b', btnIco: 'fa-id-card', btnLbl: '', hideCta: true,
       body: `
         <div class="fg"><input type="text" id="mv-search" placeholder="Müvekkil ara…" oninput="mvSearch()"></div>
@@ -32,7 +30,7 @@ window.CURRENT_MODULE = {
           <div class="fg"><div class="fl">Dava Konusu / Not</div><textarea id="mv-n-note" rows="2" placeholder="Kısa not…"></textarea></div>
           <button class="pop-cta-btn b" style="width:100%;" onclick="mvSaveNew()"><span>Kaydet</span></button>
         </div>
-        <div id="mv-list"></div>
+        <div style="font-size:11.5px;color:var(--t3);line-height:1.6;">Müvekkil listesi ve seçilen müvekkilin tüm detayları sağ panelde görünür.</div>
       `,
       onOpen: () => mvOnOpen(),
       prompt: () => ''
@@ -69,24 +67,6 @@ window.CURRENT_MODULE = {
       `,
       onOpen: () => fatOnOpen(),
       prompt: () => ''
-    },
-    // ── AŞAĞIDAKİ 2 PANEL ORİJİNAL TASARIMDA OLDUĞU GİBİ (değişmedi) ──
-    arsiv:{
-      badge:'b', badgeText:'Akıllı Arşiv', titleHtml:'Belge <em class="b">Arşivi</em>',
-      desc:'Arşivde belge arayın ve filtreleyin.',
-      btnClass:'b', btnIco:'fa-folder-open', btnLbl:'Arşivi Tara',
-      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-magnifying-glass"></i> Arama</div><input type="text" id="f-arsiv" placeholder="Belge adı, müvekkil, dava no…"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-filter"></i> Tür</div><div class="sw"><select id="f-arsivtur"><option>Tümü</option><option>Dilekçeler</option><option>Sözleşmeler</option><option>Raporlar</option></select></div></div>`,
-      prompt: ()=>`Belge arşivinde "${document.getElementById('f-arsiv')?.value||''}" ara. Tür filtresi: ${document.getElementById('f-arsivtur')?.value||''}.`
-    },
-    ucret:{
-      badge:'b', badgeText:'2026 AAÜT', titleHtml:'Ücret <em class="b">Hesaplayıcı</em>',
-      desc:'2026 Asgari Ücret Tarifesi\'ne göre vekâlet ücreti hesaplayın.',
-      btnClass:'b', btnIco:'fa-calculator', btnLbl:'Ücreti Hesapla',
-      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Dava Türü</div><div class="sw"><select id="f-ucturur"><option>Asliye Hukuk</option><option>İş Davası</option><option>Aile Mahkemesi</option><option>Ceza Davası</option><option>İdare Davası</option></select></div></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Dava Değeri (TL)</div><input type="text" id="f-ucval" placeholder="250000"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-layer-group"></i> Aşama</div><div class="sw"><select id="f-ucasama"><option>İlk derece</option><option>İstinaf</option><option>Temyiz</option></select></div></div>`,
-      prompt: ()=>`2026 Avukatlık Asgari Ücret Tarifesi'ne göre hesapla: ${document.getElementById('f-ucturur')?.value||''}, dava değeri ${document.getElementById('f-ucval')?.value||''} TL, ${document.getElementById('f-ucasama')?.value||''} aşaması.`
     }
   }
 };
@@ -138,15 +118,49 @@ function detailPlaceholder(text) {
 // MÜVEKKİL YÖNETİMİ
 // ══════════════════════════════════════════════════════
 let mvSelectedId = null;
+let mvLastQuery = '';
+
+const EVENT_TYPE_LABELS = {
+  durusma: 'Duruşma', odeme: 'Ödeme', gorusme: 'Görüşme',
+  arabuluculuk: 'Arabuluculuk', istinaf: 'İstinaf', temyiz: 'Temyiz'
+};
+function eventTypeLabel(type) { return EVENT_TYPE_LABELS[type] || type; }
 
 function mvOnOpen() {
   mvSelectedId = null;
-  loadClientList('mv-list', '', 'mvSelect');
+  mvRenderListInDetail('');
 }
 
 function mvSearch() {
   const q = document.getElementById('mv-search').value.trim();
-  loadClientList('mv-list', q, 'mvSelect', mvSelectedId);
+  mvLastQuery = q;
+  mvRenderListInDetail(q);
+}
+
+async function mvRenderListInDetail(q) {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  try {
+    const res = await fetch('/api/clients' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    const data = await res.json();
+    const clients = data.clients || [];
+    if (!clients.length) {
+      dp.innerHTML = `<div style="padding:30px 24px;color:var(--t3);font-size:13px;">Müvekkil bulunamadı.</div>`;
+      return;
+    }
+    dp.innerHTML = `<div style="padding:20px 24px;overflow-y:auto;height:100%;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Müvekkil Listesi (${clients.length})</div>
+      ${clients.map(c => {
+        const next = c.events && c.events[0];
+        const tag = next ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg2);color:var(--t3);">${new Date(next.dueDate).toLocaleDateString('tr-TR')}</span>` : '';
+        return `<div class="s-item" style="margin:0 0 4px;" onclick="mvSelect('${c.id}')">
+          <span class="ico"><i class="fa-solid fa-user"></i></span>${c.name}${tag}
+        </div>`;
+      }).join('')}
+    </div>`;
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
 }
 
 function mvToggleNew() {
@@ -175,14 +189,17 @@ async function mvSaveNew() {
     document.getElementById('mv-n-email').value = '';
     document.getElementById('mv-n-note').value = '';
     mvToggleNew();
-    await loadClientList('mv-list', '', 'mvSelect');
     mvSelect(data.client.id);
   }
 }
 
+function mvBackToList() {
+  mvSelectedId = null;
+  mvRenderListInDetail(mvLastQuery);
+}
+
 async function mvSelect(id) {
   mvSelectedId = id;
-  loadClientList('mv-list', document.getElementById('mv-search')?.value || '', 'mvSelect', id);
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
   const res = await fetch('/api/clients/' + id);
@@ -192,6 +209,9 @@ async function mvSelect(id) {
 
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="mvBackToList()">
+        <i class="fa-solid fa-arrow-left"></i> Listeye Dön
+      </div>
       <div style="display:flex;align-items:flex-start;justify-content:space-between;">
         <div>
           <div style="font-family:'Instrument Serif',serif;font-size:20px;">${c.name}</div>
@@ -214,13 +234,22 @@ async function mvSelect(id) {
         </div>
       </div>
 
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Duruşma & Ödeme Tarihleri</div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Tarihler</div>
       <div id="mv-events">${c.events.length ? c.events.map(ev => {
         const dl = mvDaysLeft(ev.dueDate);
-        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${ev.type==='durusma'?'DURUŞMA':'ÖDEME'}</span><span class="dl-text">${ev.title} — ${new Date(ev.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span><span style="cursor:pointer;color:var(--t3);margin-left:8px;" onclick="mvDeleteEvent('${ev.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></div>`;
+        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(ev.type).toUpperCase()}</span><span class="dl-text">${ev.title} — ${new Date(ev.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span><span style="cursor:pointer;color:var(--t3);margin-left:8px;" onclick="mvDeleteEvent('${ev.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz tarih eklenmedi.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-        <select id="mv-ev-type" style="width:110px;"><option value="durusma">Duruşma</option><option value="odeme">Ödeme</option></select>
+        <select id="mv-ev-type" style="width:130px;" onchange="mvToggleCustomType()">
+          <option value="durusma">Duruşma</option>
+          <option value="odeme">Ödeme</option>
+          <option value="gorusme">Görüşme</option>
+          <option value="arabuluculuk">Arabuluculuk</option>
+          <option value="istinaf">İstinaf</option>
+          <option value="temyiz">Temyiz</option>
+          <option value="__custom">Diğer (yazın)</option>
+        </select>
+        <input type="text" id="mv-ev-custom" placeholder="Tür adı…" style="width:110px;display:none;">
         <input type="text" id="mv-ev-title" placeholder="Başlık…" style="flex:1;min-width:120px;">
         <input type="date" id="mv-ev-date" style="width:140px;">
         <button class="pop-cta-btn p" style="padding:6px 12px;" onclick="mvAddEvent()"><span>Ekle</span></button>
@@ -235,6 +264,12 @@ async function mvSelect(id) {
       <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvAddLog()"><span>Notu Kaydet</span></button>
     </div>
   `;
+}
+
+function mvToggleCustomType() {
+  const sel = document.getElementById('mv-ev-type');
+  const custom = document.getElementById('mv-ev-custom');
+  custom.style.display = sel.value === '__custom' ? 'inline-block' : 'none';
 }
 
 function mvEditToggle() {
@@ -264,13 +299,13 @@ async function mvDeleteClient() {
   await fetch('/api/clients/' + mvSelectedId, { method: 'DELETE' });
   toast('Müvekkil silindi', 'fa-solid fa-trash');
   mvSelectedId = null;
-  document.getElementById('detailPane').innerHTML = detailPlaceholder();
-  loadClientList('mv-list', document.getElementById('mv-search')?.value || '', 'mvSelect');
+  mvRenderListInDetail(mvLastQuery);
 }
 
 async function mvAddEvent() {
   if (!mvSelectedId) return;
-  const type = document.getElementById('mv-ev-type').value;
+  const sel = document.getElementById('mv-ev-type').value;
+  const type = sel === '__custom' ? (document.getElementById('mv-ev-custom').value.trim() || 'Diğer') : sel;
   const title = document.getElementById('mv-ev-title').value.trim();
   const dueDate = document.getElementById('mv-ev-date').value;
   if (!title || !dueDate) { toast('Başlık ve tarih girin', 'fa-solid fa-triangle-exclamation'); return; }
@@ -327,7 +362,7 @@ async function calOnOpen() {
         <div id="cal-month-label" style="font-family:'Instrument Serif',serif;font-size:18px;"></div>
         <button class="pop-cta-btn b" style="padding:6px 12px;" onclick="calNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
-      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:20px;max-width:420px;"></div>
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px;max-width:560px;"></div>
       <div id="cal-agenda"></div>
     </div>
   `;
@@ -377,11 +412,11 @@ function calRender() {
     const has = eventsByDay[day];
     const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === day;
     const isSel = calSelectedDay === day;
-    html += `<div onclick="calSelectDay(${day})" style="cursor:pointer;text-align:center;padding:8px 0;border-radius:8px;font-size:13px;
+    html += `<div onclick="calSelectDay(${day})" style="cursor:pointer;text-align:center;padding:12px 0;border-radius:10px;font-size:14px;
       background:${isSel ? 'var(--gold)' : isToday ? 'var(--gold-lo)' : 'transparent'};
       color:${isSel ? '#fff' : 'var(--t0)'};">
       ${day}
-      ${has ? `<div style="width:4px;height:4px;border-radius:50%;background:${isSel?'#fff':'var(--danger)'};margin:3px auto 0;"></div>` : ''}
+      ${has ? `<div style="width:5px;height:5px;border-radius:50%;background:${isSel?'#fff':'var(--danger)'};margin:4px auto 0;"></div>` : ''}
     </div>`;
   }
   grid.innerHTML = html;
@@ -393,7 +428,7 @@ function calRender() {
   agenda.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">${title}</div>` +
     (list.length ? list.map(ev => {
       const dl = mvDaysLeft(ev.dueDate);
-      return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${ev.type==='durusma'?'DURUŞMA':'ÖDEME'}</span><span class="dl-text">${ev.clientName} — ${ev.title}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
+      return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(ev.type).toUpperCase()}</span><span class="dl-text">${ev.clientName} — ${ev.title}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
     }).join('') : `<div style="font-size:12px;color:var(--t3);">Kayıt yok.</div>`);
 }
 
@@ -427,11 +462,9 @@ async function rpSelect(id) {
   if (!data.client) { dp.innerHTML = detailPlaceholder(); return; }
   const c = data.client;
 
-  const durusmalar = c.events.filter(e => e.type === 'durusma');
-  const odemeler = c.events.filter(e => e.type === 'odeme');
   const toplamFatura = c.invoices.reduce((s, i) => s + i.amount, 0);
-  const gecmisDurusma = durusmalar.filter(e => new Date(e.dueDate) < new Date());
-  const gelecekDurusma = durusmalar.filter(e => new Date(e.dueDate) >= new Date());
+  const gecmisEv = c.events.filter(e => new Date(e.dueDate) < new Date());
+  const gelecekEv = c.events.filter(e => new Date(e.dueDate) >= new Date());
 
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
@@ -443,19 +476,14 @@ async function rpSelect(id) {
         <span style="font-family:'JetBrains Mono',monospace;font-weight:600;">${toplamFatura ? fmtTL(toplamFatura) : 'Belirtilmedi'}</span>
       </div>
 
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-gavel"></i> Duruşmalar</div>
-      ${gelecekDurusma.length ? gelecekDurusma.map(e => {
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Yaklaşan Tarihler</div>
+      ${gelecekEv.length ? gelecekEv.map(e => {
         const dl = mvDaysLeft(e.dueDate);
-        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">YAKLAŞAN</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
-      }).join('') : ''}
-      ${gecmisDurusma.length ? gecmisDurusma.map(e => `<div class="dl-row"><span class="dl-tag" style="background:var(--bg2);color:var(--t3);">GERÇEKLEŞTİ</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:var(--t3);">Tamamlandı</span></div>`).join('') : ''}
-      ${!durusmalar.length ? '<div style="font-size:12px;color:var(--t3);">Duruşma kaydı yok.</div>' : ''}
+        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
+      }).join('') : '<div style="font-size:12px;color:var(--t3);">Yaklaşan tarih yok.</div>'}
 
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Ödeme Tarihleri</div>
-      ${odemeler.length ? odemeler.map(e => {
-        const dl = mvDaysLeft(e.dueDate);
-        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">ÖDEME</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
-      }).join('') : '<div style="font-size:12px;color:var(--t3);">Ödeme kaydı yok.</div>'}
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Tarihler</div>
+      ${gecmisEv.length ? gecmisEv.map(e => `<div class="dl-row"><span class="dl-tag" style="background:var(--bg2);color:var(--t3);">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:var(--t3);">Tamamlandı</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Geçmiş kayıt yok.</div>'}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-comments"></i> Son Görüşme</div>
       ${c.logs.length ? `<div style="font-size:12.5px;">${c.logs[0].content}</div><div style="font-size:10px;color:var(--t3);margin-top:2px;">${new Date(c.logs[0].createdAt).toLocaleString('tr-TR')}</div>` : '<div style="font-size:12px;color:var(--t3);">Görüşme kaydı yok.</div>'}

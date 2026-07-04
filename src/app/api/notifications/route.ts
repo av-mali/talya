@@ -22,15 +22,21 @@ export async function GET() {
     orderBy: { dueDate: "asc" },
   });
 
+  const TYPE_LABELS: Record<string, string> = {
+    durusma: "Duruşma", odeme: "Ödeme", gorusme: "Görüşme",
+    arabuluculuk: "Arabuluculuk", istinaf: "İstinaf", temyiz: "Temyiz",
+  };
+
   const notifs = events.map((e) => {
     const daysLeft = Math.ceil((e.dueDate.getTime() - now.getTime()) / 86400000);
     const overdue = daysLeft < 0;
+    const label = TYPE_LABELS[e.type] || e.type;
     return {
       id: e.id,
-      type: e.type === "durusma" ? "sure" : "tebligat",
-      ico: e.type === "durusma" ? "fa-gavel" : "fa-turkish-lira-sign",
+      type: e.type === "durusma" || e.type === "istinaf" || e.type === "temyiz" ? "sure" : "tebligat",
+      ico: e.type === "odeme" ? "fa-turkish-lira-sign" : "fa-gavel",
       level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
-      label: e.type === "durusma" ? "Duruşma" : "Ödeme",
+      label,
       text: `${e.client.name} — ${e.title}`,
       time: overdue
         ? `${Math.abs(daysLeft)} gün geçti`
