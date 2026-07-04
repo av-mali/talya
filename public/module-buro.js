@@ -78,14 +78,18 @@ ucret:{
     prompt: ()=>`2026 Avukatlık Asgari Ücret Tarifesi'ne göre hesapla: ${document.getElementById('f-ucturur')?.value||''}, dava değeri ${document.getElementById('f-ucval')?.value||''} TL, ${document.getElementById('f-ucasama')?.value||''} aşaması.`
   },
 rapor:{
-    badge:'b', badgeText:'Müvekkil İletişim', titleHtml:'Müvekkil <em class="b">Raporu</em>',
-    desc:'Dava durumunu girin; müvekkile özel rapor oluştursun.',
-    btnClass:'b', btnIco:'fa-file-export', btnLbl:'Raporu Oluştur',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-user"></i> Müvekkil Adı</div><input type="text" id="f-raporad" placeholder="Ad Soyad…"></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-briefcase"></i> Güncel Durum</div><textarea id="f-rapordur" rows="4" placeholder="Son celse, bekleyen adımlar…"></textarea></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-paper-plane"></i> Format</div><div class="sw"><select id="f-raporformat"><option>E-posta (resmi)</option><option>SMS özeti</option><option>WhatsApp</option></select></div></div>`,
-    prompt: ()=>`${document.getElementById('f-raporad')?.value||''} adlı müvekkil için ${document.getElementById('f-raporformat')?.value||''} formatında dava durum raporu yaz:\n${document.getElementById('f-rapordur')?.value||''}`
-  },
+      badge: 'b', badgeText: 'Özet Görünüm · Canlı Veri', titleHtml: 'Müvekkil <em class="b">Raporu</em>',
+      desc: 'Bir müvekkil seçin — duruşma tarihleri, ödemeler ve anlaşılan ücret özeti gelsin.',
+      btnClass: 'b', btnIco: 'fa-file-circle-check', btnLbl: 'Kapat',
+      hideCta: true,
+      body: `
+        <div class="fg"><input type="text" id="rp-search" placeholder="Müvekkil ara…" oninput="rpSearch()"></div>
+        <div id="rp-list"></div>
+        <div id="rp-summary"></div>
+      `,
+      onOpen: () => rpOnOpen(),
+      prompt: () => ''
+    },
 fatura:{
     badge:'b', badgeText:'Tahsilat Takip', titleHtml:'Fatura &amp; <em class="b">Tahsilat</em>',
     desc:'Vekâlet ücreti faturası oluşturun ve ödeme takibi yapın.',
@@ -339,4 +343,87 @@ function calRender() {
 function calSelectDay(day) {
   calSelectedDay = calSelectedDay === day ? null : day;
   calRender();
+}
+
+// ══════════════════════════════════════════════════════
+// MÜVEKKİL RAPORU — özet görünüm (salt okunur)
+// ══════════════════════════════════════════════════════
+let rpSelectedId = null;
+
+function rpOnOpen() {
+  rpSelectedId = null;
+  const sum = document.getElementById('rp-summary');
+  if (sum) sum.innerHTML = '';
+  rpLoadList('');
+}
+
+async function rpLoadList(q) {
+  const listEl = document.getElementById('rp-list');
+  if (!listEl) return;
+  listEl.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  try {
+    const res = await fetch('/api/clients' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    const data = await res.json();
+    const clients = data.clients || [];
+    if (!clients.length) {
+      listEl.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Müvekkil bulunamadı.</div>`;
+      return;
+    }
+    listEl.innerHTML = clients.map(c => `
+      <div class="s-item ${rpSelectedId===c.id?'active-b':''}" style="margin:0 0 2px;" onclick="rpSelect('${c.id}')">
+        <span class="ico"><i class="fa-solid fa-user"></i></span>${c.name}
+      </div>`).join('');
+  } catch (e) {
+    listEl.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--danger);">Yüklenemedi.</div>`;
+  }
+}
+
+function rpSearch() {
+  const q = document.getElementById('rp-search').value.trim();
+  rpLoadList(q);
+}
+
+async function rpSelect(id) {
+  rpSelectedId = id;
+  const sum = document.getElementById('rp-summary');
+  sum.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  const res = await fetch('/api/clients/' + id);
+  const data = await res.json();
+  if (!data.client) { sum.innerHTML = ''; return; }
+  const c = data.client;
+
+  const durusmalar = c.events.filter(e => e.type === 'durusma');
+  const odemeler = c.events.filter(e => e.type === 'odeme');
+  const toplamFatura = c.invoices.reduce((s, i) => s + i.amount, 0);
+  const gecmisDurusma = durusmalar.filter(e => new Date(e.dueDate) < new Date());
+  const gelecekDurusma = durusmalar.filter(e => new Date(e.dueDate) >= new Date());
+
+  sum.innerHTML = `
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+      <div style="font-family:'Instrument Serif',serif;font-size:18px;">${c.name}</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:14px;">${c.phone||'—'}${c.email?(' · '+c.email):''}</div>
+
+      <div class="cr-row" style="padding:8px 0;border-bottom:1px solid var(--border);">
+        <span><i class="fa-solid fa-turkish-lira-sign" style="color:var(--gold);margin-right:6px;"></i>Anlaşılan / Faturalanan Ücret</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:600;">${toplamFatura ? fmtTL(toplamFatura) : 'Belirtilmedi'}</span>
+      </div>
+
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-gavel"></i> Duruşmalar</div>
+      ${gelecekDurusma.length ? gelecekDurusma.map(e => {
+        const dl = mvDaysLeft(e.dueDate);
+        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">YAKLAŞAN</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
+      }).join('') : ''}
+      ${gecmisDurusma.length ? gecmisDurusma.map(e => `<div class="dl-row"><span class="dl-tag" style="background:var(--bg2);color:var(--t3);">GERÇEKLEŞTİ</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:var(--t3);">Tamamlandı</span></div>`).join('') : ''}
+      ${!durusmalar.length ? '<div style="font-size:12px;color:var(--t3);">Duruşma kaydı yok.</div>' : ''}
+
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Ödeme Tarihleri</div>
+      ${odemeler.length ? odemeler.map(e => {
+        const dl = mvDaysLeft(e.dueDate);
+        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">ÖDEME</span><span class="dl-text">${e.title} — ${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
+      }).join('') : '<div style="font-size:12px;color:var(--t3);">Ödeme kaydı yok.</div>'}
+
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-comments"></i> Son Görüşme</div>
+      ${c.logs.length ? `<div style="font-size:12.5px;">${c.logs[0].content}</div><div style="font-size:10px;color:var(--t3);margin-top:2px;">${new Date(c.logs[0].createdAt).toLocaleString('tr-TR')}</div>` : '<div style="font-size:12px;color:var(--t3);">Görüşme kaydı yok.</div>'}
+    </div>
+  `;
 }
