@@ -156,7 +156,7 @@ function ImportContent() {
   return (
     <>
       <link rel="stylesheet" href="/talya-original.css" />
-      <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <div style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", background: "var(--bg)" }}>
         <div className="app-topbar">
           <div className="app-top-left">
             <button className="home-btn" onClick={() => router.push("/dashboard")}>
@@ -218,9 +218,9 @@ function ImportContent() {
                       <input type="text" value={r.title || ""} onChange={(e) => updateRow(i, { title: e.target.value })} placeholder="Başlık…" />
                     </div>
 
-                    <div style={{ flex: "0 1 150px", minWidth: 140 }}>
-                      <div style={styles.lbl}>Tarih</div>
-                      <input type="date" value={r.dueDate || ""} onChange={(e) => updateRow(i, { dueDate: e.target.value })} />
+                    <div style={{ flex: "0 1 190px", minWidth: 180 }}>
+                      <div style={styles.lbl}>Tarih / Saat</div>
+                      <input type="datetime-local" value={r.dueDate ? r.dueDate.slice(0, 16) : ""} onChange={(e) => updateRow(i, { dueDate: e.target.value })} />
                     </div>
                   </div>
                 </div>
