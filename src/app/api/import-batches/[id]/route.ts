@@ -31,6 +31,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 
   let created = 0;
+  let skippedDuplicate = 0;
   for (const item of items) {
     if (!item.include) continue;
     if (!item.dueDate || !item.type || !item.title) continue;
@@ -38,10 +39,19 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     let clientId = item.clientId as string | null;
 
     if (!clientId && item.newClientName) {
-      const newClient = await prisma.client.create({
-        data: { name: item.newClientName.trim(), userId },
+      // Aynı kullanıcının, aynı isimde bir müvekkili zaten var mı? (büyük/küçük
+      // harf duyarsız) — varsa onu kullan, yeni bir mükerrer müvekkil AÇMA.
+      const existingClient = await prisma.client.findFirst({
+        where: { userId, name: { equals: item.newClientName.trim(), mode: "insensitive" } },
       });
-      clientId = newClient.id;
+      if (existingClient) {
+        clientId = existingClient.id;
+      } else {
+        const newClient = await prisma.client.create({
+          data: { name: item.newClientName.trim(), userId },
+        });
+        clientId = newClient.id;
+      }
     }
     if (!clientId) continue;
 
@@ -56,11 +66,23 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       });
     }
 
+    // MÜKERRER KAYIT KONTROLÜ: Aynı dosyada, aynı tarih/saatte zaten bir
+    // kayıt varsa tekrar ekleme. Bu, birkaç gün sonra tekrar senkronize
+    // edince aynı duruşmanın ikinci kez eklenmesini önler.
+    const dueDate = new Date(item.dueDate);
+    const existingEvent = await prisma.clientEvent.findFirst({
+      where: { caseId: targetCase.id, dueDate },
+    });
+    if (existingEvent) {
+      skippedDuplicate++;
+      continue;
+    }
+
     await prisma.clientEvent.create({
       data: {
         type: item.type,
         title: item.title,
-        dueDate: new Date(item.dueDate),
+        dueDate,
         caseId: targetCase.id,
       },
     });
@@ -72,7 +94,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     data: { status: "confirmed" },
   });
 
-  return NextResponse.json({ ok: true, created });
+  return NextResponse.json({ ok: true, created, skippedDuplicate });
 }
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {

@@ -40,6 +40,7 @@ function ImportContent() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<number | null>(null);
+  const [skipped, setSkipped] = useState<number>(0);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -108,6 +109,7 @@ function ImportContent() {
     if (res.ok) {
       const data = await res.json();
       setDone(data.created);
+      setSkipped(data.skippedDuplicate || 0);
     } else {
       setError("Kaydedilirken bir hata oluştu.");
     }
@@ -140,7 +142,10 @@ function ImportContent() {
           <div style={styles.card}>
             <i className="fa-solid fa-circle-check" style={{ fontSize: 30, color: "var(--success)", marginBottom: 10 }}></i>
             <div className="serif" style={{ fontSize: 20, marginBottom: 8 }}>Aktarım tamamlandı</div>
-            <div style={{ fontSize: 13, color: "var(--t2)", marginBottom: 18 }}>{done} kayıt başarıyla eklendi.</div>
+            <div style={{ fontSize: 13, color: "var(--t2)", marginBottom: 18 }}>
+              {done} kayıt başarıyla eklendi.
+              {skipped > 0 && <><br />{skipped} kayıt zaten mevcuttu, mükerrer eklenmedi.</>}
+            </div>
             <button style={styles.btn} onClick={() => router.push("/dashboard/buro")}>Büro Yönetimi'ne Git</button>
           </div>
         </div>
