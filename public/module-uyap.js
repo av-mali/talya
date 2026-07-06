@@ -101,9 +101,9 @@ function extRender(token, batches) {
   }
   box.innerHTML = `
     <div class="fg"><div class="fl">Senkronizasyon Anahtarın</div>
-      <div style="display:flex;gap:6px;">
-        <input type="text" id="ext-token-val" value="${token}" readonly style="font-family:'JetBrains Mono',monospace;font-size:11px;">
-        <button class="pop-cta-btn t" style="padding:8px 12px;flex-shrink:0;" onclick="extCopy()"><i class="fa-solid fa-copy"></i></button>
+      <div style="display:flex;gap:6px;align-items:stretch;">
+        <input type="text" id="ext-token-val" value="${token}" readonly style="flex:1;min-width:0;font-family:'JetBrains Mono',monospace;font-size:11px;">
+        <button class="pop-cta-btn t" style="width:auto;flex-shrink:0;padding:8px 14px;" onclick="extCopy()"><i class="fa-solid fa-copy"></i></button>
       </div>
     </div>
     <button class="pop-cta-btn" style="width:100%;background:var(--danger);" onclick="extGenerate()"><i class="fa-solid fa-rotate"></i><span>Anahtarı Yenile (eskisi geçersiz olur)</span></button>
