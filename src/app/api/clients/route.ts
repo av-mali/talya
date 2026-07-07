@@ -9,13 +9,48 @@ async function requireUser() {
   return (session.user as any).id as string;
 }
 
-// Tüm müvekkilleri listele (arama isteğe bağlı: ?q=isim)
+// Tüm müvekkilleri listele (arama isteğe bağlı: ?q=isim, tablo görünümü: ?full=1)
 export async function GET(req: Request) {
   const userId = await requireUser();
   if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim();
+  const full = searchParams.get("full") === "1";
+
+  if (full) {
+    // Tablo/rapor görünümü için: dosya sayısı, toplam faturalanan tutar dahil.
+    const clients = await prisma.client.findMany({
+      where: { userId, ...(q ? { name: { contains: q, mode: "insensitive" } } : {}) },
+      orderBy: { name: "asc" },
+      include: {
+        cases: {
+          include: {
+            events: { orderBy: { dueDate: "asc" }, where: { dueDate: { gte: new Date() } }, take: 1 },
+            invoices: true,
+          },
+        },
+      },
+    });
+
+    const rows = clients.map((c) => {
+      const allEvents = c.cases.flatMap((cs) => cs.events);
+      const nextEvent = allEvents.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+      const totalInvoiced = c.cases.flatMap((cs) => cs.invoices).reduce((s, i) => s + i.amount, 0);
+      return {
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        email: c.email,
+        caseCount: c.cases.length,
+        totalInvoiced,
+        nextEventDate: nextEvent ? nextEvent.dueDate : null,
+        createdAt: c.createdAt,
+      };
+    });
+
+    return NextResponse.json({ clients: rows });
+  }
 
   const clients = await prisma.client.findMany({
     where: {

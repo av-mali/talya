@@ -14,7 +14,8 @@ window.CURRENT_MODULE = {
     {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
     {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"},
     {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
-    {"id": "sablonlar", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"}
+    {"id": "sablonlar", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"},
+    {"id": "tablo", "icon": "fa-table-list", "name": "Müvekkil Tablosu"}
   ],
   popups: {
     // ── MÜVEKKİL YÖNETİMİ ── orta: arama+liste, sağ: seçilen müvekkilin detayı
@@ -126,6 +127,19 @@ window.CURRENT_MODULE = {
         <button class="pop-cta-btn b" style="width:100%;" onclick="tplAdd()"><i class="fa-solid fa-plus"></i><span>Şablonu Kaydet</span></button>
       `,
       onOpen: () => tplOnOpen(),
+      prompt: () => ''
+    },
+    // ── MÜVEKKİL TABLOSU ── tüm müvekkilleri tablo halinde göster, filtrele, Excel'e aktar
+    tablo: {
+      badge: 'b', badgeText: 'Rapor Görünümü', titleHtml: 'Müvekkil <em class="b">Tablosu</em>',
+      desc: 'Tüm müvekkillerinizi tablo halinde görün, arayın, Excel\'e aktarın.',
+      btnClass: 'b', btnIco: 'fa-table-list', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><input type="text" id="tbl-search" placeholder="Müvekkil ara…" oninput="tblFilter()"></div>
+        <button class="pop-cta-btn g" style="width:100%;" onclick="tblExportCsv()"><i class="fa-solid fa-file-csv"></i><span>Excel'e Aktar (CSV)</span></button>
+        <div style="font-size:11px;color:var(--t3);margin-top:10px;">Tam tablo sağ panelde görünür.</div>
+      `,
+      onOpen: () => tblOnOpen(),
       prompt: () => ''
     }
   }
@@ -1109,4 +1123,95 @@ async function tplAdd() {
   document.getElementById('tpl-content').value = '';
   toast('Şablon kaydedildi', 'fa-solid fa-check', true);
   tplRenderList();
+}
+
+// ══════════════════════════════════════════════════════
+// MÜVEKKİL TABLOSU — tam liste, filtrele, CSV/Excel'e aktar
+// ══════════════════════════════════════════════════════
+let tblAllRows = [];
+
+async function tblOnOpen() {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  try {
+    const res = await fetch('/api/clients?full=1');
+    const data = await res.json();
+    tblAllRows = data.clients || [];
+    tblRender(tblAllRows);
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function tblFilter() {
+  const q = (document.getElementById('tbl-search')?.value || '').toLowerCase();
+  const filtered = q ? tblAllRows.filter(r => r.name.toLowerCase().includes(q)) : tblAllRows;
+  tblRender(filtered);
+}
+
+function tblRender(rows) {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `
+    <div style="padding:22px 24px;overflow:auto;height:100%;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">
+        Toplam ${rows.length} müvekkil
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);text-align:left;">
+            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Ad Soyad</th>
+            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Telefon</th>
+            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">E-posta</th>
+            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Dosya</th>
+            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Toplam Fatura</th>
+            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Yaklaşan Tarih</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${r.id}')">
+              <td style="padding:8px 10px;">${r.name}</td>
+              <td style="padding:8px 10px;color:var(--t2);">${r.phone || '—'}</td>
+              <td style="padding:8px 10px;color:var(--t2);">${r.email || '—'}</td>
+              <td style="padding:8px 10px;text-align:center;">${r.caseCount}</td>
+              <td style="padding:8px 10px;font-family:'JetBrains Mono',monospace;">${r.totalInvoiced ? fmtTL(r.totalInvoiced) : '—'}</td>
+              <td style="padding:8px 10px;color:var(--t2);">${r.nextEventDate ? new Date(r.nextEventDate).toLocaleDateString('tr-TR') : '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      ${!rows.length ? '<div style="padding:20px;color:var(--t3);font-size:12px;">Müvekkil bulunamadı.</div>' : ''}
+    </div>
+  `;
+}
+
+function tblExportCsv() {
+  const q = (document.getElementById('tbl-search')?.value || '').toLowerCase();
+  const rows = q ? tblAllRows.filter(r => r.name.toLowerCase().includes(q)) : tblAllRows;
+  if (!rows.length) { toast('Aktarılacak veri yok', 'fa-solid fa-triangle-exclamation'); return; }
+
+  const header = ['Ad Soyad', 'Telefon', 'E-posta', 'Dosya Sayısı', 'Toplam Fatura (TL)', 'Yaklaşan Tarih'];
+  const csvRows = rows.map(r => [
+    r.name,
+    r.phone || '',
+    r.email || '',
+    r.caseCount,
+    r.totalInvoiced || 0,
+    r.nextEventDate ? new Date(r.nextEventDate).toLocaleDateString('tr-TR') : ''
+  ]);
+  const csvContent = [header, ...csvRows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+    .join('\n');
+
+  // Excel'in Türkçe karakterleri doğru göstermesi için UTF-8 BOM ekliyoruz.
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'muvekkil-listesi.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast('CSV dosyası indirildi', 'fa-solid fa-check', true);
 }

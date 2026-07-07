@@ -92,6 +92,11 @@ window.MODULES_INDEX = [
         "id": "sablonlar",
         "icon": "fa-layer-group",
         "name": "Şablon Kütüphanesi"
+      },
+      {
+        "id": "tablo",
+        "icon": "fa-table-list",
+        "name": "Müvekkil Tablosu"
       }
     ]
   },

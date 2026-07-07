@@ -127,7 +127,7 @@ export default function AdminPage() {
   return (
     <>
       <link rel="stylesheet" href="/talya-original.css" />
-      <div style={{ display: "flex", flexDirection: "column", width: "100%", minHeight: "100vh", background: "var(--bg)" }}>
+      <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100vh", overflowY: "auto", background: "var(--bg)" }}>
         <div className="app-topbar">
           <div className="app-top-left">
             <button className="home-btn" onClick={() => router.push("/dashboard")}>

@@ -156,7 +156,7 @@ function ImportContent() {
   return (
     <>
       <link rel="stylesheet" href="/talya-original.css" />
-      <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <div style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", background: "var(--bg)" }}>
         <div className="app-topbar">
           <div className="app-top-left">
             <button className="home-btn" onClick={() => router.push("/dashboard")}>
