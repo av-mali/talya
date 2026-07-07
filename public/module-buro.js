@@ -355,6 +355,24 @@ async function mvOpenCase(caseId) {
         <button class="pop-cta-btn p" style="padding:6px 12px;" onclick="mvAddEvent()"><span>Ekle</span></button>
       </div>
 
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-handshake"></i> Anlaşılan Ücret</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <input type="text" id="mv-agreed-fee" placeholder="Anlaşılan toplam tutar (TL)" value="${cs.agreedFee ? cs.agreedFee : ''}" style="flex:1;">
+        <button class="pop-cta-btn b" style="padding:6px 12px;flex-shrink:0;" onclick="mvSaveAgreedFee('${cs.id}')"><span>Kaydet</span></button>
+      </div>
+      ${cs.agreedFee ? (() => {
+        const invoicedTotal = cs.invoices.reduce((s, i) => s + i.amount, 0);
+        const remaining = cs.agreedFee - invoicedTotal;
+        return `<div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);">
+          <span>Faturalanan / Anlaşılan</span>
+          <span style="font-family:'JetBrains Mono',monospace;">${fmtTL(invoicedTotal)} / ${fmtTL(cs.agreedFee)}</span>
+        </div>
+        <div class="cr-row" style="padding:6px 0;">
+          <span>Kalan Bakiye</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${remaining > 0 ? 'var(--warn)' : 'var(--success)'};">${fmtTL(remaining)}</span>
+        </div>`;
+      })() : ''}
+
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Faturalar</div>
       <div id="mv-invoices">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span><span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
@@ -377,6 +395,16 @@ async function mvOpenCase(caseId) {
       </div>
     </div>
   `;
+}
+
+async function mvSaveAgreedFee(caseId) {
+  const val = document.getElementById('mv-agreed-fee').value;
+  await fetch('/api/cases/' + caseId, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agreedFee: val })
+  });
+  toast('Anlaşılan ücret kaydedildi', 'fa-solid fa-check', true);
+  mvOpenCase(caseId);
 }
 
 async function mvSetCaseStatus(caseId, status) {
@@ -935,16 +963,22 @@ async function txOnOpen() {
 async function txRenderList() {
   const dp = document.getElementById('detailPane');
   try {
-    const res = await fetch('/api/transactions');
-    const data = await res.json();
+    const [txRes, recRes] = await Promise.all([
+      fetch('/api/transactions'),
+      fetch('/api/receivables'),
+    ]);
+    const data = await txRes.json();
+    const recData = await recRes.json();
     const txs = data.transactions || [];
+    const receivables = recData.rows || [];
+    const toplamAlacak = recData.total || 0;
     const toplamGelir = txs.filter(t => t.type === 'gelir').reduce((s, t) => s + t.amount, 0);
     const toplamGider = txs.filter(t => t.type === 'gider').reduce((s, t) => s + t.amount, 0);
     const net = toplamGelir - toplamGider;
 
     dp.innerHTML = `
       <div style="padding:22px 24px;overflow-y:auto;height:100%;">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
           <div style="background:var(--bg2);border-radius:var(--r);padding:12px;text-align:center;">
             <div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">Gelir</div>
             <div style="font-family:'JetBrains Mono',monospace;color:var(--success);font-weight:600;">${fmtTL(toplamGelir)}</div>
@@ -957,7 +991,23 @@ async function txRenderList() {
             <div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">Net</div>
             <div style="font-family:'JetBrains Mono',monospace;color:${net>=0?'var(--gold)':'var(--danger)'};font-weight:600;">${fmtTL(net)}</div>
           </div>
+          <div style="background:var(--gold-lo);border:1px solid var(--gold-rule);border-radius:var(--r);padding:12px;text-align:center;">
+            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">Bekleyen Alacaklar</div>
+            <div style="font-family:'JetBrains Mono',monospace;color:var(--warn);font-weight:600;">${fmtTL(toplamAlacak)}</div>
+          </div>
         </div>
+
+        ${receivables.length ? `
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;"><i class="fa-solid fa-hourglass-half"></i> Bekleyen Alacaklar (${receivables.length})</div>
+          ${receivables.map(r => `
+            <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${r.clientId}')">
+              <span>${r.clientName} — ${r.caseTitle}</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--warn);">${fmtTL(r.remaining)}</span>
+            </div>
+          `).join('')}
+          <div style="margin-bottom:20px;"></div>
+        ` : ''}
+
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Hareketler (${txs.length})</div>
         ${txs.length ? txs.map(t => `
           <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">

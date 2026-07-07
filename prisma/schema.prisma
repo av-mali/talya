@@ -99,6 +99,7 @@ model Case {
   id         String    @id @default(cuid())
   title      String    // ör. "Boşanma Davası", "Tazminat Davası"
   status     String    @default("acik") // "acik" | "kapali"
+  agreedFee  Float?    // müvekkille anlaşılan toplam ücret (varsa)
   createdAt  DateTime  @default(now())
   client     Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId   String

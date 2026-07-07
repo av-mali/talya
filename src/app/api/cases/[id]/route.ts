@@ -33,10 +33,17 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const ok = await requireOwnedCase(params.id);
   if (!ok) return NextResponse.json({ error: "Yetkisiz veya dosya bulunamadı." }, { status: 401 });
 
-  const { title, status } = await req.json();
+  const { title, status, agreedFee } = await req.json();
+  const data: any = {};
+  if (title !== undefined) data.title = title;
+  if (status !== undefined) data.status = status;
+  if (agreedFee !== undefined) {
+    data.agreedFee = agreedFee === null || agreedFee === "" ? null : parseFloat(String(agreedFee).replace(/[^\d.]/g, ""));
+  }
+
   const updated = await prisma.case.update({
     where: { id: params.id },
-    data: { title, status },
+    data,
   });
   return NextResponse.json({ case: updated });
 }
