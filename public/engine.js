@@ -322,8 +322,17 @@ async function loadRealNotifications() {
   } catch (e) { /* sessizce geç */ }
 }
 
-let notifPrefs = { sure: true, tebligat: true, ai: true, sistem: false };
+let notifPrefs = { sure: true, tebligat: true };
 let activeFilter = 'all';
+
+async function loadNotifPrefs() {
+  try {
+    const res = await fetch('/api/profile/notif-prefs');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.prefs) { notifPrefs = data.prefs; renderNotifs(); }
+  } catch (e) { /* varsayılan tercihlerle devam */ }
+}
 
 function getVisibleNotifs() {
   return NOTIFS.filter(n => {
@@ -407,6 +416,10 @@ function filterNotif(el, filter) {
 function saveNotifPref(type, val) {
   notifPrefs[type] = val;
   renderNotifs();
+  fetch('/api/profile/notif-prefs', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prefs: notifPrefs })
+  }).catch(() => {});
 }
 
 function toggleNotif(e) {
@@ -553,4 +566,5 @@ if (window.CURRENT_MODULE) {
   renderDashDeadlines();
 }
 loadRealNotifications();
+loadNotifPrefs();
 if (window.__talyaReady) window.__talyaReady();

@@ -13,16 +13,19 @@ export async function GET() {
   const userId = (session.user as any).id as string;
 
   const now = new Date();
-  const in14days = new Date(now.getTime() + 14 * 86400000);
+  // Bildirim zili artık sadece ACİL (2 gün ve altı) kayıtları gösterir —
+  // ana sayfadaki "Yaklaşan Süreler" (daha geniş pencere, 3 satır) ile
+  // karışmasın diye ayrı bir amaç üstleniyor.
+  const in2days = new Date(now.getTime() + 2 * 86400000);
 
   const [events, tasks, readRows] = await Promise.all([
     prisma.clientEvent.findMany({
-      where: { case: { client: { userId } }, dueDate: { lte: in14days } },
+      where: { case: { client: { userId } }, dueDate: { lte: in2days } },
       include: { case: { include: { client: true } } },
       orderBy: { dueDate: "asc" },
     }),
     prisma.task.findMany({
-      where: { userId, done: false, dueDate: { not: null, lte: in14days } },
+      where: { userId, done: false, dueDate: { not: null, lte: in2days } },
       orderBy: { dueDate: "asc" },
     }),
     prisma.notificationRead.findMany({ where: { userId }, select: { notifId: true } }),

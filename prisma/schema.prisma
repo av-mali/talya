@@ -22,6 +22,7 @@ model User {
   sicilNo      String?
   approved     Boolean   @default(true)
   isAdmin      Boolean   @default(false)
+  notifPrefs   Json?
   createdAt    DateTime  @default(now())
   messages     Message[]
   clients      Client[]

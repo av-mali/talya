@@ -36,6 +36,18 @@ export default function TalyaShell({
       const pill = document.getElementById("userEmailPill");
       if (pill && session?.user?.email) pill.textContent = session.user.email;
 
+      // Yönetici hesabıysa, üst menüye "Yönetici Paneli" bağlantısı ekle —
+      // sadece admin=true olan hesaplar görür, adres elle yazılmasın diye.
+      if (pill && (session?.user as any)?.isAdmin) {
+        const adminLink = document.createElement("a");
+        adminLink.href = "/admin";
+        adminLink.textContent = "Yönetici Paneli";
+        adminLink.className = pill.className.includes("nav-pill") ? "nav-pill" : "";
+        adminLink.style.cssText =
+          "font-size:11px;color:var(--gold);margin-left:6px;text-decoration:none;cursor:pointer;white-space:nowrap;";
+        pill.parentElement?.insertBefore(adminLink, pill.nextSibling);
+      }
+
       // engine.js diğer script'lere (CURRENT_MODULE, CMDK_INDEX) ihtiyaç
       // duyduğu için en son çalışmalı — ama ondan öncekiler birbirinden
       // bağımsız, paralel indirilebilir. Bu, büyük modül dosyalarının

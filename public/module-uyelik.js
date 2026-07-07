@@ -1,16 +1,210 @@
 // Bu dosya SADECE 'Üyelik & Hesap' modülüne aittir.
-// Bu modülü düzenlemek diğer modülleri (buro, uyap, hesap, uyelik) etkilemez.
+// Bu modülü düzenlemek diğer modülleri etkilemez.
 window.CURRENT_MODULE = {
   key: 'uyelik',
   label: 'Üyelik & Hesap',
   nameHtml: `Üyelik <em class="g">& Hesap</em>`,
   color: 'g',
-  items: [{"id": "plan", "icon": "fa-star", "name": "Planım & Abonelik"}, {"id": "faturalar", "icon": "fa-file-invoice", "name": "Fatura Geçmişi"}, {"id": "profil", "icon": "fa-user-circle", "name": "Profil Bilgileri"}, {"id": "guvenlik", "icon": "fa-shield-halved", "name": "Güvenlik & Şifre"}, {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"}],
+  items: [
+    {"id": "plan", "icon": "fa-star", "name": "Planım & Abonelik"},
+    {"id": "faturalar", "icon": "fa-file-invoice", "name": "Fatura Geçmişi"},
+    {"id": "profil", "icon": "fa-user-circle", "name": "Profil Bilgileri"},
+    {"id": "guvenlik", "icon": "fa-shield-halved", "name": "Güvenlik & Şifre"},
+    {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"}
+  ],
   popups: {
-  plan:{badge:'g',badgeText:'Abonelik',titleHtml:'Planım &amp; <em class="g">Abonelik</em>',desc:'Mevcut planınızı görüntüleyin ve yönetin.',btnClass:'g',btnIco:'fa-star',btnLbl:'Planı Yönet',body:`<div style="background:var(--gold-lo);border:1px solid var(--gold-rule);border-radius:var(--r);padding:16px;margin-bottom:12px;"><div style="font-family:'Instrument Serif',serif;font-size:18px;color:var(--gold);margin-bottom:4px;">Pro Plan</div><div style="font-size:12px;color:var(--t2);">Tüm modüller · Sınırsız kullanım · Öncelikli destek</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t0);margin-top:8px;">₺2.490 / ay</div></div><div class="fg"><div class="fl">Kullanım Bu Ay</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;"><div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--t0);">—</div><div style="font-size:10px;color:var(--t3);margin-top:3px;">Dilekçe</div></div><div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;"><div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--t0);">—</div><div style="font-size:10px;color:var(--t3);margin-top:3px;">Analiz</div></div></div>`,prompt:()=>'Pro plan özellikleri ve avantajları hakkında bilgi ver.'},
-  faturalar:{badge:'g',badgeText:'Fatura Geçmişi',titleHtml:'Fatura <em class="g">Geçmişi</em>',desc:'Geçmiş ödemelerinizi görüntüleyin.',btnClass:'g',btnIco:'fa-file-invoice',btnLbl:'Faturaları Getir',body:`<div class="fg"><div class="fl">Dönem</div><div class="sw"><select><option>Son 3 ay</option><option>Son 6 ay</option><option>Bu yıl</option></select></div></div>`,prompt:()=>'Fatura geçmişi ve abonelik ödeme özeti.'},
-  profil:{badge:'g',badgeText:'Hesap Bilgileri',titleHtml:'Profil <em class="g">Bilgileri</em>',desc:'Hesap bilgilerinizi güncelleyin.',btnClass:'g',btnIco:'fa-floppy-disk',btnLbl:'Kaydet',body:`<div class="fg"><div class="fl">Ad Soyad</div><input type="text" placeholder="Av. Ad Soyad"></div><div class="fg"><div class="fl">Baro Sicil No</div><input type="text" placeholder="İstanbul Barosu — ____"></div><div class="fg"><div class="fl">E-posta</div><input type="text" placeholder="av@ornek.com"></div>`,prompt:()=>'Profil güncelleme talebi.'},
-  guvenlik:{badge:'g',badgeText:'Güvenlik',titleHtml:'Güvenlik &amp; <em class="g">Şifre</em>',desc:'Şifrenizi değiştirin ve 2FA ayarlayın.',btnClass:'g',btnIco:'fa-shield-halved',btnLbl:'Güncelle',body:`<div class="fg"><div class="fl">Mevcut Şifre</div><input type="text" placeholder="••••••••"></div><div class="fg"><div class="fl">Yeni Şifre</div><input type="text" placeholder="••••••••"></div>`,prompt:()=>'Güvenlik ayarları güncelleme.'},
-  bildirim:{badge:'g',badgeText:'Bildirimler',titleHtml:'Bildirim <em class="g">Ayarları</em>',desc:'Hangi bildirimleri almak istediğinizi seçin.',btnClass:'g',btnIco:'fa-bell',btnLbl:'Kaydet',body:`<div class="cl"><div class="cl-head"><i class="fa-solid fa-bell"></i> Bildirim Tercihleri</div><div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Süre uyarıları (3 gün öncesi)</span></div><div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Yeni tebligat bildirimleri</span></div><div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Fatura hatırlatmaları</span></div></div>`,prompt:()=>'Bildirim ayarları güncellendi.'}
+    plan: {
+      badge: 'g', badgeText: 'Abonelik', titleHtml: 'Planım &amp; <em class="g">Abonelik</em>',
+      desc: 'Mevcut planınız ve durumu.',
+      btnClass: 'g', btnIco: 'fa-star', btnLbl: '', hideCta: true,
+      body: `
+        <div style="background:var(--gold-lo);border:1px solid var(--gold-rule);border-radius:var(--r);padding:16px;margin-bottom:12px;">
+          <div style="font-family:'Instrument Serif',serif;font-size:18px;color:var(--gold);margin-bottom:4px;">Standart Kullanım</div>
+          <div style="font-size:12px;color:var(--t2);">Şu an ücretli bir abonelik sistemi aktif değil — hesabınız tam yetkiyle kullanımda.</div>
+        </div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.6;">
+          İleride ücretli planlar eklenirse, buradan görüntüleyip yönetebileceksiniz.
+          Sorularınız için yöneticinizle iletişime geçebilirsiniz.
+        </div>
+      `,
+      onOpen: () => {},
+      prompt: () => ''
+    },
+    faturalar: {
+      badge: 'g', badgeText: 'Fatura Geçmişi', titleHtml: 'Fatura <em class="g">Geçmişi</em>',
+      desc: 'Abonelik ödeme geçmişiniz.',
+      btnClass: 'g', btnIco: 'fa-file-invoice', btnLbl: '', hideCta: true,
+      body: `
+        <div style="text-align:center;padding:30px 10px;color:var(--t3);">
+          <i class="fa-solid fa-file-invoice" style="font-size:26px;opacity:.3;display:block;margin-bottom:10px;"></i>
+          Henüz bir ödeme sistemi entegre edilmedi.<br>Bu ekran, ücretli abonelik başladığında dolacak.
+        </div>
+      `,
+      onOpen: () => {},
+      prompt: () => ''
+    },
+    profil: {
+      badge: 'g', badgeText: 'Hesap Bilgileri', titleHtml: 'Profil <em class="g">Bilgileri</em>',
+      desc: 'Hesap bilgilerinizi görüntüleyin ve güncelleyin.',
+      btnClass: 'g', btnIco: 'fa-floppy-disk', btnLbl: '', hideCta: true,
+      body: `<div id="profil-box">Yükleniyor…</div>`,
+      onOpen: () => profilOnOpen(),
+      prompt: () => ''
+    },
+    guvenlik: {
+      badge: 'g', badgeText: 'Güvenlik', titleHtml: 'Güvenlik &amp; <em class="g">Şifre</em>',
+      desc: 'Şifrenizi değiştirin.',
+      btnClass: 'g', btnIco: 'fa-shield-halved', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><div class="fl">Mevcut Şifre</div><input type="password" id="pw-current" placeholder="••••••••"></div>
+        <div class="fg"><div class="fl">Yeni Şifre (en az 6 karakter)</div><input type="password" id="pw-new" placeholder="••••••••"></div>
+        <div class="fg"><div class="fl">Yeni Şifre (tekrar)</div><input type="password" id="pw-new2" placeholder="••••••••"></div>
+        <button class="pop-cta-btn g" style="width:100%;" onclick="guvenlikSave()"><i class="fa-solid fa-shield-halved"></i><span>Şifreyi Güncelle</span></button>
+        <div id="guvenlik-msg" style="font-size:12px;margin-top:10px;"></div>
+      `,
+      onOpen: () => {
+        const box = document.getElementById('guvenlik-msg');
+        if (box) box.textContent = '';
+      },
+      prompt: () => ''
+    },
+    bildirim: {
+      badge: 'g', badgeText: 'Bildirimler', titleHtml: 'Bildirim <em class="g">Ayarları</em>',
+      desc: 'Hangi bildirim türlerini görmek istediğinizi seçin.',
+      btnClass: 'g', btnIco: 'fa-bell', btnLbl: '', hideCta: true,
+      body: `<div id="bildirim-box">Yükleniyor…</div>`,
+      onOpen: () => bildirimOnOpen(),
+      prompt: () => ''
+    }
   }
 };
+
+// ══════════════════════════════════════════════════════
+// PROFİL BİLGİLERİ
+// ══════════════════════════════════════════════════════
+async function profilOnOpen() {
+  const box = document.getElementById('profil-box');
+  try {
+    const res = await fetch('/api/profile');
+    const data = await res.json();
+    const u = data.user;
+    box.innerHTML = `
+      <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="pf-name" value="${(u.name||'').replace(/"/g,'&quot;')}"></div>
+      <div class="fg"><div class="fl">E-posta</div><input type="text" value="${u.email}" disabled style="opacity:.6;"></div>
+      <div class="fg"><div class="fl">Telefon</div><input type="text" id="pf-phone" value="${(u.phone||'').replace(/"/g,'&quot;')}"></div>
+      <div class="fg"><div class="fl">Baro</div><input type="text" id="pf-baro" value="${(u.baro||'').replace(/"/g,'&quot;')}"></div>
+      <div class="fg"><div class="fl">Sicil Numarası</div><input type="text" id="pf-sicil" value="${(u.sicilNo||'').replace(/"/g,'&quot;')}"></div>
+      <button class="pop-cta-btn g" style="width:100%;" onclick="profilSave()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
+      <div id="profil-msg" style="font-size:12px;margin-top:10px;"></div>
+    `;
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+async function profilSave() {
+  const name = document.getElementById('pf-name').value;
+  const phone = document.getElementById('pf-phone').value;
+  const baro = document.getElementById('pf-baro').value;
+  const sicilNo = document.getElementById('pf-sicil').value;
+  const msg = document.getElementById('profil-msg');
+
+  const res = await fetch('/api/profile', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, phone, baro, sicilNo })
+  });
+  if (res.ok) {
+    msg.style.color = 'var(--success)';
+    msg.textContent = 'Bilgiler güncellendi.';
+    toast('Profil güncellendi', 'fa-solid fa-check', true);
+    const pill = document.getElementById('userEmailPill');
+    if (pill && name) { /* e-posta sabit kalır, isim ayrı gösterilmiyor şu an */ }
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Güncellenemedi.';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// GÜVENLİK & ŞİFRE
+// ══════════════════════════════════════════════════════
+async function guvenlikSave() {
+  const currentPassword = document.getElementById('pw-current').value;
+  const newPassword = document.getElementById('pw-new').value;
+  const newPassword2 = document.getElementById('pw-new2').value;
+  const msg = document.getElementById('guvenlik-msg');
+
+  if (!currentPassword || !newPassword) {
+    msg.style.color = 'var(--danger)'; msg.textContent = 'Tüm alanları doldurun.'; return;
+  }
+  if (newPassword !== newPassword2) {
+    msg.style.color = 'var(--danger)'; msg.textContent = 'Yeni şifreler eşleşmiyor.'; return;
+  }
+  if (newPassword.length < 6) {
+    msg.style.color = 'var(--danger)'; msg.textContent = 'Yeni şifre en az 6 karakter olmalı.'; return;
+  }
+
+  const res = await fetch('/api/profile/password', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    msg.style.color = 'var(--success)';
+    msg.textContent = 'Şifre güncellendi.';
+    toast('Şifre güncellendi', 'fa-solid fa-check', true);
+    document.getElementById('pw-current').value = '';
+    document.getElementById('pw-new').value = '';
+    document.getElementById('pw-new2').value = '';
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = data.error || 'Güncellenemedi.';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// BİLDİRİM AYARLARI
+// ══════════════════════════════════════════════════════
+async function bildirimOnOpen() {
+  const box = document.getElementById('bildirim-box');
+  try {
+    const res = await fetch('/api/profile/notif-prefs');
+    const data = await res.json();
+    const prefs = data.prefs || { sure: true, tebligat: true };
+    box.innerHTML = `
+      <div class="cl">
+        <div class="cl-head"><i class="fa-solid fa-bell"></i> Bildirim Türleri</div>
+        <div class="cl-item" style="cursor:pointer;" onclick="bildirimToggle('sure', this)">
+          <div class="cl-dot">${prefs.sure ? '<i class="fa-solid fa-check"></i>' : ''}</div>
+          <span>Süre uyarıları (duruşma/görev tarihleri)</span>
+        </div>
+        <div class="cl-item" style="cursor:pointer;" onclick="bildirimToggle('tebligat', this)">
+          <div class="cl-dot">${prefs.tebligat ? '<i class="fa-solid fa-check"></i>' : ''}</div>
+          <span>Ödeme hatırlatmaları</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--t3);margin-top:10px;">Değişiklik anında kaydedilir.</div>
+    `;
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+async function bildirimToggle(type, el) {
+  const dot = el.querySelector('.cl-dot');
+  const isOn = dot.innerHTML.trim() !== '';
+  const newVal = !isOn;
+  dot.innerHTML = newVal ? '<i class="fa-solid fa-check"></i>' : '';
+
+  const res = await fetch('/api/profile/notif-prefs');
+  const data = await res.json();
+  const prefs = data.prefs || {};
+  prefs[type] = newVal;
+
+  await fetch('/api/profile/notif-prefs', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prefs })
+  });
+  if (typeof notifPrefs !== 'undefined') { notifPrefs[type] = newVal; }
+  toast('Bildirim tercihi güncellendi', 'fa-solid fa-check', true);
+}
