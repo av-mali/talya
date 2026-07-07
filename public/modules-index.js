@@ -54,19 +54,27 @@ window.MODULES_INDEX = [
     "color": "b",
     "items": [
       {
-        "id": "muvekkil",
-        "icon": "fa-users",
-        "name": "Müvekkil Yönetimi"
+        "id": "muvekkilekle",
+        "icon": "fa-user-plus",
+        "name": "Müvekkil Ekle",
+        "group": "Müvekkil Yönetimi"
+      },
+      {
+        "id": "tablo",
+        "icon": "fa-table-list",
+        "name": "Müvekkil Tablosu",
+        "group": "Müvekkil Yönetimi"
+      },
+      {
+        "id": "rapor",
+        "icon": "fa-file-circle-check",
+        "name": "Müvekkil Raporu",
+        "group": "Müvekkil Yönetimi"
       },
       {
         "id": "sure",
         "icon": "fa-calendar-xmark",
         "name": "Süre & Takvim"
-      },
-      {
-        "id": "rapor",
-        "icon": "fa-file-circle-check",
-        "name": "Müvekkil Raporu"
       },
       {
         "id": "fatura",
@@ -92,11 +100,6 @@ window.MODULES_INDEX = [
         "id": "sablonlar",
         "icon": "fa-layer-group",
         "name": "Şablon Kütüphanesi"
-      },
-      {
-        "id": "tablo",
-        "icon": "fa-table-list",
-        "name": "Müvekkil Tablosu"
       }
     ]
   },

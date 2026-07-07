@@ -41,12 +41,23 @@ function initModulePage() {
           <span class="ico"><i class="fa-solid ${isCurrent ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:10px;"></i></span>
           ${mod.label}
         </div>`;
-      const children = isCurrent ? mod.items.map(item => `
-        <div class="s-item" id="si-${item.id}" style="padding-left:30px;" onclick="openPopup('${item.id}')">
-          <span class="ico"><i class="fa-solid ${item.icon}"></i></span>
-          ${item.name}
-          ${item.badge ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;background:var(--bg2);color:var(--t3);">${item.badge}</span>` : ''}
-        </div>`).join('') : '';
+      let children = '';
+      if (isCurrent) {
+        let lastGroup = null;
+        mod.items.forEach(item => {
+          if (item.group && item.group !== lastGroup) {
+            children += `<div style="padding:8px 12px 4px 30px;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;">${item.group}</div>`;
+          }
+          lastGroup = item.group || null;
+          const indent = item.group ? 40 : 30;
+          children += `
+            <div class="s-item" id="si-${item.id}" style="padding-left:${indent}px;" onclick="openPopup('${item.id}')">
+              <span class="ico"><i class="fa-solid ${item.icon}"></i></span>
+              ${item.name}
+              ${item.badge ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;background:var(--bg2);color:var(--t3);">${item.badge}</span>` : ''}
+            </div>`;
+        });
+      }
       return header + children;
     }).join('');
   }

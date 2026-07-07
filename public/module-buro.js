@@ -7,37 +7,31 @@ window.CURRENT_MODULE = {
   nameHtml: `Büro <em class="b">Yönetimi</em>`,
   color: 'b',
   items: [
-    {"id": "muvekkil", "icon": "fa-users", "name": "Müvekkil Yönetimi"},
+    {"id": "muvekkilekle", "icon": "fa-user-plus", "name": "Müvekkil Ekle", "group": "Müvekkil Yönetimi"},
+    {"id": "tablo", "icon": "fa-table-list", "name": "Müvekkil Tablosu", "group": "Müvekkil Yönetimi"},
+    {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu", "group": "Müvekkil Yönetimi"},
     {"id": "sure", "icon": "fa-calendar-xmark", "name": "Süre & Takvim"},
-    {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu"},
     {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"},
     {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
     {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"},
     {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
-    {"id": "sablonlar", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"},
-    {"id": "tablo", "icon": "fa-table-list", "name": "Müvekkil Tablosu"}
+    {"id": "sablonlar", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"}
   ],
   popups: {
     // ── MÜVEKKİL YÖNETİMİ ── orta: arama+liste, sağ: seçilen müvekkilin detayı
-    muvekkil: {
-      badge: 'b', badgeText: 'Büro CRM · Canlı Veri', titleHtml: 'Müvekkil <em class="b">Yönetimi</em>',
-      desc: 'Yeni müvekkil ekleyin; liste ve detaylar sağda görünsün.',
-      btnClass: 'b', btnIco: 'fa-id-card', btnLbl: '', hideCta: true,
+    muvekkilekle: {
+      badge: 'b', badgeText: 'Büro CRM · Canlı Veri', titleHtml: 'Müvekkil <em class="b">Ekle</em>',
+      desc: 'Yeni bir müvekkil kaydı oluşturun.',
+      btnClass: 'b', btnIco: 'fa-user-plus', btnLbl: '', hideCta: true,
       body: `
-        <div class="fg"><input type="text" id="mv-search" placeholder="Müvekkil ara…" oninput="mvSearch()"></div>
-        <button class="pop-cta-btn b" style="width:100%;margin-bottom:12px;" onclick="mvToggleNew()">
-          <i class="fa-solid fa-user-plus"></i><span id="mv-toggle-lbl">Yeni Müvekkil</span>
-        </button>
-        <div id="mv-new-form" style="display:none;margin-bottom:14px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);">
-          <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-n-name" placeholder="Müvekkil adı…"></div>
-          <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-n-phone" placeholder="05__ ___ __ __"></div>
-          <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-n-email" placeholder="mail@ornek.com"></div>
-          <div class="fg"><div class="fl">Dava Konusu / Not</div><textarea id="mv-n-note" rows="2" placeholder="Kısa not…"></textarea></div>
-          <button class="pop-cta-btn b" style="width:100%;" onclick="mvSaveNew()"><span>Kaydet</span></button>
-        </div>
-        <div style="font-size:11.5px;color:var(--t3);line-height:1.6;">Müvekkil listesi ve seçilen müvekkilin tüm detayları sağ panelde görünür.</div>
+        <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-n-name" placeholder="Müvekkil adı…"></div>
+        <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-n-phone" placeholder="05__ ___ __ __"></div>
+        <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-n-email" placeholder="mail@ornek.com"></div>
+        <div class="fg"><div class="fl">Dava Konusu / Not</div><textarea id="mv-n-note" rows="2" placeholder="Kısa not…"></textarea></div>
+        <button class="pop-cta-btn b" style="width:100%;" onclick="mvSaveNew()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
+        <div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-top:10px;">Kaydettikten sonra müvekkilin detayı sağ panelde açılır. Tüm müvekkilleri görmek için <strong>Müvekkil Tablosu</strong>'nu kullanın.</div>
       `,
-      onOpen: () => mvOnOpen(),
+      onOpen: () => mvEkleOnOpen(),
       prompt: () => ''
     },
     // ── SÜRE & TAKVİM ── orta: özet açıklama, sağ: tam takvim
@@ -202,49 +196,10 @@ const EVENT_TYPE_LABELS = {
 };
 function eventTypeLabel(type) { return EVENT_TYPE_LABELS[type] || type; }
 
-function mvOnOpen() {
+function mvEkleOnOpen() {
   mvSelectedId = null;
-  mvRenderListInDetail('');
-}
-
-function mvSearch() {
-  const q = document.getElementById('mv-search').value.trim();
-  mvLastQuery = q;
-  mvRenderListInDetail(q);
-}
-
-async function mvRenderListInDetail(q) {
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
-  try {
-    const res = await fetch('/api/clients' + (q ? '?q=' + encodeURIComponent(q) : ''));
-    const data = await res.json();
-    const clients = data.clients || [];
-    if (!clients.length) {
-      dp.innerHTML = `<div style="padding:30px 24px;color:var(--t3);font-size:13px;">Müvekkil bulunamadı.</div>`;
-      return;
-    }
-    dp.innerHTML = `<div style="padding:20px 24px;overflow-y:auto;height:100%;">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Müvekkil Listesi (${clients.length})</div>
-      ${clients.map(c => {
-        const next = c.events && c.events[0];
-        const tag = next ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg2);color:var(--t3);">${new Date(next.dueDate).toLocaleDateString('tr-TR')}</span>` : '';
-        return `<div class="s-item" style="margin:0 0 4px;" onclick="mvSelect('${c.id}')">
-          <span class="ico"><i class="fa-solid fa-user"></i></span>${c.name}${tag}
-        </div>`;
-      }).join('')}
-    </div>`;
-  } catch (e) {
-    dp.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
-  }
-}
-
-function mvToggleNew() {
-  const form = document.getElementById('mv-new-form');
-  const lbl = document.getElementById('mv-toggle-lbl');
-  const open = form.style.display !== 'none';
-  form.style.display = open ? 'none' : 'block';
-  lbl.textContent = open ? 'Yeni Müvekkil' : 'Vazgeç';
+  if (dp) dp.innerHTML = detailPlaceholder('Kaydettiğiniz müvekkilin detayı burada açılacak.');
 }
 
 async function mvSaveNew() {
@@ -264,14 +219,14 @@ async function mvSaveNew() {
     document.getElementById('mv-n-phone').value = '';
     document.getElementById('mv-n-email').value = '';
     document.getElementById('mv-n-note').value = '';
-    mvToggleNew();
     mvSelect(data.client.id);
   }
 }
 
 function mvBackToList() {
   mvSelectedId = null;
-  mvRenderListInDetail(mvLastQuery);
+  // "Listeye Dön" artık Müvekkil Tablosu'na döner.
+  openPopup('tablo');
 }
 
 async function mvSelect(id) {
@@ -472,7 +427,7 @@ async function mvDeleteClient() {
   await fetch('/api/clients/' + mvSelectedId, { method: 'DELETE' });
   toast('Müvekkil silindi', 'fa-solid fa-trash');
   mvSelectedId = null;
-  mvRenderListInDetail(mvLastQuery);
+  openPopup('tablo');
 }
 
 async function mvAddEvent() {
