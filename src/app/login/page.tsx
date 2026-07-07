@@ -23,11 +23,7 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (res?.error) {
-      if (res.error === "PENDING_APPROVAL") {
-        setError("Hesabınız henüz onaylanmadı. Yönetici onayından sonra giriş yapabilirsiniz.");
-      } else {
-        setError("E-posta veya şifre hatalı.");
-      }
+      setError("E-posta veya şifre hatalı.");
       return;
     }
     router.push("/dashboard");

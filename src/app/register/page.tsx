@@ -9,12 +9,8 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [baro, setBaro] = useState("");
-  const [sicilNo, setSicilNo] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,7 +19,7 @@ export default function RegisterPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, phone, baro, sicilNo }),
+      body: JSON.stringify({ name, email, password }),
     });
     const data = await res.json();
     setLoading(false);
@@ -31,26 +27,7 @@ export default function RegisterPage() {
       setError(data.error || "Bir hata oluştu.");
       return;
     }
-    setSubmitted(true);
-  }
-
-  if (submitted) {
-    return (
-      <div style={styles.wrap}>
-        <div style={styles.card}>
-          <div className="serif" style={styles.title}>
-            Kaydınız <em style={{ color: "var(--gold)" }}>Alındı</em>
-          </div>
-          <div style={{ fontSize: 13, color: "var(--t2)", textAlign: "center", lineHeight: 1.6 }}>
-            Hesabınız oluşturuldu ve şu an <strong>onay bekliyor</strong>. Yönetici
-            bilgilerinizi onayladıktan sonra giriş yapabileceksiniz.
-          </div>
-          <Link href="/login" style={{ ...styles.btn, textAlign: "center", textDecoration: "none", display: "block" }}>
-            Giriş Sayfasına Dön
-          </Link>
-        </div>
-      </div>
-    );
+    router.push("/login");
   }
 
   return (
@@ -81,35 +58,10 @@ export default function RegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <input
-          style={styles.input}
-          type="tel"
-          placeholder="Telefon Numarası"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-        />
-        <input
-          style={styles.input}
-          placeholder="Baro (ör. Antalya Barosu)"
-          value={baro}
-          onChange={(e) => setBaro(e.target.value)}
-          required
-        />
-        <input
-          style={styles.input}
-          placeholder="Sicil Numarası"
-          value={sicilNo}
-          onChange={(e) => setSicilNo(e.target.value)}
-          required
-        />
         {error && <div style={styles.error}>{error}</div>}
         <button style={styles.btn} disabled={loading}>
           {loading ? "Oluşturuluyor…" : "Hesap Oluştur"}
         </button>
-        <div style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.5 }}>
-          Kaydınız, yönetici onayından sonra aktif olur.
-        </div>
         <div style={styles.foot}>
           Zaten hesabın var mı? <Link href="/login" style={{ color: "var(--gold)" }}>Giriş yap</Link>
         </div>

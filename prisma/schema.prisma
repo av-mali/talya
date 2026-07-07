@@ -17,10 +17,6 @@ model User {
   email        String    @unique
   passwordHash String
   name         String?
-  phone        String?
-  baro         String?
-  sicilNo      String?
-  approved     Boolean   @default(true)
   isAdmin      Boolean   @default(false)
   createdAt    DateTime  @default(now())
   messages     Message[]
