@@ -13,6 +13,16 @@ type AdminUser = {
   _count: { messages: number };
 };
 
+type PendingUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
+  baro: string | null;
+  sicilNo: string | null;
+  createdAt: string;
+};
+
 type Stats = { userCount: number; messageCount: number };
 type Constants = { kidemTavani: number; faizOrani: number; kiraTufeOrani: number };
 
@@ -20,16 +30,18 @@ export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
+  const [pendingUsers, setPendingUsers] = useState<PendingUser[] | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [constants, setConstants] = useState<Constants | null>(null);
   const [savingConstants, setSavingConstants] = useState(false);
 
   const load = useCallback(async () => {
-    const [uRes, sRes, cRes] = await Promise.all([
+    const [uRes, sRes, cRes, pRes] = await Promise.all([
       fetch("/api/admin/users"),
       fetch("/api/admin/stats"),
       fetch("/api/constants"),
+      fetch("/api/admin/pending-users"),
     ]);
     if (uRes.status === 403 || sRes.status === 403) {
       setForbidden(true);
@@ -43,12 +55,23 @@ export default function AdminPage() {
       const cData = await cRes.json();
       setConstants(cData.constants);
     }
+    if (pRes.ok) {
+      const pData = await pRes.json();
+      setPendingUsers(pData.users || []);
+    }
   }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
     if (status === "authenticated") load();
   }, [status, router, load]);
+
+  async function handleApprove(id: string, email: string) {
+    if (!confirm(`${email} hesabını onaylamak istediğinize emin misiniz?`)) return;
+    const res = await fetch(`/api/admin/users/${id}/approve`, { method: "POST" });
+    if (res.ok) load();
+    else alert("Onaylanamadı.");
+  }
 
   async function handleSaveConstants(e: React.FormEvent) {
     e.preventDefault();
@@ -186,6 +209,47 @@ export default function AdminPage() {
             )}
           </div>
 
+          {/* BEKLEYEN ONAYLAR */}
+          {pendingUsers && pendingUsers.length > 0 && (
+            <div className="dash-card" style={{ marginTop: 24, border: "1px solid var(--warn)" }}>
+              <div className="dash-head">
+                <div className="dash-title"><i className="fa-solid fa-user-clock" style={{ color: "var(--warn)" }}></i> Bekleyen Onaylar ({pendingUsers.length})</div>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                      <th style={styles.th}>E-posta</th>
+                      <th style={styles.th}>Ad</th>
+                      <th style={styles.th}>Telefon</th>
+                      <th style={styles.th}>Baro</th>
+                      <th style={styles.th}>Sicil No</th>
+                      <th style={styles.th}>Kayıt Tarihi</th>
+                      <th style={styles.th}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingUsers.map((u) => (
+                      <tr key={u.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                        <td style={styles.td}>{u.email}</td>
+                        <td style={styles.td}>{u.name || "—"}</td>
+                        <td style={styles.td}>{u.phone || "—"}</td>
+                        <td style={styles.td}>{u.baro || "—"}</td>
+                        <td style={styles.td}>{u.sicilNo || "—"}</td>
+                        <td style={styles.td}>{new Date(u.createdAt).toLocaleDateString("tr-TR")}</td>
+                        <td style={styles.td}>
+                          <button style={styles.approveBtn} onClick={() => handleApprove(u.id, u.email)}>
+                            <i className="fa-solid fa-check"></i> Onayla
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* MÜŞTERİ TABLOSU */}
           <div className="dash-card" style={{ marginTop: 24 }}>
             <div className="dash-head">
@@ -270,4 +334,5 @@ const styles: Record<string, React.CSSProperties> = {
   td: { padding: "10px 12px", color: "var(--t0)" },
   adminBadge: { fontSize: 11, padding: "2px 8px", borderRadius: 10, background: "var(--gold-lo)", color: "var(--gold-hi)", fontWeight: 500 },
   deleteBtn: { padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border2)", background: "transparent", color: "var(--danger)", cursor: "pointer" },
+  approveBtn: { padding: "6px 12px", borderRadius: 8, border: "none", background: "var(--success)", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 500 },
 };

@@ -32,6 +32,10 @@ export const authOptions: NextAuthOptions = {
         );
         if (!isValid) return null;
 
+        if (!user.approved) {
+          throw new Error("PENDING_APPROVAL");
+        }
+
         return { id: user.id, email: user.email, name: user.name || "", isAdmin: user.isAdmin };
       },
     }),
