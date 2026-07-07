@@ -9,7 +9,7 @@ export default function HesapModulu() {
   return (
     <TalyaShell
       bodyUrl="/module-body-noai.html"
-      scripts={["/module-hesap.js", "/cmdk-index.js", "/engine.js"]}
+      scripts={["/module-hesap.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
     />
   );
 }

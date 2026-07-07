@@ -1,0 +1,209 @@
+// Tüm 5 modülün kategori bilgisi ve araç listesi — sol menüde her
+// modülü akordeon şeklinde göstermek için kullanılır.
+window.MODULES_INDEX = [
+  {
+    "key": "belge",
+    "label": "Belge & Analiz",
+    "color": "g",
+    "items": [
+      {
+        "id": "wizard",
+        "icon": "fa-scroll",
+        "name": "Dilekçe Sihirbazı"
+      },
+      {
+        "id": "emsal",
+        "icon": "fa-magnifying-glass-chart",
+        "name": "Emsal Karar Analizi"
+      },
+      {
+        "id": "dosya",
+        "icon": "fa-file-shield",
+        "name": "Dosya Analizi"
+      },
+      {
+        "id": "sozlesme",
+        "icon": "fa-file-signature",
+        "name": "Sözleşme İnceleme"
+      },
+      {
+        "id": "mevzuat",
+        "icon": "fa-book-open-reader",
+        "name": "Mevzuat Arama"
+      },
+      {
+        "id": "sablon",
+        "icon": "fa-layer-group",
+        "name": "Şablon Kütüphanesi"
+      },
+      {
+        "id": "risk",
+        "icon": "fa-scale-balanced",
+        "name": "Risk Analizi"
+      },
+      {
+        "id": "durusma",
+        "icon": "fa-timeline",
+        "name": "Duruşma Hazırlık"
+      }
+    ]
+  },
+  {
+    "key": "buro",
+    "label": "Büro Yönetimi",
+    "color": "b",
+    "items": [
+      {
+        "id": "muvekkil",
+        "icon": "fa-users",
+        "name": "Müvekkil Yönetimi"
+      },
+      {
+        "id": "sure",
+        "icon": "fa-calendar-xmark",
+        "name": "Süre & Takvim"
+      },
+      {
+        "id": "rapor",
+        "icon": "fa-file-circle-check",
+        "name": "Müvekkil Raporu"
+      },
+      {
+        "id": "fatura",
+        "icon": "fa-receipt",
+        "name": "Fatura & Tahsilat"
+      },
+      {
+        "id": "gorevler",
+        "icon": "fa-list-check",
+        "name": "Görevler"
+      },
+      {
+        "id": "notlar",
+        "icon": "fa-note-sticky",
+        "name": "Notlar"
+      },
+      {
+        "id": "gelirgider",
+        "icon": "fa-scale-balanced",
+        "name": "Gelir-Gider"
+      },
+      {
+        "id": "sablonlar",
+        "icon": "fa-layer-group",
+        "name": "Şablon Kütüphanesi"
+      }
+    ]
+  },
+  {
+    "key": "uyap",
+    "label": "UYAP Entegrasyonu",
+    "color": "t",
+    "items": [
+      {
+        "id": "uyap-dilekce",
+        "icon": "fa-paper-plane",
+        "name": "Dilekçe Gönder"
+      },
+      {
+        "id": "uyap-dosya",
+        "icon": "fa-folder-open",
+        "name": "Dosya Sorgula"
+      },
+      {
+        "id": "uyap-tebligat",
+        "icon": "fa-envelope-open-text",
+        "name": "Tebligat Takip"
+      },
+      {
+        "id": "uyap-harc",
+        "icon": "fa-coins",
+        "name": "Harç Hesapla"
+      },
+      {
+        "id": "eklenti",
+        "icon": "fa-plug",
+        "name": "Eklenti Bağlantısı"
+      }
+    ]
+  },
+  {
+    "key": "hesap",
+    "label": "Hesaplama Araçları",
+    "color": "p",
+    "items": [
+      {
+        "id": "kidem",
+        "icon": "fa-hand-holding-dollar",
+        "name": "Kıdem Tazminatı"
+      },
+      {
+        "id": "ihbar",
+        "icon": "fa-person-walking-arrow-right",
+        "name": "İhbar Tazminatı"
+      },
+      {
+        "id": "mesai",
+        "icon": "fa-clock-rotate-left",
+        "name": "Fazla Mesai"
+      },
+      {
+        "id": "izin",
+        "icon": "fa-umbrella-beach",
+        "name": "Yıllık İzin"
+      },
+      {
+        "id": "faiz",
+        "icon": "fa-percent",
+        "name": "Yasal Faiz"
+      },
+      {
+        "id": "gecikme",
+        "icon": "fa-arrow-trend-up",
+        "name": "Gecikme Faizi"
+      },
+      {
+        "id": "kira",
+        "icon": "fa-building",
+        "name": "Kira Artış Hesabı"
+      },
+      {
+        "id": "za",
+        "icon": "fa-hourglass-half",
+        "name": "Zamanaşımı Takvimi"
+      }
+    ]
+  },
+  {
+    "key": "uyelik",
+    "label": "Üyelik & Hesap",
+    "color": "g",
+    "items": [
+      {
+        "id": "plan",
+        "icon": "fa-star",
+        "name": "Planım & Abonelik"
+      },
+      {
+        "id": "faturalar",
+        "icon": "fa-file-invoice",
+        "name": "Fatura Geçmişi"
+      },
+      {
+        "id": "profil",
+        "icon": "fa-user-circle",
+        "name": "Profil Bilgileri"
+      },
+      {
+        "id": "guvenlik",
+        "icon": "fa-shield-halved",
+        "name": "Güvenlik & Şifre"
+      },
+      {
+        "id": "bildirim",
+        "icon": "fa-bell",
+        "name": "Bildirim Ayarları"
+      }
+    ]
+  }
+];

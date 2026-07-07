@@ -7,7 +7,7 @@ export default function UyapModulu() {
   return (
     <TalyaShell
       bodyUrl="/module-body.html"
-      scripts={["/module-uyap.js", "/cmdk-index.js", "/engine.js"]}
+      scripts={["/module-uyap.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
     />
   );
 }

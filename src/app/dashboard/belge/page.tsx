@@ -9,7 +9,7 @@ export default function BelgeModulu() {
   return (
     <TalyaShell
       bodyUrl="/module-body.html"
-      scripts={["/module-belge.js", "/cmdk-index.js", "/engine.js"]}
+      scripts={["/module-belge.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
     />
   );
 }

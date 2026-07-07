@@ -33,12 +33,22 @@ function initModulePage() {
 
   const nav = document.getElementById('sidebarNav');
   if (nav) {
-    nav.innerHTML = cfg.items.map(item => `
-      <div class="s-item" id="si-${item.id}" onclick="openPopup('${item.id}')">
-        <span class="ico"><i class="fa-solid ${item.icon}"></i></span>
-        ${item.name}
-        ${item.badge ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;background:var(--bg2);color:var(--t3);">${item.badge}</span>` : ''}
-      </div>`).join('');
+    const modules = window.MODULES_INDEX || [cfg];
+    nav.innerHTML = modules.map(mod => {
+      const isCurrent = mod.key === cfg.key;
+      const header = `
+        <div class="s-item" style="font-weight:600;cursor:pointer;${isCurrent ? 'color:var(--gold);' : ''}" onclick="openModule('${mod.key}')">
+          <span class="ico"><i class="fa-solid ${isCurrent ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:10px;"></i></span>
+          ${mod.label}
+        </div>`;
+      const children = isCurrent ? mod.items.map(item => `
+        <div class="s-item" id="si-${item.id}" style="padding-left:30px;" onclick="openPopup('${item.id}')">
+          <span class="ico"><i class="fa-solid ${item.icon}"></i></span>
+          ${item.name}
+          ${item.badge ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;background:var(--bg2);color:var(--t3);">${item.badge}</span>` : ''}
+        </div>`).join('') : '';
+      return header + children;
+    }).join('');
   }
 
   const params = new URLSearchParams(window.location.search);

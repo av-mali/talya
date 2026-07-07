@@ -9,7 +9,7 @@ export default function BuroModulu() {
   return (
     <TalyaShell
       bodyUrl="/module-body-detail.html"
-      scripts={["/module-buro.js", "/cmdk-index.js", "/engine.js"]}
+      scripts={["/module-buro.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
     />
   );
 }
