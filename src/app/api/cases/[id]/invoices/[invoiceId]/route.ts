@@ -14,6 +14,9 @@ export async function DELETE(
   const found = await prisma.case.findFirst({ where: { id: params.id, client: { userId } } });
   if (!found) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });
 
+  // Bu faturayla birlikte otomatik oluşmuş Gelir-Gider kaydı varsa onu da sil.
+  await prisma.transaction.deleteMany({ where: { sourceInvoiceId: params.invoiceId, userId } });
+
   await prisma.invoice.delete({ where: { id: params.invoiceId } });
   return NextResponse.json({ ok: true });
 }

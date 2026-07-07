@@ -162,14 +162,15 @@ model Note {
 // Gelir-gider takibi (büronun genel kasası — kira, personel, aidat vb.
 // giderler ve gelen tüm gelirler; müvekkil faturalarından bağımsız)
 model Transaction {
-  id          String   @id @default(cuid())
-  type        String   // "gelir" | "gider"
-  amount      Float
-  description String
-  date        DateTime @default(now())
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
+  id            String   @id @default(cuid())
+  type          String   // "gelir" | "gider"
+  amount        Float
+  description   String
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  sourceInvoiceId String? // otomatik oluşan fatura gelirleri için bağlantı
 }
 
 // Şablon kütüphanesi — sadece metin (dosya değil), sık kullanılan
