@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
 
 // Önümüzdeki 14 gün içindeki (ve geçmiş, henüz görülmemiş) duruşma/ödeme
 // tarihlerini VE süresi yaklaşan görevleri bildirim olarak döndürür —
@@ -34,20 +35,23 @@ export async function GET() {
     arabuluculuk: "Arabuluculuk", istinaf: "İstinaf", temyiz: "Temyiz",
   };
 
-  const eventNotifs = events.map((e) => {
-    const daysLeft = Math.ceil((e.dueDate.getTime() - now.getTime()) / 86400000);
+  // Aynı dosya + aynı tarihte birden fazla müvekkil varsa tek bildirimde birleştir.
+  const grouped = groupEventsByCaseAndDate(events);
+
+  const eventNotifs = grouped.map((g) => {
+    const daysLeft = Math.ceil((g.dueDate.getTime() - now.getTime()) / 86400000);
     const overdue = daysLeft < 0;
-    const label = TYPE_LABELS[e.type] || e.type;
-    const id = "ev-" + e.id;
+    const label = TYPE_LABELS[g.type] || g.type;
+    const id = "ev-" + g.combinedId;
     return {
       id,
-      type: e.type === "durusma" || e.type === "istinaf" || e.type === "temyiz" ? "sure" : "tebligat",
-      ico: e.type === "odeme" ? "fa-turkish-lira-sign" : "fa-gavel",
+      type: g.type === "durusma" || g.type === "istinaf" || g.type === "temyiz" ? "sure" : "tebligat",
+      ico: g.type === "odeme" ? "fa-turkish-lira-sign" : "fa-gavel",
       level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
       label,
-      text: `${e.case.client.name} (${e.case.title}) — ${e.title}`,
+      text: `${g.caseTitle} — ${g.clientNamesDisplay} — ${g.title}`,
       time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
-      dueDate: e.dueDate,
+      dueDate: g.dueDate,
       read: readIds.has(id),
     };
   });

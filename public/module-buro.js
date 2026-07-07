@@ -550,7 +550,7 @@ async function calOnOpen() {
   calSelectedDay = null;
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `
-    <div style="padding:22px 24px;display:flex;flex-direction:column;align-items:center;">
+    <div style="padding:22px 24px;display:flex;flex-direction:column;align-items:center;height:100%;overflow-y:auto;box-sizing:border-box;">
       <div id="cal-head" style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:18px;width:100%;max-width:560px;">
         <button onclick="calNav(-1)" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--border2);background:var(--card);color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;"><i class="fa-solid fa-chevron-left"></i></button>
         <div id="cal-month-label" style="font-family:'Instrument Serif',serif;font-size:24px;min-width:180px;text-align:center;"></div>

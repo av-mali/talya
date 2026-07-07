@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
 
 // Takvim VE ana sayfadaki "Yaklaşan Süreler" için: kullanıcının tüm
 // müvekkillerindeki duruşma/ödeme tarihleri + tarihi olan görevler.
@@ -22,13 +23,16 @@ export async function GET() {
     }),
   ]);
 
-  const eventItems = events.map((e) => ({
-    id: e.id,
-    type: e.type,
-    title: e.title,
-    dueDate: e.dueDate,
-    clientId: e.case.clientId,
-    clientName: `${e.case.client.name} — ${e.case.title}`,
+  // Aynı dosya + aynı tarihte birden fazla müvekkil varsa tek satırda birleştir.
+  const grouped = groupEventsByCaseAndDate(events);
+
+  const eventItems = grouped.map((g) => ({
+    id: g.combinedId,
+    type: g.type,
+    title: g.title,
+    dueDate: g.dueDate,
+    clientId: null,
+    clientName: `${g.clientNamesDisplay} — ${g.caseTitle}`,
   }));
 
   const taskItems = tasks.map((t) => ({

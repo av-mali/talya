@@ -287,7 +287,7 @@ async function renderDashDeadlines() {
     const upcoming = (data.events || [])
       .filter(e => new Date(e.dueDate) >= new Date(now.toDateString()))
       .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-      .slice(0, 5);
+      .slice(0, 3);
 
     if (!upcoming.length) {
       wrap.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Yaklaşan duruşma/ödeme tarihi yok.</div>`;
