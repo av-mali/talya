@@ -656,6 +656,8 @@ async function rpSelect(id) {
   const allEvents = c.cases.flatMap(cs => cs.events.map(e => ({ ...e, caseTitle: cs.title })));
   const allInvoices = c.cases.flatMap(cs => cs.invoices);
   const toplamFatura = allInvoices.reduce((s, i) => s + i.amount, 0);
+  const toplamAnlasilan = c.cases.reduce((s, cs) => s + (cs.agreedFee || 0), 0);
+  const kalanBakiye = toplamAnlasilan - toplamFatura;
   const gecmisEv = allEvents.filter(e => new Date(e.dueDate) < new Date());
   const gelecekEv = allEvents.filter(e => new Date(e.dueDate) >= new Date());
 
@@ -664,9 +666,17 @@ async function rpSelect(id) {
       <div style="font-family:'Instrument Serif',serif;font-size:20px;">${c.name}</div>
       <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">${c.phone||'—'}${c.email?(' · '+c.email):''}</div>
 
-      <div class="cr-row" style="padding:8px 0;border-bottom:1px solid var(--border);">
-        <span><i class="fa-solid fa-turkish-lira-sign" style="color:var(--gold);margin-right:6px;"></i>Anlaşılan / Faturalanan Ücret</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-weight:600;">${toplamFatura ? fmtTL(toplamFatura) : 'Belirtilmedi'}</span>
+      <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);">
+        <span><i class="fa-solid fa-handshake" style="color:var(--gold);margin-right:6px;"></i>Anlaşılan Ücret</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:600;">${toplamAnlasilan ? fmtTL(toplamAnlasilan) : 'Belirtilmedi'}</span>
+      </div>
+      <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);">
+        <span><i class="fa-solid fa-file-invoice-dollar" style="color:var(--success);margin-right:6px;"></i>Ödenen (Faturalanan)</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:600;">${toplamFatura ? fmtTL(toplamFatura) : '—'}</span>
+      </div>
+      <div class="cr-row" style="padding:6px 0;">
+        <span><i class="fa-solid fa-hourglass-half" style="color:var(--warn);margin-right:6px;"></i>Kalan Bakiye</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${toplamAnlasilan ? (kalanBakiye > 0 ? 'var(--warn)' : 'var(--success)') : 'var(--t3)'};">${toplamAnlasilan ? fmtTL(kalanBakiye) : 'Belirtilmedi'}</span>
       </div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-folder-open"></i> Dosyalar (${c.cases.length})</div>
