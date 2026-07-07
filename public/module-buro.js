@@ -357,8 +357,8 @@ async function mvOpenCase(caseId) {
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-handshake"></i> Anlaşılan Ücret</div>
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
-        <input type="text" id="mv-agreed-fee" placeholder="Anlaşılan toplam tutar (TL)" value="${cs.agreedFee ? cs.agreedFee : ''}" style="flex:1;">
-        <button class="pop-cta-btn b" style="padding:6px 12px;flex-shrink:0;" onclick="mvSaveAgreedFee('${cs.id}')"><span>Kaydet</span></button>
+        <input type="text" id="mv-agreed-fee" placeholder="Anlaşılan toplam tutar (TL)" value="${cs.agreedFee ? cs.agreedFee : ''}" style="flex:1;min-width:0;">
+        <button class="pop-cta-btn b" style="width:auto;padding:6px 12px;flex-shrink:0;" onclick="mvSaveAgreedFee('${cs.id}')"><span>Kaydet</span></button>
       </div>
       ${cs.agreedFee ? (() => {
         const invoicedTotal = cs.invoices.reduce((s, i) => s + i.amount, 0);
