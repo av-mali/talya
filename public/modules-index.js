@@ -22,11 +22,6 @@ window.MODULES_INDEX = [
         "name": "Dosya Analizi"
       },
       {
-        "id": "sozlesme",
-        "icon": "fa-file-signature",
-        "name": "Sözleşme İnceleme"
-      },
-      {
         "id": "mevzuat",
         "icon": "fa-book-open-reader",
         "name": "Mevzuat Arama"
@@ -35,11 +30,6 @@ window.MODULES_INDEX = [
         "id": "sablon",
         "icon": "fa-layer-group",
         "name": "Şablon Kütüphanesi"
-      },
-      {
-        "id": "risk",
-        "icon": "fa-scale-balanced",
-        "name": "Risk Analizi"
       },
       {
         "id": "durusma",

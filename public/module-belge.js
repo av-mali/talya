@@ -16,10 +16,8 @@ window.CURRENT_MODULE = {
     {"id": "wizard", "icon": "fa-scroll", "name": "Dilekçe Sihirbazı"},
     {"id": "emsal", "icon": "fa-magnifying-glass-chart", "name": "Emsal Karar Analizi"},
     {"id": "dosya", "icon": "fa-file-shield", "name": "Dosya Analizi"},
-    {"id": "sozlesme", "icon": "fa-file-signature", "name": "Sözleşme İnceleme"},
     {"id": "mevzuat", "icon": "fa-book-open-reader", "name": "Mevzuat Arama"},
     {"id": "sablon", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"},
-    {"id": "risk", "icon": "fa-scale-balanced", "name": "Risk Analizi"},
     {"id": "durusma", "icon": "fa-timeline", "name": "Duruşma Hazırlık"}
   ],
   popups: {
@@ -57,14 +55,6 @@ window.CURRENT_MODULE = {
       onOpen: () => { document.getElementById('popBody').innerHTML = buildAnalyzeWidgetHtml('da', 'Bu belgeyi özetle, kararı/kritik süreleri çıkar…'); },
       prompt: () => ''
     },
-    sozlesme: {
-      badge: 'g', badgeText: 'TBK · Aynı motor (Dosya Analizi)', titleHtml: 'Sözleşme <em class="g">İnceleme</em>',
-      desc: 'Sözleşmeyi yükleyin ya da yapıştırın; riskli maddeler tespit edilsin. Hiçbir dosya saklanmaz.',
-      btnClass: 'g', btnIco: 'fa-shield-halved', btnLbl: '', hideCta: true,
-      body: '',
-      onOpen: () => { document.getElementById('popBody').innerHTML = buildAnalyzeWidgetHtml('sz', 'Riskli/eksik/belirsiz maddeleri tespit et, önerilerini yaz…'); },
-      prompt: () => ''
-    },
     mevzuat: {
       badge: 'g', badgeText: 'Mevzuat.gov.tr · Resmi Gazete', titleHtml: 'Mevzuat <em class="g">Arama</em>',
       desc: 'Kanun, yönetmelik ve tebliğlerde anlık arama yapın.',
@@ -81,15 +71,6 @@ window.CURRENT_MODULE = {
       body: `<div id="tpl-box">Yükleniyor…</div>`,
       onOpen: () => tplOnOpen(),
       prompt: () => ''
-    },
-    risk: {
-      badge: 'g', badgeText: 'Hakim Perspektifi · Kazanma Olasılığı', titleHtml: 'Risk <em class="g">Analizi</em>',
-      desc: 'Dava özetini girin; güçlü/zayıf yönler değerlendirilsin.',
-      btnClass: 'g', btnIco: 'fa-chart-pie', btnLbl: 'Risk Skoru Hesapla',
-      body: `<div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Dava Türü</div><div class="sw"><select id="f-risktur"><option>İş Hukuku</option><option>Aile Hukuku</option><option>Ticaret</option><option>Ceza</option><option>İdare</option></select></div></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Dava Özeti</div><textarea id="f-riskoz" rows="4" placeholder="Davanın özünü ve delilleri aktarın…"></textarea></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-user-tie"></i> Müvekkilin Rolü</div><div class="sw"><select id="f-riskrol"><option>Davacı</option><option>Davalı</option></select></div></div>`,
-      prompt: () => `${document.getElementById('f-risktur')?.value || ''} davasında ${document.getElementById('f-riskrol')?.value || ''} için risk analizi yap. Güçlü/zayıf yönler, kazanma olasılığı ve strateji önerisi:\n\n${document.getElementById('f-riskoz')?.value || ''}`
     },
     durusma: {
       badge: 'g', badgeText: 'Celse Hazırlığı', titleHtml: 'Duruşma <em class="g">Hazırlık</em>',
@@ -112,13 +93,33 @@ function buildAnalyzeWidgetHtml(prefix, questionPlaceholder) {
     <div class="fg"><div class="fl"><i class="fa-solid fa-file-arrow-up"></i> Dosya Yükle (PDF, JPG, PNG, DOCX, UDF)</div><input type="file" id="${prefix}-file" accept=".pdf,.jpg,.jpeg,.png,.docx,.udf"></div>
     <div style="text-align:center;font-size:11px;color:var(--t3);margin:8px 0;">— veya —</div>
     <div class="fg"><div class="fl"><i class="fa-solid fa-paste"></i> Metni Yapıştır</div><textarea id="${prefix}-text" rows="5" placeholder="Belge metnini buraya yapıştırabilirsiniz…"></textarea></div>
-    <div class="fg"><div class="fl"><i class="fa-solid fa-comment-dots"></i> Sorunuz / Talimatınız</div><textarea id="${prefix}-question" rows="2" placeholder="${questionPlaceholder}"></textarea></div>
+    <div class="fg">
+      <div class="fl"><i class="fa-solid fa-comment-dots"></i> Sorunuz / Talimatınız</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+        <span class="qp" style="cursor:pointer;" onclick="fillQuickInstruction('${prefix}','risk')"><i class="fa-solid fa-scale-balanced"></i> Risk Analizi Yap</span>
+        <span class="qp" style="cursor:pointer;" onclick="fillQuickInstruction('${prefix}','sozlesme')"><i class="fa-solid fa-file-signature"></i> Sözleşme İncele</span>
+      </div>
+      <textarea id="${prefix}-question" rows="2" placeholder="${questionPlaceholder}"></textarea>
+    </div>
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);margin-bottom:10px;">
       <input type="checkbox" id="${prefix}-udf"> Cevabı UDF/Word/PDF olarak da indirebilir hale getir
     </label>
     <button class="pop-cta-btn g" style="width:100%;" onclick="araclAnalyzeSubmit('${prefix}')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Analiz Et</span></button>
     <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Gizlilik</div><p>Yüklediğiniz dosya hiçbir yerde saklanmaz — anlık olarak işlenir, cevap üretilir üretilmez bellekten silinir. Sonuç sağdaki sohbet panelinde görünür.</p></div>
   `;
+}
+
+const QUICK_INSTRUCTIONS = {
+  risk: 'Bu belgeyi/dosyayı hukuki açıdan değerlendir: güçlü yönler, zayıf yönler/riskler, varsa emsal içtihat eğilimi ve önerilen stratejiyi ayrı başlıklar halinde yaz. Sonunda genel değerlendirmeni "Düşük risk / Orta risk / Yüksek risk" şeklinde kategorik olarak belirt — net bir yüzde veya kesin bir kazanma olasılığı verme, hukuki sonuçlar kesin tahmin edilemez.',
+  sozlesme: 'Bu sözleşmeyi TBK açısından incele: riskli, eksik veya belirsiz maddeleri tek tek tespit et, her biri için ne değiştirilmesi/eklenmesi gerektiğini öner. Taraflar arasındaki dengesizlikleri (varsa) ayrıca belirt.',
+};
+
+function fillQuickInstruction(prefix, type) {
+  const el = document.getElementById(prefix + '-question');
+  if (el && QUICK_INSTRUCTIONS[type]) {
+    el.value = QUICK_INSTRUCTIONS[type];
+    el.focus();
+  }
 }
 
 async function araclAnalyzeSubmit(prefix) {
