@@ -208,6 +208,18 @@ async function mvSaveNew() {
   const phone = document.getElementById('mv-n-phone').value;
   const email = document.getElementById('mv-n-email').value;
   const notes = document.getElementById('mv-n-note').value;
+
+  // Kaydetmeden önce aynı isimde zaten kayıtlı bir müvekkil var mı kontrol et.
+  try {
+    const checkRes = await fetch('/api/clients?q=' + encodeURIComponent(name));
+    const checkData = await checkRes.json();
+    const existing = (checkData.clients || []).find(c => c.name.trim().toLowerCase() === name.toLowerCase());
+    if (existing) {
+      const devam = confirm(`"${name}" isminde zaten kayıtlı bir müvekkil var. Yine de yeni bir kayıt olarak eklemek istiyor musunuz?`);
+      if (!devam) return;
+    }
+  } catch (e) { /* kontrol başarısız olursa kaydetmeye devam et */ }
+
   const res = await fetch('/api/clients', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, phone, email, notes })
