@@ -90,7 +90,7 @@ window.CURRENT_MODULE = {
 // ══════════════════════════════════════════════════════
 function buildAnalyzeWidgetHtml(prefix, questionPlaceholder) {
   return `
-    <div class="fg"><div class="fl"><i class="fa-solid fa-file-arrow-up"></i> Dosya Yükle (PDF, JPG, PNG, DOCX, UDF)</div><input type="file" id="${prefix}-file" accept=".pdf,.jpg,.jpeg,.png,.docx,.udf"></div>
+    <div class="fg"><div class="fl"><i class="fa-solid fa-file-arrow-up"></i> Dosya Yükle (PDF, Görsel, DOCX, TXT/HTML/XML/CSV, UDF)</div><input type="file" id="${prefix}-file" accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.docx,.txt,.html,.htm,.xml,.csv,.udf"></div>
     <div style="text-align:center;font-size:11px;color:var(--t3);margin:8px 0;">— veya —</div>
     <div class="fg"><div class="fl"><i class="fa-solid fa-paste"></i> Metni Yapıştır</div><textarea id="${prefix}-text" rows="5" placeholder="Belge metnini buraya yapıştırabilirsiniz…"></textarea></div>
     <div class="fg">

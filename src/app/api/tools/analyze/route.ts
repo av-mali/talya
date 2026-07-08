@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { readUdfText, generateUdf } from "@/lib/udf";
 import { generateDocx, generatePdf } from "@/lib/docExport";
 import mammoth from "mammoth";
+import sharp from "sharp";
 
 // Bu uç nokta Belge & Analiz modülündeki "Dosya Analizi", "Sözleşme
 // İnceleme" ve "Dilekçe Sihirbazı" araçlarını besler. Google Gemini'nin
@@ -64,6 +65,19 @@ export async function POST(req: Request) {
         // metne çevirmeye gerek yok, ham veriyi olduğu gibi gönderiyoruz.
         const mimeType = ext === "pdf" ? "application/pdf" : `image/${ext === "jpg" ? "jpeg" : ext}`;
         parts.push({ inline_data: { mime_type: mimeType, data: buffer.toString("base64") } });
+      } else if (["bmp", "tiff", "tif"].includes(ext)) {
+        // Gemini bu formatları doğrudan kabul etmiyor — önce PNG'ye çeviriyoruz.
+        try {
+          const pngBuffer = await sharp(buffer).png().toBuffer();
+          parts.push({ inline_data: { mime_type: "image/png", data: pngBuffer.toString("base64") } });
+        } catch (e) {
+          return NextResponse.json(
+            { error: `${ext.toUpperCase()} dosyası okunamadı/dönüştürülemedi. Dosya bozuk olabilir ya da desteklenmeyen bir sıkıştırma kullanıyor olabilir.` },
+            { status: 400 }
+          );
+        }
+      } else if (["txt", "html", "htm", "xml", "csv"].includes(ext)) {
+        parts.push({ text: "BELGE İÇERİĞİ:\n" + buffer.toString("utf-8") });
       } else if (ext === "docx") {
         const result = await mammoth.extractRawText({ buffer });
         parts.push({ text: "BELGE İÇERİĞİ:\n" + result.value });
@@ -72,7 +86,7 @@ export async function POST(req: Request) {
         parts.push({ text: "BELGE İÇERİĞİ (UYAP/UDF):\n" + text });
       } else {
         return NextResponse.json(
-          { error: "Desteklenmeyen dosya formatı. PDF, JPG, PNG, DOCX veya UDF yükleyin." },
+          { error: "Desteklenmeyen dosya formatı. PDF, JPG, PNG, WEBP, BMP, TIFF, DOCX, TXT, HTML, XML, CSV veya UDF yükleyin." },
           { status: 400 }
         );
       }
