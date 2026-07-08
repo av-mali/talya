@@ -15,7 +15,7 @@ import mammoth from "mammoth";
 const SYSTEM_HINTS: Record<string, string> = {
   dosya: "Sen Türk hukuku konusunda uzman bir asistansın. Sana verilen belgeyi dikkatle incele ve kullanıcının sorusunu, somut ve hukuki referanslarla (varsa ilgili kanun maddeleri) destekleyerek cevapla.",
   sozlesme: "Sen bir sözleşme inceleme uzmanısın. Sana verilen sözleşmeyi dikkatle incele; riskli/eksik/belirsiz maddeleri, tarafların lehine/aleyhine olan noktaları vurgula. Kullanıcının sorusuna bu çerçevede cevap ver.",
-  dilekce: "Sen Türk hukuku konusunda uzman bir avukat asistanısın. Kullanıcının verdiği bilgilere göre, Hukuk Muhakemeleri Kanunu'na (HMK) uygun, resmi dilde, doğru başlıklandırılmış bir dilekçe taslağı yaz. Taslağı doğrudan dilekçe metni olarak ver, ekstra açıklama ekleme.",
+  dilekce: "Sen Türk hukuku konusunda uzman bir avukat asistanısın. Kullanıcının verdiği dava türü, olay örgüsü ve varsa özel taleplere göre, Hukuk Muhakemeleri Kanunu'na (HMK) uygun, resmi dilde, doğru başlıklandırılmış bir dilekçe taslağı yaz. Olay örgüsünde belirtilen somut detayları (isim, tarih, tutar, olay akışı ne varsa) MUTLAKA dilekçenin 'Açıklamalar' kısmına işle — genel/soyut bir metin yazma. Taslağı doğrudan dilekçe metni olarak ver, ekstra açıklama ekleme.",
 };
 
 function getExt(filename: string) {

@@ -175,7 +175,7 @@ async function dilekceSihirbaziSubmit() {
     return;
   }
 
-  appendMsg('user', `<strong>Dilekçe Sihirbazı</strong> — ${davaTuru.replace(/</g, '&lt;')}`);
+  appendMsg('user', `<strong>Dilekçe Sihirbazı</strong> — ${davaTuru.replace(/</g, '&lt;')}<br><span style="opacity:.85;white-space:pre-wrap;">${olay.replace(/</g, '&lt;')}${talep ? '<br><em>Özel talep: ' + talep.replace(/</g, '&lt;') + '</em>' : ''}</span>`);
   showTyping();
 
   const instruction = `Dava Türü: ${davaTuru}\n\nOlay Örgüsü:\n${olay}\n\nÖzel Talepler: ${talep || 'Belirtilmemiş'}`;
