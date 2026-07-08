@@ -32,7 +32,7 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Olay Örgüsü</div><textarea id="ds-olay" rows="5" placeholder="Müvekkilin yaşadığı olayı yazın…"></textarea></div>
         <div class="fg"><div class="fl"><i class="fa-solid fa-list-check"></i> Özel Talepler <span class="opt">(opsiyonel)</span></div><input type="text" id="ds-talep" placeholder="İhtiyati tedbir, faiz, vekâlet ücreti…"></div>
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);margin-bottom:10px;">
-          <input type="checkbox" id="ds-udf" checked> Taslağı UDF/Word olarak da indirebilir hale getir
+          <input type="checkbox" id="ds-udf" checked> Taslağı UDF/Word/PDF olarak da indirebilir hale getir
         </label>
         <button class="pop-cta-btn g" style="width:100%;" onclick="dilekceSihirbaziSubmit()"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dilekçeyi Taslakla</span></button>
         <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Not</div><p>Sonuç sağdaki sohbet panelinde görünür.</p></div>
@@ -114,7 +114,7 @@ function buildAnalyzeWidgetHtml(prefix, questionPlaceholder) {
     <div class="fg"><div class="fl"><i class="fa-solid fa-paste"></i> Metni Yapıştır</div><textarea id="${prefix}-text" rows="5" placeholder="Belge metnini buraya yapıştırabilirsiniz…"></textarea></div>
     <div class="fg"><div class="fl"><i class="fa-solid fa-comment-dots"></i> Sorunuz / Talimatınız</div><textarea id="${prefix}-question" rows="2" placeholder="${questionPlaceholder}"></textarea></div>
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);margin-bottom:10px;">
-      <input type="checkbox" id="${prefix}-udf"> Cevabı UDF/Word olarak da indirebilir hale getir
+      <input type="checkbox" id="${prefix}-udf"> Cevabı UDF/Word/PDF olarak da indirebilir hale getir
     </label>
     <button class="pop-cta-btn g" style="width:100%;" onclick="araclAnalyzeSubmit('${prefix}')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Analiz Et</span></button>
     <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Gizlilik</div><p>Yüklediğiniz dosya hiçbir yerde saklanmaz — anlık olarak işlenir, cevap üretilir üretilmez bellekten silinir. Sonuç sağdaki sohbet panelinde görünür.</p></div>
@@ -154,7 +154,7 @@ async function araclAnalyzeSubmit(prefix) {
       appendMsg('ai', `<span style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i> ${data.error || 'Hata oluştu.'}</span>`);
       return;
     }
-    appendMsg('ai', fmtAI(data.analysis || ''), data.udfBase64 || null, data.docxBase64 || null);
+    appendMsg('ai', fmtAI(data.analysis || ''), data.udfBase64 || null, data.docxBase64 || null, data.pdfBase64 || null);
   } catch (e) {
     removeTyping();
     appendMsg('ai', '<span style="color:var(--danger)">Bağlantı hatası.</span>');
@@ -193,7 +193,7 @@ async function dilekceSihirbaziSubmit() {
       appendMsg('ai', `<span style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i> ${data.error || 'Hata oluştu.'}</span>`);
       return;
     }
-    appendMsg('ai', fmtAI(data.analysis || ''), data.udfBase64 || null, data.docxBase64 || null);
+    appendMsg('ai', fmtAI(data.analysis || ''), data.udfBase64 || null, data.docxBase64 || null, data.pdfBase64 || null);
   } catch (e) {
     removeTyping();
     appendMsg('ai', '<span style="color:var(--danger)">Bağlantı hatası.</span>');

@@ -4,6 +4,11 @@
 // karakterler (ç, ğ, ı, ö, ş, ü) sorunsuz görünür.
 
 import { Document, Packer, Paragraph, TextRun } from "docx";
+import { PDFDocument, rgb } from "pdf-lib";
+// @ts-ignore - @pdf-lib/fontkit için resmi TypeScript tip tanımı yok
+import fontkit from "@pdf-lib/fontkit";
+import fs from "fs";
+import path from "path";
 
 export async function generateDocx(text: string): Promise<Buffer> {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
@@ -32,4 +37,70 @@ export async function generateDocx(text: string): Promise<Buffer> {
 
   const buf = await Packer.toBuffer(doc);
   return buf;
+}
+
+// PDF, Word'ün aksine yazı tipini KENDİ İÇİNE GÖMMEK zorundadır — bu yüzden
+// Türkçe karakterleri (ç, ğ, ı, İ, ö, ş, ü) destekleyen gerçek bir font
+// dosyası (Noto Serif) projeye eklenip burada kullanılıyor.
+let cachedFontBytes: Buffer | null = null;
+function loadTurkishFont(): Buffer {
+  if (!cachedFontBytes) {
+    const fontPath = path.join(process.cwd(), "src/assets/fonts/NotoSerif-Regular.ttf");
+    cachedFontBytes = fs.readFileSync(fontPath);
+  }
+  return cachedFontBytes;
+}
+
+export async function generatePdf(text: string): Promise<Buffer> {
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit as any);
+
+  const fontBytes = loadTurkishFont();
+  const font = await pdfDoc.embedFont(fontBytes);
+
+  const fontSize = 11;
+  const margin = 50;
+  let page = pdfDoc.addPage();
+  let { width, height } = page.getSize();
+  let y = height - margin;
+  const lineHeight = fontSize * 1.4;
+  const maxWidth = width - margin * 2;
+
+  function wrapLine(line: string): string[] {
+    if (!line) return [""];
+    const words = line.split(" ");
+    const wrapped: string[] = [];
+    let current = "";
+    for (const w of words) {
+      const test = current ? current + " " + w : w;
+      if (font.widthOfTextAtSize(test, fontSize) > maxWidth && current) {
+        wrapped.push(current);
+        current = w;
+      } else {
+        current = test;
+      }
+    }
+    if (current) wrapped.push(current);
+    return wrapped;
+  }
+
+  const rawLines = text.replace(/\r\n/g, "\n").split("\n");
+  for (const rawLine of rawLines) {
+    // "**kalın**" işaretlerini PDF'te göstermeden temizle (ayrı bold font
+    // gömmüyoruz şimdilik — sade ama doğru bir çıktı önceliğimiz).
+    const cleanLine = rawLine.replace(/\*\*(.+?)\*\*/g, "$1");
+    const wrapped = wrapLine(cleanLine);
+    for (const line of wrapped) {
+      if (y < margin) {
+        page = pdfDoc.addPage();
+        ({ width, height } = page.getSize());
+        y = height - margin;
+      }
+      page.drawText(line, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
+      y -= lineHeight;
+    }
+  }
+
+  const bytes = await pdfDoc.save();
+  return Buffer.from(bytes);
 }

@@ -190,7 +190,7 @@ async function improvePrompt() {
 }
 function ckEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }
 
-function appendMsg(role, text, udfBase64, docxBase64) {
+function appendMsg(role, text, udfBase64, docxBase64, pdfBase64) {
   const empty = document.getElementById('chatEmpty');
   if (empty) empty.style.display = 'none';
   const msgs = document.getElementById('chatMsgs');
@@ -207,11 +207,15 @@ function appendMsg(role, text, udfBase64, docxBase64) {
     if (docxBase64) {
       actions += `<span class="msg-act-btn" onclick="downloadDocxFromBubble(this)"><i class="fa-solid fa-file-word"></i> Word İndir</span>`;
     }
+    if (pdfBase64) {
+      actions += `<span class="msg-act-btn" onclick="downloadPdfFromBubble(this)"><i class="fa-solid fa-file-pdf"></i> PDF İndir</span>`;
+    }
     actions += `</div>`;
   }
   div.innerHTML = `<div class="msg-av"><i class="fa-solid ${ico}"></i></div><div class="msg-bbl">${text}${actions}</div>`;
   if (udfBase64) div.dataset.udf = udfBase64;
   if (docxBase64) div.dataset.docx = docxBase64;
+  if (pdfBase64) div.dataset.pdf = pdfBase64;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
@@ -244,6 +248,18 @@ function downloadDocxFromBubble(btn) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'belge.docx';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function downloadPdfFromBubble(btn) {
+  const msgDiv = btn.closest('.msg');
+  const b64 = msgDiv?.dataset.pdf;
+  if (!b64) return;
+  const blob = base64ToBlob(b64, 'application/pdf');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'belge.pdf';
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
