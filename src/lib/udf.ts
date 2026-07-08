@@ -27,13 +27,18 @@ export async function readUdfText(buffer: Buffer): Promise<string> {
 }
 
 export async function generateUdf(text: string): Promise<Buffer> {
-  // CDATA içeriğini, orijinal örnekteki gibi başında/sonunda birer
-  // satır boşluğuyla oluşturuyoruz — offset hesaplarını hep bu TAM
-  // metne göre yapıyoruz ki paragraf uzunlukları toplamı, gerçek
-  // CDATA uzunluğuyla birebir tutsun.
+  // Gerçek, minimal bir örnek UDF dosyası (elle test edilmiş, sorunsuz
+  // açılan) incelenerek şu kritik eksikler bulundu ve düzeltildi:
+  //  1) <styles> bölümü hiç yoktu — <elements resolver="hvl-default">
+  //     bu isimde bir stile referans veriyor ama tanımı olmayınca
+  //     görüntüleyici muhtemelen çöküyordu. Şimdi ekleniyor.
+  //  2) <paragraph> etiketine gereksiz bir Alignment="0" eklemiştik;
+  //     minimal örnekte hiç Alignment yok — kaldırıldı.
+  //  3) Baştaki fazladan "\n" kaldırıldı (gerekli değilmiş).
+
   // CDATA içinde "]]>" dizisi geçerse XML bozulur — standart XML kaçış
   // tekniğiyle bunu güvenli hale getiriyoruz.
-  const cdataContent = ("\n" + text.replace(/\r\n/g, "\n") + "\n").replace(/]]>/g, "]]]]><![CDATA[>");
+  const cdataContent = (text.replace(/\r\n/g, "\n") + "\n").replace(/]]>/g, "]]]]><![CDATA[>");
   const lines = cdataContent.split("\n");
 
   let offset = 0;
@@ -43,10 +48,9 @@ export async function generateUdf(text: string): Promise<Buffer> {
     const isLast = i === lines.length - 1;
     const lengthWithBreak = line.length + (isLast ? 0 : 1);
     // Son satır tamamen boşsa (sondaki \n'den sonra kalan iz), uzunluğu 0
-    // olan bir paragraf oluşturmuyoruz — bazı UDF görüntüleyicileri bunu
-    // kaldıramayıp dosyayı açamıyor.
+    // olan bir paragraf oluşturmuyoruz.
     if (lengthWithBreak > 0) {
-      elementsXml += `<paragraph Alignment="0"><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
+      elementsXml += `<paragraph><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
     }
     offset += lengthWithBreak;
   }
@@ -56,11 +60,12 @@ export async function generateUdf(text: string): Promise<Buffer> {
 <template format_id="1.8" >
 <content><![CDATA[${cdataContent}]]></content><properties><pageFormat mediaSizeName="1" leftMargin="42.51968479156494" rightMargin="42.51968479156494" topMargin="42.51968479156494" bottomMargin="42.51968479156494" paperOrientation="1" headerFOffset="20.0" footerFOffset="20.0" /></properties>
 <elements resolver="hvl-default" >${elementsXml}</elements>
+<styles><style name="default" description="Geçerli" family="Times New Roman" size="12" bold="false" italic="false" /><style name="hvl-default" family="Times New Roman" size="12" description="Gövde" /></styles>
 </template>
 `;
 
   const zip = new JSZip();
   zip.file("content.xml", xml);
-  const buf = await zip.generateAsync({ type: "nodebuffer" });
+  const buf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
   return buf;
 }
