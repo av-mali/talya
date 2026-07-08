@@ -1,87 +1,312 @@
 // Bu dosya SADECE 'Belge & Analiz' modülüne aittir.
 // Bu modülü düzenlemek diğer modülleri (buro, uyap, hesap, uyelik) etkilemez.
+//
+// NOT: "Dilekçe Sihirbazı", "Dosya Analizi", "Sözleşme İnceleme" ve
+// "Şablon Kütüphanesi" artık kendi içinde çalışan (AI sohbet paneline
+// göndermeyen) araçlar. "Emsal Karar Analizi", "Mevzuat Arama", "Risk
+// Analizi" ve "Duruşma Hazırlık" ise eskisi gibi sohbet paneline soru
+// gönderiyor — bu modülde sohbet paneli hâlâ var, sadece bazı araçlar
+// onu kullanmıyor.
 window.CURRENT_MODULE = {
   key: 'belge',
   label: 'Belge & Analiz',
   nameHtml: `Belge &amp; <em class="g">Analiz</em>`,
   color: 'g',
-  items: [{"id": "wizard", "icon": "fa-scroll", "name": "Dilekçe Sihirbazı"}, {"id": "emsal", "icon": "fa-magnifying-glass-chart", "name": "Emsal Karar Analizi"}, {"id": "dosya", "icon": "fa-file-shield", "name": "Dosya Analizi"}, {"id": "sozlesme", "icon": "fa-file-signature", "name": "Sözleşme İnceleme"}, {"id": "mevzuat", "icon": "fa-book-open-reader", "name": "Mevzuat Arama"}, {"id": "sablon", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"}, {"id": "risk", "icon": "fa-scale-balanced", "name": "Risk Analizi"}, {"id": "durusma", "icon": "fa-timeline", "name": "Duruşma Hazırlık"}],
+  items: [
+    {"id": "wizard", "icon": "fa-scroll", "name": "Dilekçe Sihirbazı"},
+    {"id": "emsal", "icon": "fa-magnifying-glass-chart", "name": "Emsal Karar Analizi"},
+    {"id": "dosya", "icon": "fa-file-shield", "name": "Dosya Analizi"},
+    {"id": "sozlesme", "icon": "fa-file-signature", "name": "Sözleşme İnceleme"},
+    {"id": "mevzuat", "icon": "fa-book-open-reader", "name": "Mevzuat Arama"},
+    {"id": "sablon", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"},
+    {"id": "risk", "icon": "fa-scale-balanced", "name": "Risk Analizi"},
+    {"id": "durusma", "icon": "fa-timeline", "name": "Duruşma Hazırlık"}
+  ],
   popups: {
-  wizard:{
-    badge:'g', badgeText:'HMK Md.119 · Dava Dilekçesi', titleHtml:'Dilekçe <em class="g">Sihirbazı</em>',
-    desc:'Olay özetini girin; yapay zeka HMK uyumlu taslağı oluştursun.',
-    btnClass:'g', btnIco:'fa-gears', btnLbl:'Dilekçeyi Taslakla',
-    body:`
-      <div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Dava Türü</div><div class="sw"><select id="f-dava"><option>İş Hukuku — İşe İade, Kıdem, İhbar</option><option>Aile Hukuku — Boşanma, Velayet, Nafaka</option><option>Ticaret — Alacak, İtirazın İptali</option><option>Ceza — Şikayet / Savunma</option><option>İdare — İptal, Tam Yargı</option></select></div></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Olay Örgüsü</div><textarea id="f-olay" rows="5" placeholder="Müvekkilin yaşadığı olayı yazın…"></textarea></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-list-check"></i> Özel Talepler <span class="opt">(opsiyonel)</span></div><input type="text" id="f-talep" placeholder="İhtiyati tedbir, faiz, vekâlet ücreti…"></div>
-      <div class="cl"><div class="cl-head"><i class="fa-solid fa-shield-check"></i> Otomatik kontrol</div>
-        <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>HMK Madde 119 uyumluluğu</span></div>
-        <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Görevli mahkeme tespiti</span></div>
-        <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Zamanaşımı risk taraması</span></div>
-      </div>`,
-    prompt: ()=>`${document.getElementById('f-dava')?.value||''} davası için HMK uyumlu dilekçe taslağı hazırla.\n\nOlay örgüsü:\n${document.getElementById('f-olay')?.value||''}\n\nÖzel talepler: ${document.getElementById('f-talep')?.value||'Belirtilmemiş'}`
-  },
-  emsal:{
-    badge:'g', badgeText:'Yargıtay · BAM Kararları', titleHtml:'Emsal Karar <em class="g">Analizi</em>',
-    desc:'Uyuşmazlığı tanımlayın; benzer davalardaki kararlar AI ile analiz edilsin.',
-    btnClass:'g', btnIco:'fa-magnifying-glass', btnLbl:'Emsal Karar Ara',
-    body:`
-      <div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Uyuşmazlık Konusu</div><div class="sw"><select id="f-konu"><option>İş Hukuku</option><option>Aile Hukuku</option><option>Ticaret Hukuku</option><option>Ceza Hukuku</option><option>İdare Hukuku</option></select></div></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Hukuki Mesele</div><textarea id="f-mesele" rows="4" placeholder="Emsal aranan hukuki meseleyi özetleyin…"></textarea></div>`,
-    prompt: ()=>`${document.getElementById('f-konu')?.value||''} alanında şu konuda Yargıtay ve BAM emsal kararlarını ara ve analiz et:\n${document.getElementById('f-mesele')?.value||''}`
-  },
-  dosya:{
-    badge:'g', badgeText:'PDF · UDF · TIFF', titleHtml:'Dosya <em class="g">Analizi</em>',
-    desc:'Dava dosyasını tanımlayın; yapay zeka olayı, kararları ve süreleri çıkarsın.',
-    btnClass:'g', btnIco:'fa-file-magnifying-glass', btnLbl:'Dosyayı Analiz Et',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-magnifying-glass"></i> Analiz Derinliği</div><div class="sw"><select id="f-derinlik"><option>Tam analiz</option><option>Hızlı özet</option><option>Sadece süreler</option></select></div></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Dosya Özeti / Notlar</div><textarea id="f-dosyanot" rows="4" placeholder="Dosya hakkında bilinen bilgileri yazın…"></textarea></div>`,
-    prompt: ()=>`Dava dosyası analizi yap. Analiz derinliği: ${document.getElementById('f-derinlik')?.value||''}. Bilgiler:\n${document.getElementById('f-dosyanot')?.value||''}\n\nOlayın özeti, kararlar, kritik süreler ve taraflar hakkında rapor ver.`
-  },
-  sozlesme:{
-    badge:'g', badgeText:'TBK · Borçlar Kanunu', titleHtml:'Sözleşme <em class="g">İnceleme</em>',
-    desc:'Sözleşme metnini yapıştırın; riskli maddeler tespit edilsin.',
-    btnClass:'g', btnIco:'fa-shield-halved', btnLbl:'Risk Analizi Başlat',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-file-signature"></i> Sözleşme Türü</div><div class="sw"><select id="f-soztur"><option>İş Sözleşmesi</option><option>Kira Sözleşmesi</option><option>Satış Sözleşmesi</option><option>Hizmet Sözleşmesi</option><option>Diğer</option></select></div></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-paste"></i> Sözleşme Metni</div><textarea id="f-sozmetin" rows="6" placeholder="Sözleşme metnini buraya yapıştırın…"></textarea></div>`,
-    prompt: ()=>`Aşağıdaki ${document.getElementById('f-soztur')?.value||''} sözleşmesini incele. Riskli maddeleri, hukuki açıkları ve önerilen değişiklikleri belirt:\n\n${document.getElementById('f-sozmetin')?.value||''}`
-  },
-  mevzuat:{
-    badge:'g', badgeText:'Mevzuat.gov.tr · Resmi Gazete', titleHtml:'Mevzuat <em class="g">Arama</em>',
-    desc:'Kanun, yönetmelik ve tebliğlerde anlık arama yapın.',
-    btnClass:'g', btnIco:'fa-book-open-reader', btnLbl:'Mevzuatta Ara',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-book"></i> Tür</div><div class="sw"><select id="f-mevtur"><option>Kanun</option><option>Yönetmelik</option><option>Tebliğ</option><option>C.B. Kararnamesi</option></select></div></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-magnifying-glass"></i> Arama Terimi</div><input type="text" id="f-mevara" placeholder="Kıdem tazminatı, velayet, kira artışı…"></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-hashtag"></i> Kanun No <span class="opt">(opsiyonel)</span></div><input type="text" id="f-mevno" placeholder="4857, 6098…"></div>`,
-    prompt: ()=>`"${document.getElementById('f-mevara')?.value||''}" konusunda ${document.getElementById('f-mevtur')?.value||''} ara. İlgili maddeleri düz dilde özetle, değişiklik geçmişini belirt. ${document.getElementById('f-mevno')?.value?'Kanun No: '+document.getElementById('f-mevno').value:''}`
-  },
-  sablon:{
-    badge:'g', badgeText:'200+ Hazır Şablon', titleHtml:'Şablon <em class="g">Kütüphanesi</em>',
-    desc:'Hazır şablon seçin, müvekkil bilgilerini girin.',
-    btnClass:'g', btnIco:'fa-file-circle-plus', btnLbl:'Şablonu Oluştur',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-layer-group"></i> Kategori</div><div class="sw"><select id="f-sabkat"><option>İhtarname / İhbarname</option><option>Vekaletname</option><option>Feragat Beyanı</option><option>Arabuluculuk Tutanağı</option><option>İcra İtirazı</option></select></div></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-user"></i> Müvekkil Adı</div><input type="text" id="f-sabmv" placeholder="Ad Soyad…"></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-note-sticky"></i> Ek Bilgi <span class="opt">(opsiyonel)</span></div><input type="text" id="f-sabek" placeholder="Özel koşullar, tarihler…"></div>`,
-    prompt: ()=>`${document.getElementById('f-sabkat')?.value||''} şablonu oluştur. Müvekkil: ${document.getElementById('f-sabmv')?.value||'[Müvekkil Adı]'}. Ek bilgi: ${document.getElementById('f-sabek')?.value||'Yok'}`
-  },
-  risk:{
-    badge:'g', badgeText:'Hakim Perspektifi · Kazanma Olasılığı', titleHtml:'Risk <em class="g">Analizi</em>',
-    desc:'Dava özetini girin; güçlü/zayıf yönler değerlendirilsin.',
-    btnClass:'g', btnIco:'fa-chart-pie', btnLbl:'Risk Skoru Hesapla',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Dava Türü</div><div class="sw"><select id="f-risktur"><option>İş Hukuku</option><option>Aile Hukuku</option><option>Ticaret</option><option>Ceza</option><option>İdare</option></select></div></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Dava Özeti</div><textarea id="f-riskoz" rows="4" placeholder="Davanın özünü ve delilleri aktarın…"></textarea></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-user-tie"></i> Müvekkilin Rolü</div><div class="sw"><select id="f-riskrol"><option>Davacı</option><option>Davalı</option></select></div></div>`,
-    prompt: ()=>`${document.getElementById('f-risktur')?.value||''} davasında ${document.getElementById('f-riskrol')?.value||''} için risk analizi yap. Güçlü/zayıf yönler, kazanma olasılığı ve strateji önerisi:\n\n${document.getElementById('f-riskoz')?.value||''}`
-  },
-  durusma:{
-    badge:'g', badgeText:'Celse Hazırlığı', titleHtml:'Duruşma <em class="g">Hazırlık</em>',
-    desc:'Duruşma bilgilerini girin; strateji ve sorular oluşturulsun.',
-    btnClass:'g', btnIco:'fa-person-chalkboard', btnLbl:'Hazırlık Başlat',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-day"></i> Duruşma Tarihi</div><input type="text" id="f-dtarih" placeholder="GG/AA/YYYY"></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Güncel Durum</div><textarea id="f-ddur" rows="4" placeholder="Son celse kararı, bekleyen adımlar…"></textarea></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-lightbulb"></i> İstenen Çıktı</div><div class="sw"><select id="f-dcikti"><option>Olası hakim soruları ve cevaplar</option><option>Tanık soru listesi</option><option>Kapanış beyanı taslağı</option><option>Kronolojik olay örgüsü</option></select></div></div>`,
-    prompt: ()=>`${document.getElementById('f-dtarih')?.value||''} tarihli duruşma için hazırlık yap. İstenen: ${document.getElementById('f-dcikti')?.value||''}.\n\nGüncel durum:\n${document.getElementById('f-ddur')?.value||''}`
-  }
+    wizard: {
+      badge: 'g', badgeText: 'HMK Md.119 · Ücretsiz AI (Gemini)', titleHtml: 'Dilekçe <em class="g">Sihirbazı</em>',
+      desc: 'Dava türünü ve olayı yazın; AI HMK uyumlu bir taslak hazırlasın.',
+      btnClass: 'g', btnIco: 'fa-gears', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Dava Türü</div><input type="text" id="ds-davatur" placeholder="Örn. İşe İade Davası, Boşanma Davası, İtirazın İptali…"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Olay Örgüsü</div><textarea id="ds-olay" rows="5" placeholder="Müvekkilin yaşadığı olayı yazın…"></textarea></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-list-check"></i> Özel Talepler <span class="opt">(opsiyonel)</span></div><input type="text" id="ds-talep" placeholder="İhtiyati tedbir, faiz, vekâlet ücreti…"></div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);margin-bottom:10px;">
+          <input type="checkbox" id="ds-udf" checked> Taslağı UDF olarak da indirebilir hale getir
+        </label>
+        <button class="pop-cta-btn g" style="width:100%;" onclick="dilekceSihirbaziSubmit()"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dilekçeyi Taslakla</span></button>
+        <div id="ds-result" style="margin-top:16px;"></div>
+      `,
+      onOpen: () => { const r = document.getElementById('ds-result'); if (r) r.innerHTML = ''; },
+      prompt: () => ''
+    },
+    emsal: {
+      badge: 'g', badgeText: 'Yargıtay · BAM Kararları', titleHtml: 'Emsal Karar <em class="g">Analizi</em>',
+      desc: 'Uyuşmazlığı tanımlayın; benzer davalardaki kararlar AI ile analiz edilsin.',
+      btnClass: 'g', btnIco: 'fa-magnifying-glass', btnLbl: 'Emsal Karar Ara',
+      body: `
+        <div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Uyuşmazlık Konusu</div><div class="sw"><select id="f-konu"><option>İş Hukuku</option><option>Aile Hukuku</option><option>Ticaret Hukuku</option><option>Ceza Hukuku</option><option>İdare Hukuku</option></select></div></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Hukuki Mesele</div><textarea id="f-mesele" rows="4" placeholder="Emsal aranan hukuki meseleyi özetleyin…"></textarea></div>`,
+      prompt: () => `${document.getElementById('f-konu')?.value || ''} alanında şu konuda Yargıtay ve BAM emsal kararlarını ara ve analiz et:\n${document.getElementById('f-mesele')?.value || ''}`
+    },
+    dosya: {
+      badge: 'g', badgeText: 'PDF · Görsel · Word · UDF', titleHtml: 'Dosya <em class="g">Analizi</em>',
+      desc: 'Bir dosya yükleyin ya da metin yapıştırın; AI sorunuzu cevaplasın. Hiçbir dosya saklanmaz.',
+      btnClass: 'g', btnIco: 'fa-file-magnifying-glass', btnLbl: '', hideCta: true,
+      body: '', // JS ile dolduruluyor (bkz. buildAnalyzeWidgetHtml)
+      onOpen: () => { document.getElementById('popBody').innerHTML = buildAnalyzeWidgetHtml('da', 'Bu belgeyi özetle, kararı/kritik süreleri çıkar…'); },
+      prompt: () => ''
+    },
+    sozlesme: {
+      badge: 'g', badgeText: 'TBK · Aynı motor (Dosya Analizi)', titleHtml: 'Sözleşme <em class="g">İnceleme</em>',
+      desc: 'Sözleşmeyi yükleyin ya da yapıştırın; riskli maddeler tespit edilsin. Hiçbir dosya saklanmaz.',
+      btnClass: 'g', btnIco: 'fa-shield-halved', btnLbl: '', hideCta: true,
+      body: '',
+      onOpen: () => { document.getElementById('popBody').innerHTML = buildAnalyzeWidgetHtml('sz', 'Riskli/eksik/belirsiz maddeleri tespit et, önerilerini yaz…'); },
+      prompt: () => ''
+    },
+    mevzuat: {
+      badge: 'g', badgeText: 'Mevzuat.gov.tr · Resmi Gazete', titleHtml: 'Mevzuat <em class="g">Arama</em>',
+      desc: 'Kanun, yönetmelik ve tebliğlerde anlık arama yapın.',
+      btnClass: 'g', btnIco: 'fa-book-open-reader', btnLbl: 'Mevzuatta Ara',
+      body: `<div class="fg"><div class="fl"><i class="fa-solid fa-book"></i> Tür</div><div class="sw"><select id="f-mevtur"><option>Kanun</option><option>Yönetmelik</option><option>Tebliğ</option><option>C.B. Kararnamesi</option></select></div></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-magnifying-glass"></i> Arama Terimi</div><input type="text" id="f-mevara" placeholder="Kıdem tazminatı, velayet, kira artışı…"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-hashtag"></i> Kanun No <span class="opt">(opsiyonel)</span></div><input type="text" id="f-mevno" placeholder="4857, 6098…"></div>`,
+      prompt: () => `"${document.getElementById('f-mevara')?.value || ''}" konusunda ${document.getElementById('f-mevtur')?.value || ''} ara. İlgili maddeleri düz dilde özetle, değişiklik geçmişini belirt. ${document.getElementById('f-mevno')?.value ? 'Kanun No: ' + document.getElementById('f-mevno').value : ''}`
+    },
+    sablon: {
+      badge: 'g', badgeText: 'Metin Şablonları', titleHtml: 'Şablon <em class="g">Kütüphanesi</em>',
+      desc: 'Sık kullandığınız dilekçe/ihtarname metinlerini burada saklayın.',
+      btnClass: 'g', btnIco: 'fa-layer-group', btnLbl: '', hideCta: true,
+      body: `<div id="tpl-box">Yükleniyor…</div>`,
+      onOpen: () => tplOnOpen(),
+      prompt: () => ''
+    },
+    risk: {
+      badge: 'g', badgeText: 'Hakim Perspektifi · Kazanma Olasılığı', titleHtml: 'Risk <em class="g">Analizi</em>',
+      desc: 'Dava özetini girin; güçlü/zayıf yönler değerlendirilsin.',
+      btnClass: 'g', btnIco: 'fa-chart-pie', btnLbl: 'Risk Skoru Hesapla',
+      body: `<div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Dava Türü</div><div class="sw"><select id="f-risktur"><option>İş Hukuku</option><option>Aile Hukuku</option><option>Ticaret</option><option>Ceza</option><option>İdare</option></select></div></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Dava Özeti</div><textarea id="f-riskoz" rows="4" placeholder="Davanın özünü ve delilleri aktarın…"></textarea></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-user-tie"></i> Müvekkilin Rolü</div><div class="sw"><select id="f-riskrol"><option>Davacı</option><option>Davalı</option></select></div></div>`,
+      prompt: () => `${document.getElementById('f-risktur')?.value || ''} davasında ${document.getElementById('f-riskrol')?.value || ''} için risk analizi yap. Güçlü/zayıf yönler, kazanma olasılığı ve strateji önerisi:\n\n${document.getElementById('f-riskoz')?.value || ''}`
+    },
+    durusma: {
+      badge: 'g', badgeText: 'Celse Hazırlığı', titleHtml: 'Duruşma <em class="g">Hazırlık</em>',
+      desc: 'Duruşma bilgilerini girin; strateji ve sorular oluşturulsun.',
+      btnClass: 'g', btnIco: 'fa-person-chalkboard', btnLbl: 'Hazırlık Başlat',
+      body: `<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-day"></i> Duruşma Tarihi</div><input type="text" id="f-dtarih" placeholder="GG/AA/YYYY"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Güncel Durum</div><textarea id="f-ddur" rows="4" placeholder="Son celse kararı, bekleyen adımlar…"></textarea></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-lightbulb"></i> İstenen Çıktı</div><div class="sw"><select id="f-dcikti"><option>Olası hakim soruları ve cevaplar</option><option>Tanık soru listesi</option><option>Kapanış beyanı taslağı</option><option>Kronolojik olay örgüsü</option></select></div></div>`,
+      prompt: () => `${document.getElementById('f-dtarih')?.value || ''} tarihli duruşma için hazırlık yap. İstenen: ${document.getElementById('f-dcikti')?.value || ''}.\n\nGüncel durum:\n${document.getElementById('f-ddur')?.value || ''}`
+    }
   }
 };
+
+// ══════════════════════════════════════════════════════
+// ORTAK "YÜKLE + ANALİZ ET" MOTORU
+// Dosya Analizi ve Sözleşme İnceleme aynı motoru (farklı önekle) kullanır.
+// ══════════════════════════════════════════════════════
+function buildAnalyzeWidgetHtml(prefix, questionPlaceholder) {
+  return `
+    <div class="fg"><div class="fl"><i class="fa-solid fa-file-arrow-up"></i> Dosya Yükle (PDF, JPG, PNG, DOCX, UDF)</div><input type="file" id="${prefix}-file" accept=".pdf,.jpg,.jpeg,.png,.docx,.udf"></div>
+    <div style="text-align:center;font-size:11px;color:var(--t3);margin:8px 0;">— veya —</div>
+    <div class="fg"><div class="fl"><i class="fa-solid fa-paste"></i> Metni Yapıştır</div><textarea id="${prefix}-text" rows="5" placeholder="Belge metnini buraya yapıştırabilirsiniz…"></textarea></div>
+    <div class="fg"><div class="fl"><i class="fa-solid fa-comment-dots"></i> Sorunuz / Talimatınız</div><textarea id="${prefix}-question" rows="2" placeholder="${questionPlaceholder}"></textarea></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);margin-bottom:10px;">
+      <input type="checkbox" id="${prefix}-udf"> Cevabı UDF olarak da indirebilir hale getir
+    </label>
+    <button class="pop-cta-btn g" style="width:100%;" onclick="araclAnalyzeSubmit('${prefix}')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Analiz Et</span></button>
+    <div id="${prefix}-result" style="margin-top:16px;"></div>
+    <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Gizlilik</div><p>Yüklediğiniz dosya hiçbir yerde saklanmaz — anlık olarak işlenir, cevap üretilir üretilmez bellekten silinir.</p></div>
+  `;
+}
+
+function renderAnalysisResult(prefix, data) {
+  const resultBox = document.getElementById(prefix + '-result');
+  if (!resultBox) return;
+  let html = `<div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;" id="${prefix}-analysis-text">${(data.analysis || '').replace(/</g, '&lt;')}</div>`;
+  html += `<button class="pop-cta-btn b" style="width:100%;margin-top:8px;" onclick="araclCopyResult('${prefix}')"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>`;
+  if (data.udfBase64) {
+    html += `<button class="pop-cta-btn g" style="width:100%;margin-top:8px;" onclick="araclDownloadUdf('${prefix}')"><i class="fa-solid fa-download"></i><span>UDF Olarak İndir</span></button>`;
+  }
+  resultBox.innerHTML = html;
+  if (data.udfBase64) resultBox.dataset.udf = data.udfBase64;
+}
+
+async function araclAnalyzeSubmit(prefix) {
+  const fileInput = document.getElementById(prefix + '-file');
+  const text = document.getElementById(prefix + '-text').value.trim();
+  const question = document.getElementById(prefix + '-question').value.trim();
+  const wantUdf = document.getElementById(prefix + '-udf').checked;
+  const resultBox = document.getElementById(prefix + '-result');
+  const mode = prefix === 'sz' ? 'sozlesme' : 'dosya';
+
+  if (!question) { toast('Soru/talimat girin', 'fa-solid fa-triangle-exclamation'); return; }
+  if (!(fileInput.files && fileInput.files[0]) && !text) {
+    toast('Dosya yükleyin veya metin yapıştırın', 'fa-solid fa-triangle-exclamation');
+    return;
+  }
+
+  resultBox.innerHTML = `<div style="color:var(--t3);font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Analiz ediliyor…</div>`;
+
+  const form = new FormData();
+  if (fileInput.files && fileInput.files[0]) form.append('file', fileInput.files[0]);
+  if (text) form.append('pastedText', text);
+  form.append('instruction', question);
+  form.append('mode', mode);
+  form.append('wantUdf', wantUdf ? '1' : '0');
+
+  try {
+    const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) {
+      resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> ${data.error || 'Hata oluştu.'}</div>`;
+      return;
+    }
+    renderAnalysisResult(prefix, data);
+  } catch (e) {
+    resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;">Bağlantı hatası.</div>`;
+  }
+}
+
+function araclCopyResult(prefix) {
+  const el = document.getElementById(prefix + '-analysis-text');
+  if (!el) return;
+  navigator.clipboard?.writeText(el.innerText).then(() => toast('Panoya kopyalandı', 'fa-solid fa-check', true));
+}
+
+function araclDownloadUdf(prefix) {
+  const resultBox = document.getElementById(prefix + '-result');
+  const b64 = resultBox?.dataset.udf;
+  if (!b64) return;
+  downloadBase64AsFile(b64, 'belge.udf');
+}
+
+function downloadBase64AsFile(b64, filename) {
+  const byteChars = atob(b64);
+  const byteNumbers = new Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════════════════
+// DİLEKÇE SİHİRBAZI — kendi motoru (dosya/metin gerekmez)
+// ══════════════════════════════════════════════════════
+async function dilekceSihirbaziSubmit() {
+  const davaTuru = document.getElementById('ds-davatur').value.trim();
+  const olay = document.getElementById('ds-olay').value.trim();
+  const talep = document.getElementById('ds-talep').value.trim();
+  const wantUdf = document.getElementById('ds-udf').checked;
+  const resultBox = document.getElementById('ds-result');
+
+  if (!davaTuru || !olay) {
+    toast('Dava türü ve olay örgüsü gerekli', 'fa-solid fa-triangle-exclamation');
+    return;
+  }
+
+  resultBox.innerHTML = `<div style="color:var(--t3);font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Dilekçe taslaklanıyor…</div>`;
+
+  const instruction = `Dava Türü: ${davaTuru}\n\nOlay Örgüsü:\n${olay}\n\nÖzel Talepler: ${talep || 'Belirtilmemiş'}`;
+
+  const form = new FormData();
+  form.append('instruction', instruction);
+  form.append('mode', 'dilekce');
+  form.append('wantUdf', wantUdf ? '1' : '0');
+
+  try {
+    const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) {
+      resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;">${data.error || 'Hata oluştu.'}</div>`;
+      return;
+    }
+    renderAnalysisResult('ds', data);
+  } catch (e) {
+    resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;">Bağlantı hatası.</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ŞABLON KÜTÜPHANESİ — Büro Yönetimi'nden buraya taşındı.
+// Bu modülde ayrı bir sağ panel (detailPane) olmadığı için liste ve
+// detay, aynı panel içinde (popBody) sırayla gösteriliyor.
+// ══════════════════════════════════════════════════════
+let tplSelectedId = null;
+
+async function tplOnOpen() {
+  tplSelectedId = null;
+  await tplRenderList();
+}
+
+async function tplRenderList() {
+  const box = document.getElementById('tpl-box');
+  try {
+    const res = await fetch('/api/templates');
+    const data = await res.json();
+    const templates = data.templates || [];
+
+    if (!tplSelectedId) {
+      box.innerHTML = `
+        <div class="fg"><input type="text" id="tpl-title" placeholder="Şablon adı (ör. Kira İhtarnamesi)…"></div>
+        <div class="fg"><textarea id="tpl-content" rows="5" placeholder="Şablon metnini buraya yazın…"></textarea></div>
+        <button class="pop-cta-btn g" style="width:100%;margin-bottom:16px;" onclick="tplAdd()"><i class="fa-solid fa-plus"></i><span>Şablonu Kaydet</span></button>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">Şablonlarınız (${templates.length})</div>
+        ${templates.length ? templates.map(t => `<div class="s-item" style="margin:0 0 4px;" onclick="tplView('${t.id}')">
+          <span class="ico"><i class="fa-solid fa-file-lines"></i></span>${t.title}
+        </div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz şablon eklenmedi.</div>'}
+      `;
+    } else {
+      const tpl = templates.find(t => t.id === tplSelectedId);
+      if (!tpl) { tplSelectedId = null; return tplRenderList(); }
+      box.innerHTML = `
+        <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="tplBack()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div style="font-family:'Instrument Serif',serif;font-size:18px;margin-bottom:12px;">${tpl.title}</div>
+          <div style="display:flex;gap:6px;">
+            <button class="pop-cta-btn g" style="width:auto;padding:5px 10px;" onclick="tplCopy('${tpl.id}')"><i class="fa-solid fa-copy"></i></button>
+            <button class="pop-cta-btn" style="width:auto;padding:5px 10px;background:var(--danger);" onclick="tplDelete('${tpl.id}')"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+        <div id="tpl-content-${tpl.id}" style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:16px;line-height:1.6;">${tpl.content}</div>
+      `;
+    }
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function tplView(id) { tplSelectedId = id; tplRenderList(); }
+function tplBack() { tplSelectedId = null; tplRenderList(); }
+
+async function tplCopy(id) {
+  const el = document.getElementById('tpl-content-' + id);
+  if (!el) return;
+  navigator.clipboard?.writeText(el.innerText).then(() => toast('Panoya kopyalandı', 'fa-solid fa-check', true));
+}
+
+async function tplDelete(id) {
+  if (!confirm('Bu şablonu silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/templates/' + id, { method: 'DELETE' });
+  tplSelectedId = null;
+  toast('Şablon silindi', 'fa-solid fa-trash');
+  tplRenderList();
+}
+
+async function tplAdd() {
+  const title = document.getElementById('tpl-title').value.trim();
+  const content = document.getElementById('tpl-content').value.trim();
+  if (!title || !content) { toast('Başlık ve içerik gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/templates', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, content })
+  });
+  toast('Şablon kaydedildi', 'fa-solid fa-check', true);
+  tplRenderList();
+}

@@ -95,11 +95,6 @@ window.MODULES_INDEX = [
         "id": "gelirgider",
         "icon": "fa-scale-balanced",
         "name": "Gelir-Gider"
-      },
-      {
-        "id": "sablonlar",
-        "icon": "fa-layer-group",
-        "name": "Şablon Kütüphanesi"
       }
     ]
   },
