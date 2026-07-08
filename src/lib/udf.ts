@@ -31,7 +31,9 @@ export async function generateUdf(text: string): Promise<Buffer> {
   // satır boşluğuyla oluşturuyoruz — offset hesaplarını hep bu TAM
   // metne göre yapıyoruz ki paragraf uzunlukları toplamı, gerçek
   // CDATA uzunluğuyla birebir tutsun.
-  const cdataContent = "\n" + text.replace(/\r\n/g, "\n") + "\n";
+  // CDATA içinde "]]>" dizisi geçerse XML bozulur — standart XML kaçış
+  // tekniğiyle bunu güvenli hale getiriyoruz.
+  const cdataContent = ("\n" + text.replace(/\r\n/g, "\n") + "\n").replace(/]]>/g, "]]]]><![CDATA[>");
   const lines = cdataContent.split("\n");
 
   let offset = 0;
@@ -40,7 +42,12 @@ export async function generateUdf(text: string): Promise<Buffer> {
     const line = lines[i];
     const isLast = i === lines.length - 1;
     const lengthWithBreak = line.length + (isLast ? 0 : 1);
-    elementsXml += `<paragraph><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
+    // Son satır tamamen boşsa (sondaki \n'den sonra kalan iz), uzunluğu 0
+    // olan bir paragraf oluşturmuyoruz — bazı UDF görüntüleyicileri bunu
+    // kaldıramayıp dosyayı açamıyor.
+    if (lengthWithBreak > 0) {
+      elementsXml += `<paragraph Alignment="0"><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
+    }
     offset += lengthWithBreak;
   }
 
