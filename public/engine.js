@@ -403,6 +403,32 @@ function closeDeadlinesModal() {
 }
 
 // ── ANA EKRAN: YAKLAŞAN SÜRELER (gerçek veri) ──
+async function renderAiUsage() {
+  const box = document.getElementById('aiUsageBox');
+  if (!box) return;
+  try {
+    const res = await fetch('/api/ai-usage');
+    const data = await res.json();
+    const total = data.total || 0;
+    const days = data.days || [];
+    const maxCount = Math.max(1, ...days.map(d => d.count));
+    box.innerHTML = `
+      <div style="font-family:'Instrument Serif',serif;font-size:28px;color:var(--gold);line-height:1;margin-bottom:2px;">${total}</div>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:12px;">AI sorgusu (bu ay)</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:50px;">
+        ${days.map(d => `
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:100%;background:var(--gold-lo);border-radius:3px;height:${Math.max(4, (d.count / maxCount) * 36)}px;" title="${d.label}: ${d.count}"></div>
+            <div style="font-size:9px;color:var(--t3);">${d.label}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--t3);">Yüklenemedi.</div>`;
+  }
+}
+
 async function renderDashDeadlines() {
   const wrap = document.getElementById('dashDeadlines');
   if (!wrap) return;
@@ -691,6 +717,7 @@ if (window.CURRENT_MODULE) {
 } else {
   runCountUp();
   renderDashDeadlines();
+  renderAiUsage();
 }
 loadRealNotifications();
 loadNotifPrefs();
