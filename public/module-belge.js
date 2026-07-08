@@ -35,9 +35,9 @@ window.CURRENT_MODULE = {
           <input type="checkbox" id="ds-udf" checked> Taslağı UDF olarak da indirebilir hale getir
         </label>
         <button class="pop-cta-btn g" style="width:100%;" onclick="dilekceSihirbaziSubmit()"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dilekçeyi Taslakla</span></button>
-        <div id="ds-result" style="margin-top:16px;"></div>
+        <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Not</div><p>Sonuç sağdaki sohbet panelinde görünür.</p></div>
       `,
-      onOpen: () => { const r = document.getElementById('ds-result'); if (r) r.innerHTML = ''; },
+      onOpen: () => {},
       prompt: () => ''
     },
     emsal: {
@@ -117,21 +117,8 @@ function buildAnalyzeWidgetHtml(prefix, questionPlaceholder) {
       <input type="checkbox" id="${prefix}-udf"> Cevabı UDF olarak da indirebilir hale getir
     </label>
     <button class="pop-cta-btn g" style="width:100%;" onclick="araclAnalyzeSubmit('${prefix}')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Analiz Et</span></button>
-    <div id="${prefix}-result" style="margin-top:16px;"></div>
-    <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Gizlilik</div><p>Yüklediğiniz dosya hiçbir yerde saklanmaz — anlık olarak işlenir, cevap üretilir üretilmez bellekten silinir.</p></div>
+    <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Gizlilik</div><p>Yüklediğiniz dosya hiçbir yerde saklanmaz — anlık olarak işlenir, cevap üretilir üretilmez bellekten silinir. Sonuç sağdaki sohbet panelinde görünür.</p></div>
   `;
-}
-
-function renderAnalysisResult(prefix, data) {
-  const resultBox = document.getElementById(prefix + '-result');
-  if (!resultBox) return;
-  let html = `<div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;" id="${prefix}-analysis-text">${(data.analysis || '').replace(/</g, '&lt;')}</div>`;
-  html += `<button class="pop-cta-btn b" style="width:100%;margin-top:8px;" onclick="araclCopyResult('${prefix}')"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>`;
-  if (data.udfBase64) {
-    html += `<button class="pop-cta-btn g" style="width:100%;margin-top:8px;" onclick="araclDownloadUdf('${prefix}')"><i class="fa-solid fa-download"></i><span>UDF Olarak İndir</span></button>`;
-  }
-  resultBox.innerHTML = html;
-  if (data.udfBase64) resultBox.dataset.udf = data.udfBase64;
 }
 
 async function araclAnalyzeSubmit(prefix) {
@@ -139,7 +126,6 @@ async function araclAnalyzeSubmit(prefix) {
   const text = document.getElementById(prefix + '-text').value.trim();
   const question = document.getElementById(prefix + '-question').value.trim();
   const wantUdf = document.getElementById(prefix + '-udf').checked;
-  const resultBox = document.getElementById(prefix + '-result');
   const mode = prefix === 'sz' ? 'sozlesme' : 'dosya';
 
   if (!question) { toast('Soru/talimat girin', 'fa-solid fa-triangle-exclamation'); return; }
@@ -148,7 +134,10 @@ async function araclAnalyzeSubmit(prefix) {
     return;
   }
 
-  resultBox.innerHTML = `<div style="color:var(--t3);font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Analiz ediliyor…</div>`;
+  const fileLabel = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : 'Yapıştırılan metin';
+  const baslik = mode === 'sozlesme' ? 'Sözleşme İnceleme' : 'Dosya Analizi';
+  appendMsg('user', `<strong>${baslik}</strong> — ${fileLabel.replace(/</g, '&lt;')}<br><span style="opacity:.85;">${question.replace(/</g, '&lt;')}</span>`);
+  showTyping();
 
   const form = new FormData();
   if (fileInput.files && fileInput.files[0]) form.append('file', fileInput.files[0]);
@@ -160,40 +149,16 @@ async function araclAnalyzeSubmit(prefix) {
   try {
     const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
     const data = await res.json();
+    removeTyping();
     if (!res.ok) {
-      resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;"><i class="fa-solid fa-triangle-exclamation"></i> ${data.error || 'Hata oluştu.'}</div>`;
+      appendMsg('ai', `<span style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i> ${data.error || 'Hata oluştu.'}</span>`);
       return;
     }
-    renderAnalysisResult(prefix, data);
+    appendMsg('ai', fmtAI(data.analysis || ''), data.udfBase64 || null);
   } catch (e) {
-    resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;">Bağlantı hatası.</div>`;
+    removeTyping();
+    appendMsg('ai', '<span style="color:var(--danger)">Bağlantı hatası.</span>');
   }
-}
-
-function araclCopyResult(prefix) {
-  const el = document.getElementById(prefix + '-analysis-text');
-  if (!el) return;
-  navigator.clipboard?.writeText(el.innerText).then(() => toast('Panoya kopyalandı', 'fa-solid fa-check', true));
-}
-
-function araclDownloadUdf(prefix) {
-  const resultBox = document.getElementById(prefix + '-result');
-  const b64 = resultBox?.dataset.udf;
-  if (!b64) return;
-  downloadBase64AsFile(b64, 'belge.udf');
-}
-
-function downloadBase64AsFile(b64, filename) {
-  const byteChars = atob(b64);
-  const byteNumbers = new Array(byteChars.length);
-  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
-  const byteArray = new Uint8Array(byteNumbers);
-  const blob = new Blob([byteArray], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
 }
 
 // ══════════════════════════════════════════════════════
@@ -204,14 +169,14 @@ async function dilekceSihirbaziSubmit() {
   const olay = document.getElementById('ds-olay').value.trim();
   const talep = document.getElementById('ds-talep').value.trim();
   const wantUdf = document.getElementById('ds-udf').checked;
-  const resultBox = document.getElementById('ds-result');
 
   if (!davaTuru || !olay) {
     toast('Dava türü ve olay örgüsü gerekli', 'fa-solid fa-triangle-exclamation');
     return;
   }
 
-  resultBox.innerHTML = `<div style="color:var(--t3);font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Dilekçe taslaklanıyor…</div>`;
+  appendMsg('user', `<strong>Dilekçe Sihirbazı</strong> — ${davaTuru.replace(/</g, '&lt;')}`);
+  showTyping();
 
   const instruction = `Dava Türü: ${davaTuru}\n\nOlay Örgüsü:\n${olay}\n\nÖzel Talepler: ${talep || 'Belirtilmemiş'}`;
 
@@ -223,13 +188,15 @@ async function dilekceSihirbaziSubmit() {
   try {
     const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
     const data = await res.json();
+    removeTyping();
     if (!res.ok) {
-      resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;">${data.error || 'Hata oluştu.'}</div>`;
+      appendMsg('ai', `<span style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i> ${data.error || 'Hata oluştu.'}</span>`);
       return;
     }
-    renderAnalysisResult('ds', data);
+    appendMsg('ai', fmtAI(data.analysis || ''), data.udfBase64 || null);
   } catch (e) {
-    resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;">Bağlantı hatası.</div>`;
+    removeTyping();
+    appendMsg('ai', '<span style="color:var(--danger)">Bağlantı hatası.</span>');
   }
 }
 

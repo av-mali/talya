@@ -141,7 +141,7 @@ function submitPopup() {
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 function ckEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }
 
-function appendMsg(role, text) {
+function appendMsg(role, text, udfBase64) {
   const empty = document.getElementById('chatEmpty');
   if (empty) empty.style.display = 'none';
   const msgs = document.getElementById('chatMsgs');
@@ -149,13 +149,34 @@ function appendMsg(role, text) {
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   const ico = role === 'ai' ? 'fa-microchip' : 'fa-user-tie';
-  const actions = role === 'ai' ? `<div class="msg-actions">
-      <span class="msg-act-btn" onclick="copyMsg(this)"><i class="fa-solid fa-copy"></i> Kopyala</span>
-      <span class="msg-act-btn" onclick="toast('Belge indirildi','fa-solid fa-download')"><i class="fa-solid fa-download"></i> İndir</span>
-    </div>` : '';
+  let actions = '';
+  if (role === 'ai') {
+    actions = `<div class="msg-actions"><span class="msg-act-btn" onclick="copyMsg(this)"><i class="fa-solid fa-copy"></i> Kopyala</span>`;
+    if (udfBase64) {
+      actions += `<span class="msg-act-btn" onclick="downloadUdfFromBubble(this)"><i class="fa-solid fa-download"></i> UDF İndir</span>`;
+    }
+    actions += `</div>`;
+  }
   div.innerHTML = `<div class="msg-av"><i class="fa-solid ${ico}"></i></div><div class="msg-bbl">${text}${actions}</div>`;
+  if (udfBase64) div.dataset.udf = udfBase64;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+function downloadUdfFromBubble(btn) {
+  const msgDiv = btn.closest('.msg');
+  const b64 = msgDiv?.dataset.udf;
+  if (!b64) return;
+  const byteChars = atob(b64);
+  const byteNumbers = new Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'belge.udf';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function copyMsg(btn) {
