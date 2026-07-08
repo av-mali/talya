@@ -54,6 +54,11 @@ window.MODULES_INDEX = [
     "color": "b",
     "items": [
       {
+        "id": "globalarama",
+        "icon": "fa-magnifying-glass",
+        "name": "Global Arama"
+      },
+      {
         "id": "muvekkilekle",
         "icon": "fa-user-plus",
         "name": "Müvekkil Ekle",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { readUdfText, generateUdf } from "@/lib/udf";
+import { generateDocx } from "@/lib/docExport";
 import mammoth from "mammoth";
 
 // Bu uç nokta Belge & Analiz modülündeki "Dosya Analizi", "Sözleşme
@@ -102,12 +103,15 @@ export async function POST(req: Request) {
       "Bir cevap üretilemedi.";
 
     let udfBase64: string | null = null;
+    let docxBase64: string | null = null;
     if (wantUdf) {
       const udfBuffer = await generateUdf(analysis);
       udfBase64 = udfBuffer.toString("base64");
+      const docxBuffer = await generateDocx(analysis);
+      docxBase64 = docxBuffer.toString("base64");
     }
 
-    return NextResponse.json({ analysis, udfBase64 });
+    return NextResponse.json({ analysis, udfBase64, docxBase64 });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "İşlenirken bir hata oluştu." }, { status: 500 });
   }

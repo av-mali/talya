@@ -7,6 +7,7 @@ window.CURRENT_MODULE = {
   nameHtml: `Büro <em class="b">Yönetimi</em>`,
   color: 'b',
   items: [
+    {"id": "globalarama", "icon": "fa-magnifying-glass", "name": "Global Arama"},
     {"id": "muvekkilekle", "icon": "fa-user-plus", "name": "Müvekkil Ekle", "group": "Müvekkil Yönetimi"},
     {"id": "tablo", "icon": "fa-table-list", "name": "Müvekkil Tablosu", "group": "Müvekkil Yönetimi"},
     {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu", "group": "Müvekkil Yönetimi"},
@@ -17,6 +18,18 @@ window.CURRENT_MODULE = {
     {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"}
   ],
   popups: {
+    // ── GLOBAL ARAMA ── müvekkil, not, görev, şablon içinde birden arar
+    globalarama: {
+      badge: 'b', badgeText: 'Tüm Verilerde Ara', titleHtml: 'Global <em class="b">Arama</em>',
+      desc: 'Müvekkil, not, görev ve şablon içinde tek kutudan arayın.',
+      btnClass: 'b', btnIco: 'fa-magnifying-glass', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><input type="text" id="ga-q" placeholder="Ara… (en az 2 harf)" oninput="gaSearch()"></div>
+        <div id="ga-results"></div>
+      `,
+      onOpen: () => { document.getElementById('ga-results').innerHTML = ''; },
+      prompt: () => ''
+    },
     // ── MÜVEKKİL YÖNETİMİ ── orta: arama+liste, sağ: seçilen müvekkilin detayı
     muvekkilekle: {
       badge: 'b', badgeText: 'Büro CRM · Canlı Veri', titleHtml: 'Müvekkil <em class="b">Ekle</em>',
@@ -927,12 +940,16 @@ async function noteRenderList() {
           Notlarınız (${notes.length})
         </div>
         ${notes.length ? notes.map(n => `
-          <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
-            <div>
-              <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">${new Date(n.createdAt).toLocaleString('tr-TR')}</div>
-              <div style="font-size:13px;white-space:pre-wrap;">${n.content}</div>
+          <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">${new Date(n.createdAt).toLocaleString('tr-TR')}</div>
+                <div style="font-size:13px;white-space:pre-wrap;">${n.content}</div>
+              </div>
+              <span style="cursor:pointer;color:var(--t3);flex-shrink:0;" onclick="noteDelete('${n.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
             </div>
-            <span style="cursor:pointer;color:var(--t3);flex-shrink:0;" onclick="noteDelete('${n.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+            <button class="pop-cta-btn b" style="width:auto;padding:4px 10px;font-size:11px;margin-top:6px;" onclick="noteAnalyze('${n.id}')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>AI ile Analiz Et</span></button>
+            <div id="note-ai-${n.id}" style="margin-top:8px;"></div>
           </div>
         `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz not yok.</div>'}
       </div>
@@ -1147,4 +1164,92 @@ function tblExportCsv() {
   a.remove();
   URL.revokeObjectURL(url);
   toast('CSV dosyası indirildi', 'fa-solid fa-check', true);
+}
+
+// ══════════════════════════════════════════════════════
+// GLOBAL ARAMA — müvekkil, not, görev, şablon içinde birden
+// ══════════════════════════════════════════════════════
+let gaTimer = null;
+
+function gaSearch() {
+  clearTimeout(gaTimer);
+  const q = document.getElementById('ga-q').value.trim();
+  const box = document.getElementById('ga-results');
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  gaTimer = setTimeout(async () => {
+    box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Aranıyor…</div>`;
+    try {
+      const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+      const data = await res.json();
+      gaRender(data.results || []);
+    } catch (e) {
+      box.innerHTML = `<div style="font-size:12px;color:var(--danger);">Arama yapılamadı.</div>`;
+    }
+  }, 350);
+}
+
+const GA_TYPE_META = {
+  muvekkil: { icon: 'fa-user', label: 'Müvekkil' },
+  not: { icon: 'fa-note-sticky', label: 'Not' },
+  gorev: { icon: 'fa-list-check', label: 'Görev' },
+  sablon: { icon: 'fa-layer-group', label: 'Şablon' },
+};
+
+function gaRender(results) {
+  const box = document.getElementById('ga-results');
+  if (!results.length) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sonuç bulunamadı.</div>`;
+    return;
+  }
+  box.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:10px 0 6px;">${results.length} sonuç</div>` +
+    results.map(r => {
+      const meta = GA_TYPE_META[r.type] || { icon: 'fa-circle', label: r.type };
+      return `<div class="s-item" style="margin:0 0 4px;" onclick="gaOpen('${r.type}','${r.id}')">
+        <span class="ico"><i class="fa-solid ${meta.icon}"></i></span>
+        <span>${r.title}<span style="display:block;font-size:10px;color:var(--t3);">${meta.label}${r.subtitle ? ' — ' + r.subtitle : ''}</span></span>
+      </div>`;
+    }).join('');
+}
+
+function gaOpen(type, id) {
+  if (type === 'muvekkil') {
+    mvSelect(id);
+  } else if (type === 'gorev') {
+    openPopup('gorevler');
+  } else if (type === 'not') {
+    openPopup('notlar');
+  } else if (type === 'sablon') {
+    toast('Şablonlar artık Belge & Analiz modülünde', 'fa-solid fa-circle-info');
+    window.location.href = '/dashboard/belge?open=sablon';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// AKILLI NOTLAR — bir notu AI ile analiz ettirme
+// ══════════════════════════════════════════════════════
+async function noteAnalyze(noteId) {
+  const notes = await (await fetch('/api/notes')).json();
+  const note = (notes.notes || []).find(n => n.id === noteId);
+  const box = document.getElementById('note-ai-' + noteId);
+  if (!note || !box) return;
+
+  box.innerHTML = `<div style="font-size:12px;color:var(--t3);"><i class="fa-solid fa-spinner fa-spin"></i> Analiz ediliyor…</div>`;
+
+  const form = new FormData();
+  form.append('pastedText', note.content);
+  form.append('instruction', 'Bu notu özetle, önemli noktaları ve varsa yapılması gereken aksiyon maddelerini listele.');
+  form.append('mode', 'dosya');
+  form.append('wantUdf', '0');
+
+  try {
+    const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) {
+      box.innerHTML = `<div style="font-size:12px;color:var(--danger);">${data.error || 'Analiz edilemedi.'}</div>`;
+      return;
+    }
+    box.innerHTML = `<div style="background:var(--bg2);border-radius:var(--r);padding:10px;font-size:12.5px;white-space:pre-wrap;line-height:1.5;">${(data.analysis || '').replace(/</g, '&lt;')}</div>`;
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);">Bağlantı hatası.</div>`;
+  }
 }

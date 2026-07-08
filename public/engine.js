@@ -108,9 +108,20 @@ function openPopup(id) {
   if (ctaWrap) ctaWrap.style.display = popCfg.hideCta ? 'none' : '';
 
   resetDetailPane();
+  resetChatPane();
   if (typeof popCfg.onOpen === 'function') {
     try { popCfg.onOpen(); } catch (e) { console.error(e); }
   }
+}
+
+function resetChatPane() {
+  // Belge & Analiz gibi sohbet paneli (ai-pane) olan modüllerde, araç
+  // değiştirince önceki aracın konuşması kalmasın diye sıfırlanır.
+  const msgs = document.getElementById('chatMsgs');
+  const empty = document.getElementById('chatEmpty');
+  if (msgs) msgs.innerHTML = '';
+  if (empty) empty.style.display = '';
+  if (typeof chatHistory !== 'undefined') chatHistory.length = 0;
 }
 
 function resetDetailPane() {
@@ -139,9 +150,47 @@ function submitPopup() {
 
 // ── CHAT ──
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+
+async function improvePrompt() {
+  const inp = document.getElementById('chatIn');
+  if (!inp) return;
+  const original = inp.value.trim();
+  if (!original) { toast('Önce bir şeyler yazın', 'fa-solid fa-triangle-exclamation'); return; }
+
+  const btn = document.getElementById('improveBtn');
+  if (btn) btn.disabled = true;
+  inp.disabled = true;
+  const placeholder = inp.value;
+  inp.value = 'Geliştiriliyor…';
+
+  const form = new FormData();
+  form.append('pastedText', original);
+  form.append('instruction', 'Bu soruyu/istemi bir hukuk asistanına yöneltilecek şekilde daha net, detaylı ve profesyonel hale getir. Sadece geliştirilmiş soruyu/istemi ver, başka açıklama ekleme, tırnak içine alma.');
+  form.append('mode', 'dosya');
+  form.append('wantUdf', '0');
+
+  try {
+    const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    inp.disabled = false;
+    if (btn) btn.disabled = false;
+    if (!res.ok) {
+      inp.value = placeholder;
+      toast(data.error || 'Geliştirilemedi', 'fa-solid fa-triangle-exclamation');
+      return;
+    }
+    inp.value = (data.analysis || placeholder).trim();
+    autoH(inp);
+  } catch (e) {
+    inp.value = placeholder;
+    inp.disabled = false;
+    if (btn) btn.disabled = false;
+    toast('Bağlantı hatası', 'fa-solid fa-triangle-exclamation');
+  }
+}
 function ckEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }
 
-function appendMsg(role, text, udfBase64) {
+function appendMsg(role, text, udfBase64, docxBase64) {
   const empty = document.getElementById('chatEmpty');
   if (empty) empty.style.display = 'none';
   const msgs = document.getElementById('chatMsgs');
@@ -155,26 +204,46 @@ function appendMsg(role, text, udfBase64) {
     if (udfBase64) {
       actions += `<span class="msg-act-btn" onclick="downloadUdfFromBubble(this)"><i class="fa-solid fa-download"></i> UDF İndir</span>`;
     }
+    if (docxBase64) {
+      actions += `<span class="msg-act-btn" onclick="downloadDocxFromBubble(this)"><i class="fa-solid fa-file-word"></i> Word İndir</span>`;
+    }
     actions += `</div>`;
   }
   div.innerHTML = `<div class="msg-av"><i class="fa-solid ${ico}"></i></div><div class="msg-bbl">${text}${actions}</div>`;
   if (udfBase64) div.dataset.udf = udfBase64;
+  if (docxBase64) div.dataset.docx = docxBase64;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+function base64ToBlob(b64, mime) {
+  const byteChars = atob(b64);
+  const byteNumbers = new Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mime });
 }
 
 function downloadUdfFromBubble(btn) {
   const msgDiv = btn.closest('.msg');
   const b64 = msgDiv?.dataset.udf;
   if (!b64) return;
-  const byteChars = atob(b64);
-  const byteNumbers = new Array(byteChars.length);
-  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
-  const byteArray = new Uint8Array(byteNumbers);
-  const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+  const blob = base64ToBlob(b64, 'application/octet-stream');
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'belge.udf';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function downloadDocxFromBubble(btn) {
+  const msgDiv = btn.closest('.msg');
+  const b64 = msgDiv?.dataset.docx;
+  if (!b64) return;
+  const blob = base64ToBlob(b64, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'belge.docx';
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
