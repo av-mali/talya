@@ -18,6 +18,15 @@ export async function GET() {
   // karışmasın diye ayrı bir amaç üstleniyor.
   const in2days = new Date(now.getTime() + 2 * 86400000);
 
+  // ÖNEMLİ: Saat farkından değil, TAKVİM GÜNÜ farkından hesapla — yoksa
+  // "bugün saat 14:00'te duruşma" sabah kontrol edilince yanlışlıkla
+  // "1 gün kaldı" görünüyordu.
+  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  function daysUntil(date: Date): number {
+    const dueMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return Math.round((dueMidnight.getTime() - nowMidnight.getTime()) / 86400000);
+  }
+
   const [events, tasks, readRows] = await Promise.all([
     prisma.clientEvent.findMany({
       where: { case: { client: { userId } }, dueDate: { lte: in2days } },
@@ -42,7 +51,7 @@ export async function GET() {
   const grouped = groupEventsByCaseAndDate(events);
 
   const eventNotifs = grouped.map((g) => {
-    const daysLeft = Math.ceil((g.dueDate.getTime() - now.getTime()) / 86400000);
+    const daysLeft = daysUntil(g.dueDate);
     const overdue = daysLeft < 0;
     const label = TYPE_LABELS[g.type] || g.type;
     const id = "ev-" + g.combinedId;
@@ -60,7 +69,7 @@ export async function GET() {
   });
 
   const taskNotifs = tasks.map((t) => {
-    const daysLeft = Math.ceil((t.dueDate!.getTime() - now.getTime()) / 86400000);
+    const daysLeft = daysUntil(t.dueDate!);
     const overdue = daysLeft < 0;
     const id = "task-" + t.id;
     return {

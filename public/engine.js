@@ -383,7 +383,12 @@ async function openDeadlinesModal() {
       return;
     }
     list.innerHTML = upcoming.map(e => {
-      const days = Math.ceil((new Date(e.dueDate).getTime() - now.getTime()) / 86400000);
+      // ÖNEMLİ: Saat farkından değil, TAKVİM GÜNÜ farkından hesapla —
+      // yoksa "bugün saat 14:00'te duruşma" sabah kontrol edilince
+      // yanlışlıkla "1 gün kaldı" görünüyordu.
+      const dueMidnight = new Date(new Date(e.dueDate).getFullYear(), new Date(e.dueDate).getMonth(), new Date(e.dueDate).getDate());
+      const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const days = Math.round((dueMidnight.getTime() - nowMidnight.getTime()) / 86400000);
       const level = days <= 3 ? 'crit' : days <= 7 ? 'warn' : '';
       const tag = days === 0 ? 'BUGÜN' : days + ' GÜN';
       return `<div class="dl-row">
@@ -448,7 +453,9 @@ async function renderDashDeadlines() {
     }
 
     wrap.innerHTML = upcoming.map(e => {
-      const days = Math.ceil((new Date(e.dueDate).getTime() - now.getTime()) / 86400000);
+      const dueMidnight = new Date(new Date(e.dueDate).getFullYear(), new Date(e.dueDate).getMonth(), new Date(e.dueDate).getDate());
+      const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const days = Math.round((dueMidnight.getTime() - nowMidnight.getTime()) / 86400000);
       const level = days <= 3 ? 'crit' : days <= 7 ? 'warn' : '';
       const tag = days === 0 ? 'BUGÜN' : days + ' GÜN';
       return `<div class="dl-row">

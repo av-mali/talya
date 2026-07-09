@@ -144,7 +144,11 @@ window.CURRENT_MODULE = {
 function fmtTL(n) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(n); }
 
 function mvDaysLeft(dueDate) {
-  const days = Math.ceil((new Date(dueDate).getTime() - Date.now()) / 86400000);
+  const due = new Date(dueDate);
+  const dueMidnight = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+  const now = new Date();
+  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((dueMidnight.getTime() - nowMidnight.getTime()) / 86400000);
   if (days < 0) return { text: Math.abs(days) + ' gün geçti', color: 'var(--danger)' };
   if (days === 0) return { text: 'Bugün', color: 'var(--danger)' };
   if (days <= 3) return { text: days + ' gün kaldı', color: 'var(--danger)' };
