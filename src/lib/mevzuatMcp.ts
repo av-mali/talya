@@ -162,14 +162,34 @@ export async function searchMevzuat(query: string, maxResults = 6) {
   return allResults;
 }
 
-export async function getMevzuatContent(mevzuatId: string): Promise<{ text: any; availableTools?: string[] }> {
+// Farklı mevzuat türleri, sunucuda FARKLI özel araçlar kullanıyor —
+// genel "get_mevzuat_content" aracı bazı türlerde (ör. Cumhurbaşkanı
+// Kararı gibi PDF kaynaklı belgelerde) ham/bozuk veri döndürebiliyor.
+// Türe göre doğru, özel aracı seçiyoruz.
+function pickContentTool(mevzuatTur: string): { tool: string; argKey: string } {
+  const t = (mevzuatTur || "").toLocaleLowerCase("tr");
+  if (t.includes("cumhurbaşkanı kararı") || t.includes("cumhurbaskani karari")) {
+    return { tool: "get_cbbaskankarar_content", argKey: "karar_id" };
+  }
+  if (t.includes("tebliğ") || t.includes("teblig")) {
+    return { tool: "get_teblig_content", argKey: "teblig_id" };
+  }
+  if (t.includes("genelge")) {
+    return { tool: "get_cbgenelge_content", argKey: "genelge_id" };
+  }
+  // Kanun, KHK, Tüzük, Yönetmelik ve diğerleri için varsayılan/genel araç.
+  return { tool: "get_mevzuat_content", argKey: "mevzuat_id" };
+}
+
+export async function getMevzuatContent(mevzuatId: string, mevzuatTur: string = ""): Promise<{ text: any; availableTools?: string[] }> {
   const sessionId = await getSession();
+  const { tool, argKey } = pickContentTool(mevzuatTur);
   const callRes = await mcpRequest(
     {
       jsonrpc: "2.0",
       id: 2,
       method: "tools/call",
-      params: { name: "get_mevzuat_content", arguments: { mevzuat_id: mevzuatId } },
+      params: { name: tool, arguments: { [argKey]: mevzuatId } },
     },
     sessionId
   );

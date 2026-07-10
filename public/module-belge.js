@@ -360,6 +360,7 @@ async function mevzuatShowTree(index) {
   if (!item) return;
   mevzuatCurrentItem = item;
   const mevzuatId = mvzField(item, 'mevzuatId', 'mevzuat_id', 'id');
+  const mevzuatTur = mvzField(item, 'mevzuatTur', 'mevzuat_tur', 'type', 'tur') || '';
   const title = mvzField(item, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
   const box = mevzuatGetPane();
   if (!mevzuatId) {
@@ -371,7 +372,7 @@ async function mevzuatShowTree(index) {
   try {
     const res = await fetch('/api/tools/mevzuat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'content', mevzuatId })
+      body: JSON.stringify({ action: 'content', mevzuatId, mevzuatTur })
     });
     const data = await res.json();
     console.log('[Mevzuat] İçerik ham cevap:', data);
@@ -384,7 +385,18 @@ async function mevzuatShowTree(index) {
         <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis: ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`;
       return;
     }
-    const text = typeof data.result === 'string' ? data.result : (data.result?.content || data.result?.text || JSON.stringify(data.result));
+    let text = typeof data.result === 'string' ? data.result : (data.result?.content || data.result?.text || JSON.stringify(data.result));
+
+    // Ham PDF ikili verisi geldiyse (bazı türlerde hâlâ olabiliyor), bunu
+    // kullanıcıya okunaksız metin olarak göstermek yerine net bir uyarı ver.
+    if (text && text.slice(0, 8).includes('%PDF')) {
+      box.innerHTML = `
+        <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
+        <div style="font-size:12px;color:var(--t3);padding:10px 0;">Bu belge için metin çıkarma şu an başarısız oluyor (servis ham PDF verisi döndürdü). Bu, "${mevzuatTur}" türü için bilinen bir sınır — geliştiriliyor.</div>
+      `;
+      return;
+    }
 
     box.innerHTML = `
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>

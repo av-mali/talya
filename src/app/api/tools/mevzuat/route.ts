@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   try {
-    const { action, query, mevzuatId } = await req.json();
+    const { action, query, mevzuatId, mevzuatTur } = await req.json();
 
     if (action === "search") {
       if (!query || !query.trim()) {
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
 
     if (action === "content") {
       if (!mevzuatId) return NextResponse.json({ error: "mevzuatId gerekli." }, { status: 400 });
-      const { text, availableTools } = await getMevzuatContent(mevzuatId);
+      const { text, availableTools } = await getMevzuatContent(mevzuatId, mevzuatTur || "");
       if (availableTools) {
         return NextResponse.json({ result: null, _debug: `Bu araç sunucuda yok. Sunucudaki GERÇEK araçlar: ${availableTools.join(", ")}` });
       }
