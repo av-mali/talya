@@ -82,6 +82,27 @@ function openPopup(id) {
   if (!popCfg) return;
   currentPopup = id;
 
+  // "wideMode": bazı araçlar (ör. Mevzuat Arama) sağdaki sohbet panelini
+  // hiç kullanmaz — o araç açıkken paneli gizleyip orta paneli genişletiyoruz.
+  // Başka bir araca geçilince otomatik eski haline dönüyor.
+  const toolPanel = document.querySelector('.tool-panel');
+  const aiPane = document.querySelector('.ai-pane');
+  if (toolPanel && aiPane) {
+    if (popCfg.wideMode) {
+      aiPane.style.display = 'none';
+      toolPanel.style.width = 'auto';
+      toolPanel.style.flex = '1';
+      toolPanel.style.maxWidth = '820px';
+      toolPanel.style.margin = '0 auto';
+    } else {
+      aiPane.style.display = '';
+      toolPanel.style.width = '';
+      toolPanel.style.flex = '';
+      toolPanel.style.maxWidth = '';
+      toolPanel.style.margin = '';
+    }
+  }
+
   const name = cfg.items.find(i => i.id === id)?.name || id;
   const itemNameEl = document.getElementById('appItemName');
   if (itemNameEl) itemNameEl.textContent = name;

@@ -58,7 +58,7 @@ window.CURRENT_MODULE = {
     mevzuat: {
       badge: 'g', badgeText: 'Mevzuat.gov.tr · Gerçek Arama', titleHtml: 'Mevzuat <em class="g">Arama</em>',
       desc: 'Kanun, yönetmelik ve tebliğlerde gerçek zamanlı arama yapın.',
-      btnClass: 'g', btnIco: 'fa-book-open-reader', btnLbl: '', hideCta: true,
+      btnClass: 'g', btnIco: 'fa-book-open-reader', btnLbl: '', hideCta: true, wideMode: true,
       body: `
         <div class="fg"><input type="text" id="mv-mevara" placeholder="Kıdem tazminatı, velayet, kira artışı…" onkeydown="if(event.key==='Enter')mevzuatSearch()"></div>
         <button class="pop-cta-btn g" style="width:100%;" onclick="mevzuatSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Mevzuatta Ara</span></button>
@@ -322,12 +322,16 @@ async function mevzuatSearch() {
         <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis (geliştirici için): ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`;
       return;
     }
+    // JSON'u doğrudan HTML özniteliğine gömmek, mevzuat adında tırnak/kesme
+    // işareti geçince tıklamayı bozuyordu — bunun yerine sonuçları global
+    // bir listede tutup sadece index'i geçiyoruz.
+    mevzuatSearchResults = list;
     box.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">${list.length} sonuç</div>` +
       list.map((item, i) => {
         const title = mvzField(item, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'İsimsiz Mevzuat';
         const tur = mvzField(item, 'mevzuatTur', 'mevzuat_tur', 'type', 'tur') || '';
         const rgTarih = mvzField(item, 'resmiGazeteTarihi', 'resmi_gazete_tarihi', 'rgTarihi') || '';
-        return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick='mevzuatShowTree(${JSON.stringify(JSON.stringify(item))})'>
+        return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick="mevzuatShowTree(${i})">
           <span class="ico"><i class="fa-solid fa-scale-balanced"></i></span>
           <span>${title}<span style="display:block;font-size:10px;color:var(--t3);">${tur}${rgTarih ? ' — RG: ' + rgTarih : ''}</span></span>
         </div>`;
@@ -338,9 +342,11 @@ async function mevzuatSearch() {
 }
 
 let mevzuatCurrentItem = null;
+let mevzuatSearchResults = [];
 
-async function mevzuatShowTree(itemJsonStr) {
-  const item = JSON.parse(itemJsonStr);
+async function mevzuatShowTree(index) {
+  const item = mevzuatSearchResults[index];
+  if (!item) return;
   mevzuatCurrentItem = item;
   const mevzuatId = mvzField(item, 'mevzuatId', 'mevzuat_id', 'id');
   const title = mvzField(item, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
@@ -363,13 +369,13 @@ async function mevzuatShowTree(itemJsonStr) {
       return;
     }
     const nodes = Array.isArray(data.result) ? data.result : (data.result?.items || []);
+    mevzuatTreeNodes = nodes;
     box.innerHTML = `
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
-      ${nodes.length ? nodes.map(n => {
-        const maddeId = mvzField(n, 'maddeId', 'madde_id', 'id');
+      ${nodes.length ? nodes.map((n, i) => {
         const maddeAd = mvzField(n, 'maddeAdi', 'madde_adi', 'title', 'ad') || 'Madde';
-        return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:8px 12px;" onclick='mevzuatShowContent("${mevzuatId}","${maddeId}")'>
+        return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:8px 12px;" onclick="mevzuatShowContent(${i})">
           <span class="ico"><i class="fa-solid fa-list-ol"></i></span>${maddeAd}
         </div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Madde listesi bulunamadı.</div>'}
@@ -379,7 +385,13 @@ async function mevzuatShowTree(itemJsonStr) {
   }
 }
 
-async function mevzuatShowContent(mevzuatId, maddeId) {
+let mevzuatTreeNodes = [];
+
+async function mevzuatShowContent(index) {
+  const node = mevzuatTreeNodes[index];
+  if (!node) return;
+  const mevzuatId = mvzField(mevzuatCurrentItem, 'mevzuatId', 'mevzuat_id', 'id');
+  const maddeId = mvzField(node, 'maddeId', 'madde_id', 'id');
   const box = document.getElementById('mv-mev-results');
   box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Madde metni yükleniyor…</div>`;
   try {
@@ -397,7 +409,7 @@ async function mevzuatShowContent(mevzuatId, maddeId) {
     const title = mvzField(mevzuatCurrentItem, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
 
     box.innerHTML = `
-      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick='mevzuatShowTree(${JSON.stringify(JSON.stringify(mevzuatCurrentItem))})'><i class="fa-solid fa-arrow-left"></i> Madde Listesine Dön</div>
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatShowTree(${mevzuatSearchResults.indexOf(mevzuatCurrentItem)})"><i class="fa-solid fa-arrow-left"></i> Madde Listesine Dön</div>
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
       <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;max-height:400px;overflow-y:auto;">${(text || '').replace(/</g, '&lt;')}</div>
       <button class="pop-cta-btn b" style="width:100%;margin-top:10px;" onclick="mevzuatCopyContent()"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>
