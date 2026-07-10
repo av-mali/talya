@@ -157,7 +157,7 @@ export async function searchMevzuat(query: string, maxResults = 6) {
   return allResults;
 }
 
-export async function getMevzuatArticleTree(mevzuatId: string) {
+export async function getMevzuatArticleTree(mevzuatId: string): Promise<{ parsed: any[]; raw: any }> {
   const sessionId = await getSession();
   const callRes = await mcpRequest(
     {
@@ -169,8 +169,8 @@ export async function getMevzuatArticleTree(mevzuatId: string) {
     sessionId
   );
   const raw = extractToolResult(callRes);
-  if (Array.isArray(raw)) return raw;
-  return parseMevzuatTreeText(raw);
+  const parsed = Array.isArray(raw) ? raw : parseMevzuatTreeText(raw);
+  return { parsed, raw };
 }
 
 export async function getMevzuatArticleContent(mevzuatId: string, maddeId: string) {
