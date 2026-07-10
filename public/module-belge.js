@@ -56,13 +56,17 @@ window.CURRENT_MODULE = {
       prompt: () => ''
     },
     mevzuat: {
-      badge: 'g', badgeText: 'Mevzuat.gov.tr · Resmi Gazete', titleHtml: 'Mevzuat <em class="g">Arama</em>',
-      desc: 'Kanun, yönetmelik ve tebliğlerde anlık arama yapın.',
-      btnClass: 'g', btnIco: 'fa-book-open-reader', btnLbl: 'Mevzuatta Ara',
-      body: `<div class="fg"><div class="fl"><i class="fa-solid fa-book"></i> Tür</div><div class="sw"><select id="f-mevtur"><option>Kanun</option><option>Yönetmelik</option><option>Tebliğ</option><option>C.B. Kararnamesi</option></select></div></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-magnifying-glass"></i> Arama Terimi</div><input type="text" id="f-mevara" placeholder="Kıdem tazminatı, velayet, kira artışı…"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-hashtag"></i> Kanun No <span class="opt">(opsiyonel)</span></div><input type="text" id="f-mevno" placeholder="4857, 6098…"></div>`,
-      prompt: () => `"${document.getElementById('f-mevara')?.value || ''}" konusunda ${document.getElementById('f-mevtur')?.value || ''} ara. İlgili maddeleri düz dilde özetle, değişiklik geçmişini belirt. ${document.getElementById('f-mevno')?.value ? 'Kanun No: ' + document.getElementById('f-mevno').value : ''}`
+      badge: 'g', badgeText: 'Mevzuat.gov.tr · Gerçek Arama', titleHtml: 'Mevzuat <em class="g">Arama</em>',
+      desc: 'Kanun, yönetmelik ve tebliğlerde gerçek zamanlı arama yapın.',
+      btnClass: 'g', btnIco: 'fa-book-open-reader', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><input type="text" id="mv-mevara" placeholder="Kıdem tazminatı, velayet, kira artışı…" onkeydown="if(event.key==='Enter')mevzuatSearch()"></div>
+        <button class="pop-cta-btn g" style="width:100%;" onclick="mevzuatSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Mevzuatta Ara</span></button>
+        <div id="mv-mev-results" style="margin-top:14px;"></div>
+        <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Kaynak</div><p>Sonuçlar, Adalet Bakanlığı Mevzuat Bilgi Sistemi'nden (mevzuat.gov.tr) gerçek zamanlı çekiliyor. Bu servis ücretsiz bir topluluk aracı üzerinden erişiliyor — nadiren yavaş/erişilemez olabilir.</p></div>
+      `,
+      onOpen: () => { const r = document.getElementById('mv-mev-results'); if (r) r.innerHTML = ''; },
+      prompt: () => ''
     },
     sablon: {
       badge: 'g', badgeText: 'Metin Şablonları', titleHtml: 'Şablon <em class="g">Kütüphanesi</em>',
@@ -279,4 +283,117 @@ async function tplAdd() {
   });
   toast('Şablon kaydedildi', 'fa-solid fa-check', true);
   tplRenderList();
+}
+
+// ══════════════════════════════════════════════════════
+// MEVZUAT ARAMA — mevzuat.gov.tr'ye gerçek zamanlı erişim
+// (Bağımsız bir topluluk servisi üzerinden — bkz. üstteki not.)
+// ══════════════════════════════════════════════════════
+
+// API'nin döndürdüğü alan adları kesin bilinmediği için (dış servis,
+// canlı test edilemedi), birden fazla olası alan adını deniyoruz.
+function mvzField(obj, ...names) {
+  for (const n of names) {
+    if (obj && obj[n] !== undefined && obj[n] !== null) return obj[n];
+  }
+  return null;
+}
+
+async function mevzuatSearch() {
+  const query = document.getElementById('mv-mevara').value.trim();
+  const box = document.getElementById('mv-mev-results');
+  if (!query) { toast('Bir arama terimi girin', 'fa-solid fa-triangle-exclamation'); return; }
+  box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> mevzuat.gov.tr'de aranıyor…</div>`;
+
+  try {
+    const res = await fetch('/api/tools/mevzuat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'search', query })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Arama başarısız.'}</div>`;
+      return;
+    }
+    const list = Array.isArray(data.result) ? data.result : (data.result?.results || data.result?.items || []);
+    if (!list.length) {
+      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sonuç bulunamadı.</div>`;
+      return;
+    }
+    box.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">${list.length} sonuç</div>` +
+      list.map((item, i) => {
+        const title = mvzField(item, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'İsimsiz Mevzuat';
+        const tur = mvzField(item, 'mevzuatTur', 'mevzuat_tur', 'type', 'tur') || '';
+        const rgTarih = mvzField(item, 'resmiGazeteTarihi', 'resmi_gazete_tarihi', 'rgTarihi') || '';
+        return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick='mevzuatShowTree(${JSON.stringify(JSON.stringify(item))})'>
+          <span class="ico"><i class="fa-solid fa-scale-balanced"></i></span>
+          <span>${title}<span style="display:block;font-size:10px;color:var(--t3);">${tur}${rgTarih ? ' — RG: ' + rgTarih : ''}</span></span>
+        </div>`;
+      }).join('');
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">Bağlantı hatası — servis şu anda erişilemez olabilir.</div>`;
+  }
+}
+
+let mevzuatCurrentItem = null;
+
+async function mevzuatShowTree(itemJsonStr) {
+  const item = JSON.parse(itemJsonStr);
+  mevzuatCurrentItem = item;
+  const mevzuatId = mvzField(item, 'mevzuatId', 'mevzuat_id', 'id');
+  const title = mvzField(item, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
+  const box = document.getElementById('mv-mev-results');
+  if (!mevzuatId) {
+    toast('Bu mevzuatın kimliği alınamadı', 'fa-solid fa-triangle-exclamation');
+    return;
+  }
+  box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Madde listesi yükleniyor…</div>`;
+
+  try {
+    const res = await fetch('/api/tools/mevzuat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'tree', mevzuatId })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Madde listesi alınamadı.'}</div>`;
+      return;
+    }
+    const nodes = Array.isArray(data.result) ? data.result : (data.result?.items || []);
+    box.innerHTML = `
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
+      ${nodes.length ? nodes.map(n => {
+        const maddeId = mvzField(n, 'maddeId', 'madde_id', 'id');
+        const maddeAd = mvzField(n, 'maddeAdi', 'madde_adi', 'title', 'ad') || 'Madde';
+        return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:8px 12px;" onclick='mevzuatShowContent("${mevzuatId}","${maddeId}")'>
+          <span class="ico"><i class="fa-solid fa-list-ol"></i></span>${maddeAd}
+        </div>`;
+      }).join('') : '<div style="font-size:12px;color:var(--t3);">Madde listesi bulunamadı.</div>'}
+    `;
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">Bağlantı hatası.</div>`;
+  }
+}
+
+async function mevzuatShowContent(mevzuatId, maddeId) {
+  try {
+    const res = await fetch('/api/tools/mevzuat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'content', mevzuatId, maddeId })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(data.error || 'Madde içeriği alınamadı', 'fa-solid fa-triangle-exclamation');
+      return;
+    }
+    const text = typeof data.result === 'string' ? data.result : (data.result?.content || data.result?.text || JSON.stringify(data.result));
+    const title = mvzField(mevzuatCurrentItem, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
+
+    appendMsg('user', `<strong>Mevzuat Arama</strong> — ${title}`);
+    appendMsg('ai', fmtAI(text));
+    toast('Madde metni sağ panele eklendi', 'fa-solid fa-check', true);
+  } catch (e) {
+    toast('Bağlantı hatası', 'fa-solid fa-triangle-exclamation');
+  }
 }
