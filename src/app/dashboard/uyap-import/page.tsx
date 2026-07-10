@@ -249,7 +249,7 @@ export default function UyapImportPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  wrap: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" },
+  wrap: { minHeight: "100vh", height: "100vh", overflowY: "auto", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" },
   card: { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: 32, width: 360, textAlign: "center" },
   lbl: { fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 },
   btn: { padding: "10px 18px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#fff", fontWeight: 500, cursor: "pointer" },

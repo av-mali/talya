@@ -70,6 +70,8 @@ export default function LoginPage() {
 const styles: Record<string, React.CSSProperties> = {
   wrap: {
     minHeight: "100vh",
+    height: "100vh",
+    overflowY: "auto",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

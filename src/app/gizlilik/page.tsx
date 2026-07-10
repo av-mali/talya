@@ -2,7 +2,7 @@ export default function GizlilikPage() {
   return (
     <>
       <link rel="stylesheet" href="/talya-original.css" />
-      <div style={{ background: "var(--bg)", minHeight: "100vh", padding: "60px 20px" }}>
+      <div style={{ background: "var(--bg)", minHeight: "100vh", height: "100vh", overflowY: "auto", padding: "60px 20px", boxSizing: "border-box" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <div style={{ marginBottom: 32 }}>
             <a href="/dashboard" style={{ color: "var(--gold)", fontSize: 13, textDecoration: "none" }}>
