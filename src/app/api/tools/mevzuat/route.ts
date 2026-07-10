@@ -17,7 +17,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Arama terimi girin." }, { status: 400 });
       }
       const result = await searchMevzuat(query.trim());
-      return NextResponse.json({ result });
+      return NextResponse.json({ result, _debug: JSON.stringify(result).slice(0, 2000) });
     }
 
     if (action === "tree") {

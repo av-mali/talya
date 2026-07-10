@@ -311,13 +311,15 @@ async function mevzuatSearch() {
       body: JSON.stringify({ action: 'search', query })
     });
     const data = await res.json();
+    console.log('[Mevzuat] Ham API cevabı:', data);
     if (!res.ok) {
       box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Arama başarısız.'}</div>`;
       return;
     }
-    const list = Array.isArray(data.result) ? data.result : (data.result?.results || data.result?.items || []);
+    const list = Array.isArray(data.result) ? data.result : (data.result?.results || data.result?.items || data.result?.mevzuatlar || []);
     if (!list.length) {
-      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sonuç bulunamadı.</div>`;
+      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sonuç bulunamadı.</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis (geliştirici için): ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`;
       return;
     }
     box.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">${list.length} sonuç</div>` +
@@ -355,6 +357,7 @@ async function mevzuatShowTree(itemJsonStr) {
       body: JSON.stringify({ action: 'tree', mevzuatId })
     });
     const data = await res.json();
+    console.log('[Mevzuat] Madde ağacı ham cevap:', data);
     if (!res.ok) {
       box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Madde listesi alınamadı.'}</div>`;
       return;
@@ -377,23 +380,37 @@ async function mevzuatShowTree(itemJsonStr) {
 }
 
 async function mevzuatShowContent(mevzuatId, maddeId) {
+  const box = document.getElementById('mv-mev-results');
+  box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Madde metni yükleniyor…</div>`;
   try {
     const res = await fetch('/api/tools/mevzuat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'content', mevzuatId, maddeId })
     });
     const data = await res.json();
+    console.log('[Mevzuat] Madde içeriği ham cevap:', data);
     if (!res.ok) {
-      toast(data.error || 'Madde içeriği alınamadı', 'fa-solid fa-triangle-exclamation');
+      box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Madde içeriği alınamadı.'}</div>`;
       return;
     }
     const text = typeof data.result === 'string' ? data.result : (data.result?.content || data.result?.text || JSON.stringify(data.result));
     const title = mvzField(mevzuatCurrentItem, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
 
-    appendMsg('user', `<strong>Mevzuat Arama</strong> — ${title}`);
-    appendMsg('ai', fmtAI(text));
-    toast('Madde metni sağ panele eklendi', 'fa-solid fa-check', true);
+    box.innerHTML = `
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick='mevzuatShowTree(${JSON.stringify(JSON.stringify(mevzuatCurrentItem))})'><i class="fa-solid fa-arrow-left"></i> Madde Listesine Dön</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
+      <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;max-height:400px;overflow-y:auto;">${(text || '').replace(/</g, '&lt;')}</div>
+      <button class="pop-cta-btn b" style="width:100%;margin-top:10px;" onclick="mevzuatCopyContent()"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>
+    `;
+    box.dataset.currentText = text;
   } catch (e) {
-    toast('Bağlantı hatası', 'fa-solid fa-triangle-exclamation');
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">Bağlantı hatası.</div>`;
   }
+}
+
+function mevzuatCopyContent() {
+  const box = document.getElementById('mv-mev-results');
+  const text = box?.dataset.currentText;
+  if (!text) return;
+  navigator.clipboard?.writeText(text).then(() => toast('Panoya kopyalandı', 'fa-solid fa-check', true));
 }
