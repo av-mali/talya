@@ -64,11 +64,58 @@ function extractToolResult(callRes: any): any {
   if (!content || !content.length) return null;
   const textPart = content.find((c: any) => c.type === "text");
   if (!textPart) return null;
-  try {
-    return JSON.parse(textPart.text);
-  } catch (e) {
-    return textPart.text;
-  }
+  return textPart.text; // ham metin — çağıran taraf gerekirse JSON/metin ayrıştırır
+}
+
+// GERÇEK VERİYLE TEST EDİLEREK BULUNDU: Servis JSON değil, şu formatta
+// düz metin bir rapor döndürüyor:
+//   Search: title='...'
+//   Results: N total (page P)
+//
+//   - [5237] BAŞLIK (TÜR) | mevzuatId: 117657 | RG: 2022-02-25
+//   - [...] ...
+function parseMevzuatSearchText(text: string) {
+  if (typeof text !== "string") return [];
+  const lines = text.split("\n").filter((l) => l.trim().startsWith("- ["));
+  return lines.map((line) => {
+    const parts = line.split(" | ").map((p) => p.trim());
+    const first = parts[0];
+    const m = first.match(/^-\s*\[(.+?)\]\s+(.*)$/);
+    const mevzuatNo = m ? m[1] : "";
+    let rest = m ? m[2] : first;
+    let mevzuatTur = "";
+    const typeMatch = rest.match(/\(([^()]+)\)\s*$/);
+    if (typeMatch) {
+      mevzuatTur = typeMatch[1];
+      rest = rest.slice(0, typeMatch.index).trim();
+    }
+    const extra: Record<string, string> = {};
+    for (let i = 1; i < parts.length; i++) {
+      const idx = parts[i].indexOf(":");
+      if (idx > -1) extra[parts[i].slice(0, idx).trim()] = parts[i].slice(idx + 1).trim();
+    }
+    return {
+      mevzuatNo,
+      mevzuatAdi: rest,
+      mevzuatTur,
+      mevzuatId: extra["mevzuatId"] || "",
+      resmiGazeteTarihi: extra["RG"] || "",
+    };
+  });
+}
+
+// Madde ağacı da muhtemelen benzer bir düz metin liste formatında geliyor —
+// "- [madde_id] Başlık" satırlarını ayrıştırıyoruz. Format tam olarak
+// doğrulanamadı (canlı test gerekiyor), bu yüzden birkaç olası kalıbı
+// deniyoruz.
+function parseMevzuatTreeText(text: string) {
+  if (typeof text !== "string") return [];
+  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("-"));
+  return lines.map((line) => {
+    const m = line.match(/^-\s*\[(.+?)\]\s+(.*)$/);
+    if (m) return { maddeId: m[1], maddeAdi: m[2] };
+    return { maddeId: "", maddeAdi: line.replace(/^-\s*/, "") };
+  });
 }
 
 export async function searchMevzuat(query: string, maxResults = 6) {
@@ -85,7 +132,9 @@ export async function searchMevzuat(query: string, maxResults = 6) {
     },
     sessionId
   );
-  return extractToolResult(callRes);
+  const raw = extractToolResult(callRes);
+  if (Array.isArray(raw)) return raw; // ileride servis gerçek JSON döndürürse buna da hazır olalım
+  return parseMevzuatSearchText(raw);
 }
 
 export async function getMevzuatArticleTree(mevzuatId: string) {
@@ -99,7 +148,9 @@ export async function getMevzuatArticleTree(mevzuatId: string) {
     },
     sessionId
   );
-  return extractToolResult(callRes);
+  const raw = extractToolResult(callRes);
+  if (Array.isArray(raw)) return raw;
+  return parseMevzuatTreeText(raw);
 }
 
 export async function getMevzuatArticleContent(mevzuatId: string, maddeId: string) {
@@ -113,5 +164,5 @@ export async function getMevzuatArticleContent(mevzuatId: string, maddeId: strin
     },
     sessionId
   );
-  return extractToolResult(callRes);
+  return extractToolResult(callRes); // burada ham metin zaten aradığımız şey
 }
