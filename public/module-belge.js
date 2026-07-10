@@ -98,6 +98,7 @@ function buildAnalyzeWidgetHtml(prefix, questionPlaceholder) {
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
         <span class="qp" style="cursor:pointer;" onclick="fillQuickInstruction('${prefix}','risk')"><i class="fa-solid fa-scale-balanced"></i> Risk Analizi Yap</span>
         <span class="qp" style="cursor:pointer;" onclick="fillQuickInstruction('${prefix}','sozlesme')"><i class="fa-solid fa-file-signature"></i> Sözleşme İncele</span>
+        <span class="qp" style="cursor:pointer;" onclick="fillQuickInstruction('${prefix}','karsitaraf')"><i class="fa-solid fa-arrows-turn-to-dots"></i> Karşı Taraf Lehine Çevir</span>
       </div>
       <textarea id="${prefix}-question" rows="2" placeholder="${questionPlaceholder}"></textarea>
     </div>
@@ -112,6 +113,7 @@ function buildAnalyzeWidgetHtml(prefix, questionPlaceholder) {
 const QUICK_INSTRUCTIONS = {
   risk: 'Bu belgeyi/dosyayı hukuki açıdan değerlendir: güçlü yönler, zayıf yönler/riskler, varsa emsal içtihat eğilimi ve önerilen stratejiyi ayrı başlıklar halinde yaz. Sonunda genel değerlendirmeni "Düşük risk / Orta risk / Yüksek risk" şeklinde kategorik olarak belirt — net bir yüzde veya kesin bir kazanma olasılığı verme, hukuki sonuçlar kesin tahmin edilemez.',
   sozlesme: 'Bu sözleşmeyi TBK açısından incele: riskli, eksik veya belirsiz maddeleri tek tek tespit et, her biri için ne değiştirilmesi/eklenmesi gerektiğini öner. Taraflar arasındaki dengesizlikleri (varsa) ayrıca belirt.',
+  karsitaraf: 'Bu belgeyi, hukuki geçerliliğini koruyarak, karşı tarafın (belgede kimin lehine yazıldıysa onun karşısındaki tarafın) çıkarına ve bakış açısına göre yeniden düzenle. Hangi maddelerin/ifadelerin karşı taraf lehine değiştirildiğini kısaca özetle.',
 };
 
 function fillQuickInstruction(prefix, type) {

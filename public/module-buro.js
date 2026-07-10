@@ -332,6 +332,9 @@ async function mvOpenCase(caseId) {
 
   const toplamSaat = cs.timeEntries.reduce((s, t) => s + t.hours, 0);
   const toplamUcret = cs.timeEntries.reduce((s, t) => s + (t.hours * (t.hourlyRate || 0)), 0);
+  const faturalanmamis = cs.timeEntries.filter(t => !t.invoiced && t.hourlyRate);
+  const faturalanmamisSaat = faturalanmamis.reduce((s, t) => s + t.hours, 0);
+  const faturalanmamisUcret = faturalanmamis.reduce((s, t) => s + (t.hours * (t.hourlyRate || 0)), 0);
 
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
@@ -397,11 +400,17 @@ async function mvOpenCase(caseId) {
       </div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-stopwatch"></i> Zaman Takibi</div>
-      <div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--t2);">
+      <div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--t2);flex-wrap:wrap;">
         <span>Toplam: <strong>${toplamSaat.toFixed(1)} saat</strong></span>
         ${toplamUcret > 0 ? `<span>Tahmini ücret: <strong style="color:var(--gold);">${fmtTL(toplamUcret)}</strong></span>` : ''}
       </div>
-      <div id="mv-time">${cs.timeEntries.length ? cs.timeEntries.map(t => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(t.date).toLocaleDateString('tr-TR')} — ${t.hours} saat${t.description?(' — '+t.description):''}</span><span style="display:flex;align-items:center;gap:8px;">${t.hourlyRate?`<span style="font-family:'JetBrains Mono',monospace;color:var(--t3);">${fmtTL(t.hours*t.hourlyRate)}</span>`:''}<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteTime('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz zaman kaydı yok.</div>'}</div>
+      ${faturalanmamisUcret > 0 ? `
+        <div style="background:var(--gold-lo);border:1px solid var(--gold-rule);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span style="font-size:12px;">Faturalanmamış: <strong>${faturalanmamisSaat.toFixed(1)} saat</strong> — <strong style="color:var(--gold);">${fmtTL(faturalanmamisUcret)}</strong></span>
+          <button class="pop-cta-btn g" style="width:auto;padding:6px 12px;" onclick="mvConvertTimeToInvoice('${cs.id}')"><i class="fa-solid fa-file-invoice-dollar"></i><span>Faturaya Dönüştür</span></button>
+        </div>
+      ` : ''}
+      <div id="mv-time">${cs.timeEntries.length ? cs.timeEntries.map(t => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(t.date).toLocaleDateString('tr-TR')} — ${t.hours} saat${t.description?(' — '+t.description):''}${t.invoiced ? ' <span style="color:var(--success);font-size:10px;">(faturalandı)</span>' : ''}</span><span style="display:flex;align-items:center;gap:8px;">${t.hourlyRate?`<span style="font-family:'JetBrains Mono',monospace;color:var(--t3);">${fmtTL(t.hours*t.hourlyRate)}</span>`:''}<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteTime('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz zaman kaydı yok.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <input type="text" id="mv-time-hours" placeholder="Saat (ör. 1.5)" style="width:110px;">
         <input type="text" id="mv-time-rate" placeholder="Saatlik ücret (ops.)" style="width:150px;">
@@ -529,6 +538,18 @@ async function mvAddTime() {
   });
   toast('Zaman kaydı eklendi', 'fa-solid fa-check', true);
   mvOpenCase(mvOpenCaseId);
+}
+
+async function mvConvertTimeToInvoice(caseId) {
+  if (!confirm('Faturalanmamış tüm zaman kayıtları tek bir faturada birleştirilecek. Devam edilsin mi?')) return;
+  const res = await fetch('/api/cases/' + caseId + '/time/convert-to-invoice', { method: 'POST' });
+  const data = await res.json();
+  if (res.ok) {
+    toast(`${data.hours} saat faturaya dönüştürüldü`, 'fa-solid fa-check', true);
+    mvOpenCase(caseId);
+  } else {
+    toast(data.error || 'Dönüştürülemedi', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvDeleteTime(entryId) {

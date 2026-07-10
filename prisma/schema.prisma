@@ -136,6 +136,7 @@ model TimeEntry {
   hourlyRate  Float?
   description String?
   date        DateTime @default(now())
+  invoiced    Boolean  @default(false)
   createdAt   DateTime @default(now())
   case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
   caseId      String
