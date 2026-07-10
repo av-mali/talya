@@ -166,32 +166,38 @@ export async function searchMevzuat(query: string, maxResults = 6) {
 // genel "get_mevzuat_content" aracı bazı türlerde (ör. Cumhurbaşkanı
 // Kararı gibi PDF kaynaklı belgelerde) ham/bozuk veri döndürebiliyor.
 // Türe göre doğru, özel aracı seçiyoruz.
-function pickContentTool(mevzuatTur: string): { tool: string; argKey: string } {
+function pickContentTool(mevzuatTur: string): { tool: string; argKey: string; useNo: boolean } {
   const t = (mevzuatTur || "").toLocaleLowerCase("tr");
   // "kararı" değil "karar" ile eşleştiriyoruz — tekil/çoğul (Kararı/Kararları)
   // ve yazım farklarının hepsini kapsasın diye.
   if (t.includes("cumhurbaşkanı karar") || t.includes("cumhurbaskani karar")) {
-    return { tool: "get_cbbaskankarar_content", argKey: "karar_id" };
+    // Bu araç iç kimlik (mevzuatId) değil, belgenin KENDİ NUMARASINI istiyor.
+    return { tool: "get_cbbaskankarar_content", argKey: "mevzuat_no", useNo: true };
   }
   if (t.includes("tebliğ") || t.includes("teblig")) {
-    return { tool: "get_teblig_content", argKey: "teblig_id" };
+    return { tool: "get_teblig_content", argKey: "teblig_id", useNo: false };
   }
   if (t.includes("genelge")) {
-    return { tool: "get_cbgenelge_content", argKey: "genelge_id" };
+    return { tool: "get_cbgenelge_content", argKey: "genelge_id", useNo: false };
   }
   // Kanun, KHK, Tüzük, Yönetmelik ve diğerleri için varsayılan/genel araç.
-  return { tool: "get_mevzuat_content", argKey: "mevzuat_id" };
+  return { tool: "get_mevzuat_content", argKey: "mevzuat_id", useNo: false };
 }
 
-export async function getMevzuatContent(mevzuatId: string, mevzuatTur: string = ""): Promise<{ text: any; availableTools?: string[] }> {
+export async function getMevzuatContent(
+  mevzuatId: string,
+  mevzuatTur: string = "",
+  mevzuatNo: string = ""
+): Promise<{ text: any; availableTools?: string[] }> {
   const sessionId = await getSession();
-  const { tool, argKey } = pickContentTool(mevzuatTur);
+  const { tool, argKey, useNo } = pickContentTool(mevzuatTur);
+  const idValue = useNo && mevzuatNo ? mevzuatNo : mevzuatId;
   const callRes = await mcpRequest(
     {
       jsonrpc: "2.0",
       id: 2,
       method: "tools/call",
-      params: { name: tool, arguments: { [argKey]: mevzuatId } },
+      params: { name: tool, arguments: { [argKey]: idValue } },
     },
     sessionId
   );

@@ -361,6 +361,7 @@ async function mevzuatShowTree(index) {
   mevzuatCurrentItem = item;
   const mevzuatId = mvzField(item, 'mevzuatId', 'mevzuat_id', 'id');
   const mevzuatTur = mvzField(item, 'mevzuatTur', 'mevzuat_tur', 'type', 'tur') || '';
+  const mevzuatNo = mvzField(item, 'mevzuatNo', 'mevzuat_no') || '';
   const title = mvzField(item, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
   const box = mevzuatGetPane();
   if (!mevzuatId) {
@@ -372,7 +373,7 @@ async function mevzuatShowTree(index) {
   try {
     const res = await fetch('/api/tools/mevzuat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'content', mevzuatId, mevzuatTur })
+      body: JSON.stringify({ action: 'content', mevzuatId, mevzuatTur, mevzuatNo })
     });
     const data = await res.json();
     console.log('[Mevzuat] İçerik ham cevap:', data);
