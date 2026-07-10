@@ -121,19 +121,7 @@ function parseMevzuatSearchText(text: string) {
   });
 }
 
-// Madde ağacı da muhtemelen benzer bir düz metin liste formatında geliyor —
-// "- [madde_id] Başlık" satırlarını ayrıştırıyoruz. Format tam olarak
-// doğrulanamadı (canlı test gerekiyor), bu yüzden birkaç olası kalıbı
-// deniyoruz.
-function parseMevzuatTreeText(text: string) {
-  if (typeof text !== "string") return [];
-  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("-"));
-  return lines.map((line) => {
-    const m = line.match(/^-\s*\[(.+?)\]\s+(.*)$/);
-    if (m) return { maddeId: m[1], maddeAdi: m[2] };
-    return { maddeId: "", maddeAdi: line.replace(/^-\s*/, "") };
-  });
-}
+
 
 export async function searchMevzuat(query: string, maxResults = 6) {
   const sessionId = await getSession();
@@ -174,34 +162,14 @@ export async function searchMevzuat(query: string, maxResults = 6) {
   return allResults;
 }
 
-export async function getMevzuatArticleTree(mevzuatId: string): Promise<{ parsed: any[]; raw: any; availableTools?: string[] }> {
+export async function getMevzuatContent(mevzuatId: string): Promise<{ text: any; availableTools?: string[] }> {
   const sessionId = await getSession();
   const callRes = await mcpRequest(
     {
       jsonrpc: "2.0",
       id: 2,
       method: "tools/call",
-      params: { name: "get_mevzuat_article_tree", arguments: { mevzuat_id: mevzuatId } },
-    },
-    sessionId
-  );
-  if (isUnknownToolError(callRes)) {
-    const availableTools = await listAvailableTools(sessionId);
-    return { parsed: [], raw: callRes.data, availableTools };
-  }
-  const raw = extractToolResult(callRes);
-  const parsed = Array.isArray(raw) ? raw : parseMevzuatTreeText(raw);
-  return { parsed, raw };
-}
-
-export async function getMevzuatArticleContent(mevzuatId: string, maddeId: string): Promise<{ text: any; availableTools?: string[] }> {
-  const sessionId = await getSession();
-  const callRes = await mcpRequest(
-    {
-      jsonrpc: "2.0",
-      id: 2,
-      method: "tools/call",
-      params: { name: "get_mevzuat_article_content", arguments: { mevzuat_id: mevzuatId, madde_id: maddeId } },
+      params: { name: "get_mevzuat_content", arguments: { mevzuat_id: mevzuatId } },
     },
     sessionId
   );

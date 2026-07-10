@@ -366,69 +366,30 @@ async function mevzuatShowTree(index) {
     toast('Bu mevzuatın kimliği alınamadı', 'fa-solid fa-triangle-exclamation');
     return;
   }
-  box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Madde listesi yükleniyor…</div>`;
+  box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Tam metin yükleniyor…</div>`;
 
   try {
     const res = await fetch('/api/tools/mevzuat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'tree', mevzuatId })
+      body: JSON.stringify({ action: 'content', mevzuatId })
     });
     const data = await res.json();
-    console.log('[Mevzuat] Madde ağacı ham cevap:', data);
+    console.log('[Mevzuat] İçerik ham cevap:', data);
     if (!res.ok) {
-      box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Madde listesi alınamadı.'}</div>`;
-      return;
-    }
-    const nodes = Array.isArray(data.result) ? data.result : (data.result?.items || []);
-    mevzuatTreeNodes = nodes;
-    box.innerHTML = `
-      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
-      ${nodes.length ? nodes.map((n, i) => {
-        const maddeAd = mvzField(n, 'maddeAdi', 'madde_adi', 'title', 'ad') || 'Madde';
-        return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:8px 12px;" onclick="mevzuatShowContent(${i})">
-          <span class="ico"><i class="fa-solid fa-list-ol"></i></span>${maddeAd}
-        </div>`;
-      }).join('') : `<div style="font-size:12px;color:var(--t3);">Madde listesi bulunamadı.</div>
-        <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis: ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`}
-    `;
-  } catch (e) {
-    box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">Bağlantı hatası.</div>`;
-  }
-}
-
-let mevzuatTreeNodes = [];
-
-async function mevzuatShowContent(index) {
-  const node = mevzuatTreeNodes[index];
-  if (!node) return;
-  const mevzuatId = mvzField(mevzuatCurrentItem, 'mevzuatId', 'mevzuat_id', 'id');
-  const maddeId = mvzField(node, 'maddeId', 'madde_id', 'id');
-  const box = mevzuatGetPane();
-  box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Madde metni yükleniyor…</div>`;
-  try {
-    const res = await fetch('/api/tools/mevzuat', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'content', mevzuatId, maddeId })
-    });
-    const data = await res.json();
-    console.log('[Mevzuat] Madde içeriği ham cevap:', data);
-    if (!res.ok) {
-      box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Madde içeriği alınamadı.'}</div>`;
+      box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'İçerik alınamadı.'}</div>`;
       return;
     }
     if (!data.result) {
-      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Madde içeriği alınamadı.</div>
+      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">İçerik alınamadı.</div>
         <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis: ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`;
       return;
     }
     const text = typeof data.result === 'string' ? data.result : (data.result?.content || data.result?.text || JSON.stringify(data.result));
-    const title = mvzField(mevzuatCurrentItem, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
 
     box.innerHTML = `
-      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatShowTree(${mevzuatSearchResults.indexOf(mevzuatCurrentItem)})"><i class="fa-solid fa-arrow-left"></i> Madde Listesine Dön</div>
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
-      <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;max-height:400px;overflow-y:auto;">${(text || '').replace(/</g, '&lt;')}</div>
+      <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;max-height:500px;overflow-y:auto;">${(text || '').replace(/</g, '&lt;')}</div>
       <button class="pop-cta-btn b" style="width:100%;margin-top:10px;" onclick="mevzuatCopyContent()"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>
     `;
     box.dataset.currentText = text;

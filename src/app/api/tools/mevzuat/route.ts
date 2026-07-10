@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { searchMevzuat, getMevzuatArticleTree, getMevzuatArticleContent } from "@/lib/mevzuatMcp";
+import { searchMevzuat, getMevzuatContent } from "@/lib/mevzuatMcp";
 
-// Mevzuat Bilgi Sistemi'nde arama, madde ağacı ve madde içeriği getirme —
-// hepsi tek uç noktada, "action" alanına göre.
+// Mevzuat Bilgi Sistemi'nde arama ve tam metin getirme — hepsi tek uç
+// noktada, "action" alanına göre.
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   try {
-    const { action, query, mevzuatId, maddeId } = await req.json();
+    const { action, query, mevzuatId } = await req.json();
 
     if (action === "search") {
       if (!query || !query.trim()) {
@@ -20,18 +20,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ result, _debug: JSON.stringify(result).slice(0, 2000) });
     }
 
-    if (action === "tree") {
-      if (!mevzuatId) return NextResponse.json({ error: "mevzuatId gerekli." }, { status: 400 });
-      const { parsed, raw, availableTools } = await getMevzuatArticleTree(mevzuatId);
-      const debugText = availableTools
-        ? `Bu araç sunucuda yok. Sunucudaki GERÇEK araçlar: ${availableTools.join(", ")}`
-        : JSON.stringify(raw).slice(0, 1500);
-      return NextResponse.json({ result: parsed, _debug: debugText });
-    }
-
     if (action === "content") {
-      if (!mevzuatId || !maddeId) return NextResponse.json({ error: "mevzuatId ve maddeId gerekli." }, { status: 400 });
-      const { text, availableTools } = await getMevzuatArticleContent(mevzuatId, maddeId);
+      if (!mevzuatId) return NextResponse.json({ error: "mevzuatId gerekli." }, { status: 400 });
+      const { text, availableTools } = await getMevzuatContent(mevzuatId);
       if (availableTools) {
         return NextResponse.json({ result: null, _debug: `Bu araç sunucuda yok. Sunucudaki GERÇEK araçlar: ${availableTools.join(", ")}` });
       }
