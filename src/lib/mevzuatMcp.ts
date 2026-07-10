@@ -120,21 +120,41 @@ function parseMevzuatTreeText(text: string) {
 
 export async function searchMevzuat(query: string, maxResults = 6) {
   const sessionId = await getSession();
-  const callRes = await mcpRequest(
-    {
-      jsonrpc: "2.0",
-      id: 2,
-      method: "tools/call",
-      params: {
-        name: "search_mevzuat",
-        arguments: { mevzuat_adi: query, page_size: maxResults },
-      },
-    },
-    sessionId
-  );
-  const raw = extractToolResult(callRes);
-  if (Array.isArray(raw)) return raw; // ileride servis gerçek JSON döndürürse buna da hazır olalım
-  return parseMevzuatSearchText(raw);
+  const isNumeric = /^\d+$/.test(query.trim());
+
+  // Sayısal bir arama ise (ör. "5237"), hem isimde hem kanun numarasında
+  // ara — TCK gibi kanunların adında sayı geçmez ama numarasında geçer.
+  const searches = isNumeric
+    ? [
+        { name: "search_mevzuat", arguments: { mevzuat_no: query, page_size: maxResults } },
+        { name: "search_mevzuat", arguments: { mevzuat_adi: query, page_size: maxResults } },
+      ]
+    : [{ name: "search_mevzuat", arguments: { mevzuat_adi: query, page_size: maxResults } }];
+
+  const allResults: any[] = [];
+  const seenIds = new Set<string>();
+
+  for (const s of searches) {
+    try {
+      const callRes = await mcpRequest(
+        { jsonrpc: "2.0", id: 2, method: "tools/call", params: s },
+        sessionId
+      );
+      const raw = extractToolResult(callRes);
+      const parsed = Array.isArray(raw) ? raw : parseMevzuatSearchText(raw);
+      for (const item of parsed) {
+        const id = item.mevzuatId || item.mevzuatNo;
+        if (id && !seenIds.has(id)) {
+          seenIds.add(id);
+          allResults.push(item);
+        }
+      }
+    } catch (e) {
+      /* bu arama türü başarısız oldu, diğerine devam et */
+    }
+  }
+
+  return allResults;
 }
 
 export async function getMevzuatArticleTree(mevzuatId: string) {

@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     if (action === "tree") {
       if (!mevzuatId) return NextResponse.json({ error: "mevzuatId gerekli." }, { status: 400 });
       const result = await getMevzuatArticleTree(mevzuatId);
-      return NextResponse.json({ result });
+      return NextResponse.json({ result, _debug: JSON.stringify(result).slice(0, 1500) });
     }
 
     if (action === "content") {

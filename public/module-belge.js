@@ -378,7 +378,8 @@ async function mevzuatShowTree(index) {
         return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:8px 12px;" onclick="mevzuatShowContent(${i})">
           <span class="ico"><i class="fa-solid fa-list-ol"></i></span>${maddeAd}
         </div>`;
-      }).join('') : '<div style="font-size:12px;color:var(--t3);">Madde listesi bulunamadı.</div>'}
+      }).join('') : `<div style="font-size:12px;color:var(--t3);">Madde listesi bulunamadı.</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis: ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`}
     `;
   } catch (e) {
     box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">Bağlantı hatası.</div>`;
