@@ -168,7 +168,9 @@ export async function searchMevzuat(query: string, maxResults = 6) {
 // Türe göre doğru, özel aracı seçiyoruz.
 function pickContentTool(mevzuatTur: string): { tool: string; argKey: string } {
   const t = (mevzuatTur || "").toLocaleLowerCase("tr");
-  if (t.includes("cumhurbaşkanı kararı") || t.includes("cumhurbaskani karari")) {
+  // "kararı" değil "karar" ile eşleştiriyoruz — tekil/çoğul (Kararı/Kararları)
+  // ve yazım farklarının hepsini kapsasın diye.
+  if (t.includes("cumhurbaşkanı karar") || t.includes("cumhurbaskani karar")) {
     return { tool: "get_cbbaskankarar_content", argKey: "karar_id" };
   }
   if (t.includes("tebliğ") || t.includes("teblig")) {
