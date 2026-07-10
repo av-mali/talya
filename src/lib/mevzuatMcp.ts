@@ -205,5 +205,20 @@ export async function getMevzuatContent(
     const availableTools = await listAvailableTools(sessionId);
     return { text: null, availableTools };
   }
-  return { text: extractToolResult(callRes) };
+  const raw = extractToolResult(callRes);
+  // Bazı araçlar (ör. get_cbbaskankarar_content) düz metin değil, içinde
+  // "markdown_content" gibi bir alan barındıran bir JSON paketi döndürüyor
+  // — asıl okunabilir metni bu paketin içinden ayıklıyoruz.
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      const clean = parsed.markdown_content || parsed.content || parsed.text || parsed.madde_metni;
+      if (typeof clean === "string" && clean.trim()) {
+        return { text: clean };
+      }
+    } catch (e) {
+      /* JSON değilmiş, ham metni olduğu gibi kullan */
+    }
+  }
+  return { text: raw };
 }
