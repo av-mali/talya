@@ -22,14 +22,20 @@ export async function POST(req: Request) {
 
     if (action === "tree") {
       if (!mevzuatId) return NextResponse.json({ error: "mevzuatId gerekli." }, { status: 400 });
-      const { parsed, raw } = await getMevzuatArticleTree(mevzuatId);
-      return NextResponse.json({ result: parsed, _debug: JSON.stringify(raw).slice(0, 1500) });
+      const { parsed, raw, availableTools } = await getMevzuatArticleTree(mevzuatId);
+      const debugText = availableTools
+        ? `Bu araç sunucuda yok. Sunucudaki GERÇEK araçlar: ${availableTools.join(", ")}`
+        : JSON.stringify(raw).slice(0, 1500);
+      return NextResponse.json({ result: parsed, _debug: debugText });
     }
 
     if (action === "content") {
       if (!mevzuatId || !maddeId) return NextResponse.json({ error: "mevzuatId ve maddeId gerekli." }, { status: 400 });
-      const result = await getMevzuatArticleContent(mevzuatId, maddeId);
-      return NextResponse.json({ result });
+      const { text, availableTools } = await getMevzuatArticleContent(mevzuatId, maddeId);
+      if (availableTools) {
+        return NextResponse.json({ result: null, _debug: `Bu araç sunucuda yok. Sunucudaki GERÇEK araçlar: ${availableTools.join(", ")}` });
+      }
+      return NextResponse.json({ result: text });
     }
 
     return NextResponse.json({ error: "Geçersiz işlem." }, { status: 400 });

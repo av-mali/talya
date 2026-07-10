@@ -58,14 +58,13 @@ window.CURRENT_MODULE = {
     mevzuat: {
       badge: 'g', badgeText: 'Mevzuat.gov.tr · Gerçek Arama', titleHtml: 'Mevzuat <em class="g">Arama</em>',
       desc: 'Kanun, yönetmelik ve tebliğlerde gerçek zamanlı arama yapın.',
-      btnClass: 'g', btnIco: 'fa-book-open-reader', btnLbl: '', hideCta: true, wideMode: true,
+      btnClass: 'g', btnIco: 'fa-book-open-reader', btnLbl: '', hideCta: true, hideChatInput: true,
       body: `
         <div class="fg"><input type="text" id="mv-mevara" placeholder="Kıdem tazminatı, velayet, kira artışı…" onkeydown="if(event.key==='Enter')mevzuatSearch()"></div>
         <button class="pop-cta-btn g" style="width:100%;" onclick="mevzuatSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Mevzuatta Ara</span></button>
-        <div id="mv-mev-results" style="margin-top:14px;"></div>
-        <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Kaynak</div><p>Sonuçlar, Adalet Bakanlığı Mevzuat Bilgi Sistemi'nden (mevzuat.gov.tr) gerçek zamanlı çekiliyor. Bu servis ücretsiz bir topluluk aracı üzerinden erişiliyor — nadiren yavaş/erişilemez olabilir.</p></div>
+        <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Kaynak</div><p>Sonuçlar, Adalet Bakanlığı Mevzuat Bilgi Sistemi'nden (mevzuat.gov.tr) gerçek zamanlı çekiliyor ve sağ panelde listelenir. Ücretsiz bir topluluk servisi üzerinden erişiliyor — nadiren yavaş/erişilemez olabilir.</p></div>
       `,
-      onOpen: () => { const r = document.getElementById('mv-mev-results'); if (r) r.innerHTML = ''; },
+      onOpen: () => { mevzuatRenderInPane('<div style="padding:30px 24px;color:var(--t3);font-size:13px;">Aramak için sol taraftaki kutuyu kullanın.</div>'); },
       prompt: () => ''
     },
     sablon: {
@@ -290,6 +289,18 @@ async function tplAdd() {
 // (Bağımsız bir topluluk servisi üzerinden — bkz. üstteki not.)
 // ══════════════════════════════════════════════════════
 
+// Mevzuat Arama sonuçları, sağdaki sohbet panelinin alanını (chatMsgs)
+// kullanır ama sohbet balonu formatında DEĞİL — doğrudan içerik olarak.
+function mevzuatGetPane() {
+  const empty = document.getElementById('chatEmpty');
+  if (empty) empty.style.display = 'none';
+  return document.getElementById('chatMsgs');
+}
+function mevzuatRenderInPane(html) {
+  const pane = mevzuatGetPane();
+  if (pane) pane.innerHTML = html;
+}
+
 // API'nin döndürdüğü alan adları kesin bilinmediği için (dış servis,
 // canlı test edilemedi), birden fazla olası alan adını deniyoruz.
 function mvzField(obj, ...names) {
@@ -301,7 +312,7 @@ function mvzField(obj, ...names) {
 
 async function mevzuatSearch() {
   const query = document.getElementById('mv-mevara').value.trim();
-  const box = document.getElementById('mv-mev-results');
+  const box = mevzuatGetPane();
   if (!query) { toast('Bir arama terimi girin', 'fa-solid fa-triangle-exclamation'); return; }
   box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> mevzuat.gov.tr'de aranıyor…</div>`;
 
@@ -350,7 +361,7 @@ async function mevzuatShowTree(index) {
   mevzuatCurrentItem = item;
   const mevzuatId = mvzField(item, 'mevzuatId', 'mevzuat_id', 'id');
   const title = mvzField(item, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'Mevzuat';
-  const box = document.getElementById('mv-mev-results');
+  const box = mevzuatGetPane();
   if (!mevzuatId) {
     toast('Bu mevzuatın kimliği alınamadı', 'fa-solid fa-triangle-exclamation');
     return;
@@ -393,7 +404,7 @@ async function mevzuatShowContent(index) {
   if (!node) return;
   const mevzuatId = mvzField(mevzuatCurrentItem, 'mevzuatId', 'mevzuat_id', 'id');
   const maddeId = mvzField(node, 'maddeId', 'madde_id', 'id');
-  const box = document.getElementById('mv-mev-results');
+  const box = mevzuatGetPane();
   box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Madde metni yükleniyor…</div>`;
   try {
     const res = await fetch('/api/tools/mevzuat', {
@@ -404,6 +415,11 @@ async function mevzuatShowContent(index) {
     console.log('[Mevzuat] Madde içeriği ham cevap:', data);
     if (!res.ok) {
       box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Madde içeriği alınamadı.'}</div>`;
+      return;
+    }
+    if (!data.result) {
+      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Madde içeriği alınamadı.</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis: ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`;
       return;
     }
     const text = typeof data.result === 'string' ? data.result : (data.result?.content || data.result?.text || JSON.stringify(data.result));
@@ -422,7 +438,7 @@ async function mevzuatShowContent(index) {
 }
 
 function mevzuatCopyContent() {
-  const box = document.getElementById('mv-mev-results');
+  const box = mevzuatGetPane();
   const text = box?.dataset.currentText;
   if (!text) return;
   navigator.clipboard?.writeText(text).then(() => toast('Panoya kopyalandı', 'fa-solid fa-check', true));

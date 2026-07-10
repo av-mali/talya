@@ -102,6 +102,12 @@ function openPopup(id) {
       toolPanel.style.margin = '';
     }
   }
+  // "hideChatInput": bu araç sohbete yazı yazdırmıyor, sadece sonuç
+  // gösteriyor — alttaki yazı kutusunu/gönder butonunu gizliyoruz.
+  const chatInputArea = document.querySelector('.chat-input-area');
+  if (chatInputArea) {
+    chatInputArea.style.display = popCfg.hideChatInput ? 'none' : '';
+  }
 
   const name = cfg.items.find(i => i.id === id)?.name || id;
   const itemNameEl = document.getElementById('appItemName');

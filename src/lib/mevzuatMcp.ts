@@ -67,6 +67,23 @@ function extractToolResult(callRes: any): any {
   return textPart.text; // ham metin — çağıran taraf gerekirse JSON/metin ayrıştırır
 }
 
+async function listAvailableTools(sessionId?: string): Promise<string[]> {
+  try {
+    const sid = sessionId || (await getSession());
+    const res = await mcpRequest({ jsonrpc: "2.0", id: 3, method: "tools/list", params: {} }, sid);
+    const tools = res.data?.result?.tools || [];
+    return tools.map((t: any) => t.name);
+  } catch (e) {
+    return [];
+  }
+}
+
+function isUnknownToolError(callRes: any): boolean {
+  const errMsg = callRes.data?.error?.message || "";
+  const contentText = callRes.data?.result?.content?.[0]?.text || "";
+  return /unknown tool/i.test(errMsg) || /unknown tool/i.test(contentText);
+}
+
 // GERÇEK VERİYLE TEST EDİLEREK BULUNDU: Servis JSON değil, şu formatta
 // düz metin bir rapor döndürüyor:
 //   Search: title='...'
@@ -157,7 +174,7 @@ export async function searchMevzuat(query: string, maxResults = 6) {
   return allResults;
 }
 
-export async function getMevzuatArticleTree(mevzuatId: string): Promise<{ parsed: any[]; raw: any }> {
+export async function getMevzuatArticleTree(mevzuatId: string): Promise<{ parsed: any[]; raw: any; availableTools?: string[] }> {
   const sessionId = await getSession();
   const callRes = await mcpRequest(
     {
@@ -168,12 +185,16 @@ export async function getMevzuatArticleTree(mevzuatId: string): Promise<{ parsed
     },
     sessionId
   );
+  if (isUnknownToolError(callRes)) {
+    const availableTools = await listAvailableTools(sessionId);
+    return { parsed: [], raw: callRes.data, availableTools };
+  }
   const raw = extractToolResult(callRes);
   const parsed = Array.isArray(raw) ? raw : parseMevzuatTreeText(raw);
   return { parsed, raw };
 }
 
-export async function getMevzuatArticleContent(mevzuatId: string, maddeId: string) {
+export async function getMevzuatArticleContent(mevzuatId: string, maddeId: string): Promise<{ text: any; availableTools?: string[] }> {
   const sessionId = await getSession();
   const callRes = await mcpRequest(
     {
@@ -184,5 +205,9 @@ export async function getMevzuatArticleContent(mevzuatId: string, maddeId: strin
     },
     sessionId
   );
-  return extractToolResult(callRes); // burada ham metin zaten aradığımız şey
+  if (isUnknownToolError(callRes)) {
+    const availableTools = await listAvailableTools(sessionId);
+    return { text: null, availableTools };
+  }
+  return { text: extractToolResult(callRes) };
 }
