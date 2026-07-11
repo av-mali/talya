@@ -14,10 +14,22 @@ import sharp from "sharp";
 // ÖNEMLİ: Yüklenen dosyalar HİÇBİR YERDE saklanmaz — anlık olarak
 // işlenir, cevap üretilir üretilmez bellekten silinir.
 
+// HALÜSİNASYON ÖNLEMİ: Her talimatın sonuna eklenen ortak güvenlik kuralı.
+// Web araması (grounding) açık, ama AI'ın hangi kaynaklara güvenmesi
+// gerektiğini ve emin olmadığında ne yapması gerektiğini net olarak
+// belirtiyoruz — bu, riski azaltır ama SIFIRLAMAZ, kullanıcı her zaman
+// kendi gözüyle doğrulamalı.
+const HALLUCINATION_GUARD = `
+
+ÖNEMLİ KURALLAR (İçtihat/Mevzuat Atıfları İçin):
+- İçtihat (Yargıtay/Danıştay kararı) veya kanun maddesi atfı yapacaksan, ÖNCE web'de ara ve SADECE resmi kaynaklardan (yargitay.gov.tr, karararama.yargitay.gov.tr, danistay.gov.tr, karararama.danistay.gov.tr, mevzuat.gov.tr, resmigazete.gov.tr, anayasa.gov.tr) doğrula.
+- Belirli bir kararın esas/karar numarasından (ör. "2021/1234 E., 2022/5678 K.") EMİN DEĞİLSEN, o numarayı ASLA UYDURMA. Bunun yerine ilgili hukuki ilkeden genel olarak bahset, spesifik ve sahte bir numara verme.
+- Gerçek bir kaynakta bulamadığın bir kararı/maddeyi varmış gibi gösterme.`;
+
 const SYSTEM_HINTS: Record<string, string> = {
-  dosya: "Sen Türk hukuku konusunda uzman bir asistansın. Sana verilen belgeyi dikkatle incele ve kullanıcının sorusunu, somut ve hukuki referanslarla (varsa ilgili kanun maddeleri) destekleyerek cevapla.",
-  sozlesme: "Sen bir sözleşme inceleme uzmanısın. Sana verilen sözleşmeyi dikkatle incele; riskli/eksik/belirsiz maddeleri, tarafların lehine/aleyhine olan noktaları vurgula. Kullanıcının sorusuna bu çerçevede cevap ver.",
-  dilekce: "Sen Türk hukuku konusunda uzman bir avukat asistanısın. Kullanıcının verdiği dava türü, olay örgüsü ve varsa özel taleplere göre, Hukuk Muhakemeleri Kanunu'na (HMK) uygun, resmi dilde, doğru başlıklandırılmış bir dilekçe taslağı yaz. Olay örgüsünde belirtilen somut detayları (isim, tarih, tutar, olay akışı ne varsa) MUTLAKA dilekçenin 'Açıklamalar' kısmına işle — genel/soyut bir metin yazma. Taslağı doğrudan dilekçe metni olarak ver, ekstra açıklama ekleme.",
+  dosya: "Sen Türk hukuku konusunda uzman bir asistansın. Sana verilen belgeyi dikkatle incele ve kullanıcının sorusunu, somut ve hukuki referanslarla (varsa ilgili kanun maddeleri) destekleyerek cevapla." + HALLUCINATION_GUARD,
+  sozlesme: "Sen bir sözleşme inceleme uzmanısın. Sana verilen sözleşmeyi dikkatle incele; riskli/eksik/belirsiz maddeleri, tarafların lehine/aleyhine olan noktaları vurgula. Kullanıcının sorusuna bu çerçevede cevap ver." + HALLUCINATION_GUARD,
+  dilekce: "Sen Türk hukuku konusunda uzman bir avukat asistanısın. Kullanıcının verdiği dava türü, olay örgüsü ve varsa özel taleplere göre, Hukuk Muhakemeleri Kanunu'na (HMK) uygun, resmi dilde, doğru başlıklandırılmış bir dilekçe taslağı yaz. Olay örgüsünde belirtilen somut detayları (isim, tarih, tutar, olay akışı ne varsa) MUTLAKA dilekçenin 'Açıklamalar' kısmına işle — genel/soyut bir metin yazma. Taslağı doğrudan dilekçe metni olarak ver, ekstra açıklama ekleme." + HALLUCINATION_GUARD,
 };
 
 function getExt(filename: string) {
@@ -102,7 +114,12 @@ export async function POST(req: Request) {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts }] }),
+        body: JSON.stringify({
+          contents: [{ parts }],
+          // Halüsinasyonu azaltmak için: AI, atıf yapmadan önce gerçekten
+          // web'de arayabilsin diye Google Arama aracını açıyoruz.
+          tools: [{ google_search: {} }],
+        }),
       }
     );
 
@@ -128,7 +145,13 @@ export async function POST(req: Request) {
       pdfBase64 = pdfBuffer.toString("base64");
     }
 
-    return NextResponse.json({ analysis, udfBase64, docxBase64, pdfBase64 });
+    // Uyarı etiketi sadece EKRANDA gösterilen cevaba eklenir — UDF/Word/PDF
+    // çıktısı (yukarıda zaten üretildi) temiz kalır, resmi belgeye karışmaz.
+    const displayAnalysis =
+      analysis +
+      "\n\n---\n⚠️ Bu metindeki içtihat/mevzuat atıfları yapay zeka tarafından oluşturulmuştur. Kullanmadan önce mutlaka resmi kaynaktan doğrulayın.";
+
+    return NextResponse.json({ analysis: displayAnalysis, udfBase64, docxBase64, pdfBase64 });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "İşlenirken bir hata oluştu." }, { status: 500 });
   }
