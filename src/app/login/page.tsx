@@ -5,6 +5,11 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+// useSearchParams() kullandığımız için Next.js'in derleme sırasında bu
+// sayfayı statik olarak önceden oluşturmaya çalışmaması gerekiyor —
+// yoksa "prerendering error" ile build başarısız oluyor.
+export const dynamic = "force-dynamic";
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
