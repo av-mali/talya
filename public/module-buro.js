@@ -40,7 +40,7 @@ window.CURRENT_MODULE = {
     ekip: {
       badge: 'b', badgeText: 'Büro & Ekip', titleHtml: 'Ekip <em class="b">Yönetimi</em>',
       desc: 'Büronuzun üyelerini görün, yeni üye davet edin.',
-      btnClass: 'b', btnIco: 'fa-people-group', btnLbl: '', hideCta: true,
+      btnClass: 'b', btnIco: 'fa-people-group', btnLbl: '', hideCta: true, hideChatInput: true,
       body: `<div id="ekip-box">Yükleniyor…</div>`,
       onOpen: () => ekipOnOpen(),
       prompt: () => ''
@@ -1442,6 +1442,7 @@ function mvShowTimeline() {
 // EKİP YÖNETİMİ — büro üyeleri, davet linki oluşturma
 // ══════════════════════════════════════════════════════
 async function ekipOnOpen() {
+  ekipGetPane().innerHTML = `<div style="padding:30px 24px;color:var(--t3);font-size:13px;">Bir üyenin "Yetkiler" bağlantısına tıklayınca, erişim ayarları burada görünecek.</div>`;
   const box = document.getElementById('ekip-box');
   try {
     const res = await fetch('/api/workspace');
@@ -1478,7 +1479,6 @@ function ekipRender(ws, myRole) {
         </span>
       </div>
     `).join('')}
-    <div id="ekip-perm-panel"></div>
 
     ${isAdmin ? `
       <button class="pop-cta-btn b" style="width:100%;margin-top:16px;" onclick="ekipCreateInvite()" ${ws.members.length >= ws.memberLimit ? 'disabled' : ''}>
@@ -1529,36 +1529,39 @@ async function ekipRemoveMember(userId) {
 
 let ekipMembersCache = [];
 
+function ekipGetPane() {
+  const empty = document.getElementById('chatEmpty');
+  if (empty) empty.style.display = 'none';
+  return document.getElementById('chatMsgs');
+}
+
 function ekipShowPermissions(memberId) {
   const member = ekipMembersCache.find(m => m.id === memberId);
   if (!member) return;
   const blocked = new Set(member.blockedTools || []);
   const modules = window.MODULES_INDEX || [];
 
-  const panel = document.getElementById('ekip-perm-panel');
+  const panel = ekipGetPane();
   panel.innerHTML = `
-    <div style="margin-top:16px;padding:14px;background:var(--bg2);border-radius:var(--r);">
-      <div style="font-size:12.5px;font-weight:600;margin-bottom:10px;">${member.name || member.email} — Erişim Yetkileri</div>
+    <div style="font-size:14px;font-family:'Instrument Serif',serif;margin-bottom:12px;">${member.name || member.email} — Erişim Yetkileri</div>
 
-      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px;cursor:pointer;">
-        <input type="checkbox" id="ekip-perm-ai" ${member.aiEnabled === false ? '' : 'checked'}>
-        <span style="font-size:12.5px;"><strong>AI Kullanımı</strong> (sohbet, Dosya Analizi, Dilekçe Sihirbazı vb. — kapatılırsa hiçbiri kullanılamaz)</span>
-      </label>
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px;cursor:pointer;">
+      <input type="checkbox" id="ekip-perm-ai" ${member.aiEnabled === false ? '' : 'checked'}>
+      <span style="font-size:12.5px;"><strong>AI Kullanımı</strong> (sohbet, Dosya Analizi, Dilekçe Sihirbazı vb. — kapatılırsa hiçbiri kullanılamaz)</span>
+    </label>
 
-      ${modules.map(mod => `
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:10px 0 4px;">${mod.label}</div>
-        ${mod.items.map(item => `
-          <label style="display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;">
-            <input type="checkbox" class="ekip-perm-tool" value="${item.id}" ${blocked.has(item.id) ? '' : 'checked'}>
-            <span style="font-size:12px;">${item.name}</span>
-          </label>
-        `).join('')}
+    ${modules.map(mod => `
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:10px 0 4px;">${mod.label}</div>
+      ${mod.items.map(item => `
+        <label style="display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;">
+          <input type="checkbox" class="ekip-perm-tool" value="${item.id}" ${blocked.has(item.id) ? '' : 'checked'}>
+          <span style="font-size:12px;">${item.name}</span>
+        </label>
       `).join('')}
+    `).join('')}
 
-      <button class="pop-cta-btn b" style="width:100%;margin-top:14px;" onclick="ekipSavePermissions('${memberId}')"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
-    </div>
+    <button class="pop-cta-btn b" style="width:100%;margin-top:14px;" onclick="ekipSavePermissions('${memberId}')"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
   `;
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 async function ekipSavePermissions(memberId) {
