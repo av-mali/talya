@@ -1541,6 +1541,7 @@ function ekipShowPermissions(memberId) {
 
   const panel = ekipGetPane();
   panel.innerHTML = `
+    <div style="padding:22px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
     <div style="font-size:14px;font-family:'Instrument Serif',serif;margin-bottom:12px;">${member.name || member.email} — Erişim Yetkileri</div>
 
     <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px;cursor:pointer;">
@@ -1559,6 +1560,7 @@ function ekipShowPermissions(memberId) {
     `).join('')}
 
     <button class="pop-cta-btn b" style="width:100%;margin-top:14px;" onclick="ekipSavePermissions('${memberId}')"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
+    </div>
   `;
 }
 
