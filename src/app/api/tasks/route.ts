@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireWorkspace } from "@/lib/workspace";
+import { requireWorkspace, hasToolAccess } from "@/lib/workspace";
 
 export async function GET() {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  if (!(await hasToolAccess(ws.userId, "gorevler"))) {
+    return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
+  }
 
   const tasks = await prisma.task.findMany({
     where: { workspaceId: ws.workspaceId },
@@ -16,6 +19,9 @@ export async function GET() {
 export async function POST(req: Request) {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  if (!(await hasToolAccess(ws.userId, "gorevler"))) {
+    return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
+  }
 
   const { title, dueDate } = await req.json();
   if (!title || !title.trim()) {

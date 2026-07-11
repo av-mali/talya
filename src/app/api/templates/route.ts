@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireWorkspace } from "@/lib/workspace";
+import { requireWorkspace, hasToolAccess } from "@/lib/workspace";
 
 export async function GET() {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  if (!(await hasToolAccess(ws.userId, "sablon"))) {
+    return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
+  }
 
   const templates = await prisma.template.findMany({
     where: { workspaceId: ws.workspaceId },
@@ -16,6 +19,9 @@ export async function GET() {
 export async function POST(req: Request) {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  if (!(await hasToolAccess(ws.userId, "sablon"))) {
+    return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
+  }
 
   const { title, content } = await req.json();
   if (!title || !title.trim() || !content || !content.trim()) {

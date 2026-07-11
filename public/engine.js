@@ -20,8 +20,22 @@ function goHome() {
   window.location.href = '/dashboard';
 }
 
+// Oturum açan kullanıcının erişim yetkileri (yönetici tarafından
+// kapatılmış araçlar + AI kullanım izni). Her modül sayfası açılışta
+// bunu çeker — sunucu tarafında da AYRICA kontrol edildiği için, burada
+// sadece görünürlük/kullanılabilirlik ayarlanır.
+let MY_PERMISSIONS = { blockedTools: [], aiEnabled: true, role: 'admin' };
+
+async function loadMyPermissions() {
+  try {
+    const res = await fetch('/api/workspace/my-permissions');
+    if (res.ok) MY_PERMISSIONS = await res.json();
+  } catch (e) { /* varsayılan (tam yetkili) ile devam */ }
+}
+
 // Modül sayfası yüklendiğinde (module-*.js zaten window.CURRENT_MODULE'ü doldurmuş olmalı)
-function initModulePage() {
+async function initModulePage() {
+  await loadMyPermissions();
   const cfg = window.CURRENT_MODULE;
   if (!cfg) return;
   const nameEl = document.getElementById('appModuleName');
@@ -30,6 +44,8 @@ function initModulePage() {
   if (sbLabel) sbLabel.innerHTML = cfg.label;
   const sbName = document.getElementById('sidebarName');
   if (sbName) sbName.innerHTML = cfg.nameHtml;
+
+  const blockedSet = new Set(MY_PERMISSIONS.blockedTools || []);
 
   const nav = document.getElementById('sidebarNav');
   if (nav) {
@@ -45,6 +61,7 @@ function initModulePage() {
       if (isCurrent) {
         let lastGroup = null;
         mod.items.forEach(item => {
+          if (blockedSet.has(item.id)) return; // yönetici bu aracı kapatmış
           if (item.group && item.group !== lastGroup) {
             children += `<div style="padding:8px 12px 4px 30px;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;">${item.group}</div>`;
           }
@@ -62,9 +79,24 @@ function initModulePage() {
     }).join('');
   }
 
+  const allowedItems = cfg.items.filter(it => !blockedSet.has(it.id));
   const params = new URLSearchParams(window.location.search);
-  const openId = params.get('open') || cfg.items[0].id;
-  setTimeout(() => openPopup(openId), 150);
+  const requestedOpen = params.get('open');
+  const openId = (requestedOpen && !blockedSet.has(requestedOpen)) ? requestedOpen : (allowedItems[0] ? allowedItems[0].id : null);
+  if (openId) {
+    setTimeout(() => openPopup(openId), 150);
+  } else {
+    const popBody = document.getElementById('popBody');
+    if (popBody) popBody.innerHTML = `<div style="padding:20px;font-size:13px;color:var(--t3);">Bu modülde erişim yetkiniz olan bir araç bulunmuyor. Büro yöneticinizle iletişime geçin.</div>`;
+  }
+
+  // Büro yöneticisi bu kullanıcı için AI'yı kapatmışsa sohbet kutusunu gizle.
+  if (!MY_PERMISSIONS.aiEnabled) {
+    const chatInputArea = document.querySelector('.chat-input-area');
+    if (chatInputArea) chatInputArea.style.display = 'none';
+    const chatEmpty = document.getElementById('chatEmpty');
+    if (chatEmpty) chatEmpty.innerHTML = `<div style="padding:20px;text-align:center;color:var(--t3);font-size:13px;"><i class="fa-solid fa-lock" style="font-size:20px;margin-bottom:8px;display:block;"></i>AI kullanım yetkiniz bulunmuyor.</div>`;
+  }
 }
 
 // ── POPUP / TOOL PANEL ──

@@ -5,6 +5,7 @@ import { readUdfText, generateUdf } from "@/lib/udf";
 import { generateDocx, generatePdf } from "@/lib/docExport";
 import mammoth from "mammoth";
 import sharp from "sharp";
+import { hasAiAccess, hasToolAccess } from "@/lib/workspace";
 
 // Bu uç nokta Belge & Analiz modülündeki "Dosya Analizi", "Sözleşme
 // İnceleme" ve "Dilekçe Sihirbazı" araçlarını besler. Google Gemini'nin
@@ -75,6 +76,12 @@ export async function POST(req: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   }
+  const userId = (session.user as any).id as string;
+
+  // Büro yöneticisi bu kullanıcı için AI'yı tamamen kapatmış olabilir.
+  if (!(await hasAiAccess(userId))) {
+    return NextResponse.json({ error: "AI kullanım yetkiniz bulunmuyor. Büro yöneticinizle iletişime geçin." }, { status: 403 });
+  }
 
   if (!process.env.GEMINI_API_KEY) {
     return NextResponse.json(
@@ -92,6 +99,11 @@ export async function POST(req: Request) {
     const instruction = (form.get("instruction") as string) || "";
     const mode = (form.get("mode") as string) || "dosya";
     const wantUdf = form.get("wantUdf") === "1";
+
+    // Bu spesifik aracı (mode) kullanma yetkisi de ayrıca kapatılmış olabilir.
+    if (!(await hasToolAccess(userId, mode))) {
+      return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
+    }
 
     if (!instruction.trim() && mode !== "dilekce") {
       return NextResponse.json({ error: "Lütfen bir soru/talimat girin." }, { status: 400 });

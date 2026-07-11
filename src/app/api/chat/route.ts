@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasAiAccess } from "@/lib/workspace";
 
 // BU DOSYA SUNUCUDA ÇALIŞIR — tarayıcı buranın içeriğini asla göremez.
 // Anthropic API anahtarı burada, process.env üzerinden okunur; hiçbir zaman
@@ -17,6 +18,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   }
   const userId = (session.user as any).id as string;
+
+  // Büro yöneticisi bu kullanıcı için AI'yı kapatmış olabilir.
+  if (!(await hasAiAccess(userId))) {
+    return NextResponse.json({ error: "AI kullanım yetkiniz bulunmuyor. Büro yöneticinizle iletişime geçin." }, { status: 403 });
+  }
 
   const { message } = await req.json();
   if (!message || typeof message !== "string") {

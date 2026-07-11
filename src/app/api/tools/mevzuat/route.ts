@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { searchMevzuat, getMevzuatContent } from "@/lib/mevzuatMcp";
+import { hasToolAccess } from "@/lib/workspace";
 
 // Mevzuat Bilgi Sistemi'nde arama ve tam metin getirme — hepsi tek uç
 // noktada, "action" alanına göre.
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const userId = (session.user as any).id as string;
+  if (!(await hasToolAccess(userId, "mevzuat"))) {
+    return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
+  }
 
   try {
     const { action, query, mevzuatId, mevzuatTur, mevzuatNo } = await req.json();

@@ -39,6 +39,11 @@ model User {
   workspace    Workspace? @relation(fields: [workspaceId], references: [id])
   workspaceId  String?
   workspaceRole String   @default("admin") // "admin" | "member"
+  // ── Erişim İzinleri ── yönetici, üyelerin hangi araçları/AI'ı
+  // kullanamayacağını belirleyebilir. Varsayılan: her şey açık.
+  // blockedTools: kapatılmış araç id'lerinin listesi (ör. ["gelirgider","notlar"])
+  blockedTools Json?
+  aiEnabled    Boolean  @default(true)
 }
 
 // Büro (Workspace) — birden fazla kullanıcının aynı müvekkil/dosya

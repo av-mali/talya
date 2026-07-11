@@ -14,7 +14,7 @@ export async function GET() {
   const workspace = await prisma.workspace.findUnique({
     where: { id: user.workspaceId },
     include: {
-      members: { select: { id: true, name: true, email: true, workspaceRole: true, createdAt: true } },
+      members: { select: { id: true, name: true, email: true, workspaceRole: true, createdAt: true, blockedTools: true, aiEnabled: true } },
     },
   });
   if (!workspace) return NextResponse.json({ error: "Büro bulunamadı." }, { status: 404 });

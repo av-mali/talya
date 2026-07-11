@@ -1456,6 +1456,7 @@ async function ekipOnOpen() {
 function ekipRender(ws, myRole) {
   const box = document.getElementById('ekip-box');
   const isAdmin = myRole === 'admin';
+  ekipMembersCache = ws.members;
   box.innerHTML = `
     <div class="fg">
       <div class="fl">Büro Adı</div>
@@ -1471,9 +1472,13 @@ function ekipRender(ws, myRole) {
     ${ws.members.map(m => `
       <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">
         <span>${m.name || m.email} <span style="font-size:10px;color:var(--t3);">${m.workspaceRole === 'admin' ? '(Yönetici)' : '(Üye)'}</span></span>
-        ${isAdmin && m.workspaceRole !== 'admin' ? `<span style="cursor:pointer;color:var(--danger);font-size:11px;" onclick="ekipRemoveMember('${m.id}')">Çıkar</span>` : ''}
+        <span style="display:flex;gap:10px;align-items:center;">
+          ${isAdmin && m.workspaceRole !== 'admin' ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick='ekipShowPermissions(${JSON.stringify(m.id)})'>Yetkiler</span>` : ''}
+          ${isAdmin && m.workspaceRole !== 'admin' ? `<span style="cursor:pointer;color:var(--danger);font-size:11px;" onclick="ekipRemoveMember('${m.id}')">Çıkar</span>` : ''}
+        </span>
       </div>
     `).join('')}
+    <div id="ekip-perm-panel"></div>
 
     ${isAdmin ? `
       <button class="pop-cta-btn b" style="width:100%;margin-top:16px;" onclick="ekipCreateInvite()" ${ws.members.length >= ws.memberLimit ? 'disabled' : ''}>
@@ -1520,4 +1525,55 @@ async function ekipRemoveMember(userId) {
   const res = await fetch('/api/workspace/members/' + userId, { method: 'DELETE' });
   if (res.ok) { toast('Üye çıkarıldı', 'fa-solid fa-check', true); ekipOnOpen(); }
   else toast('Çıkarılamadı', 'fa-solid fa-triangle-exclamation');
+}
+
+let ekipMembersCache = [];
+
+function ekipShowPermissions(memberId) {
+  const member = ekipMembersCache.find(m => m.id === memberId);
+  if (!member) return;
+  const blocked = new Set(member.blockedTools || []);
+  const modules = window.MODULES_INDEX || [];
+
+  const panel = document.getElementById('ekip-perm-panel');
+  panel.innerHTML = `
+    <div style="margin-top:16px;padding:14px;background:var(--bg2);border-radius:var(--r);">
+      <div style="font-size:12.5px;font-weight:600;margin-bottom:10px;">${member.name || member.email} — Erişim Yetkileri</div>
+
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px;cursor:pointer;">
+        <input type="checkbox" id="ekip-perm-ai" ${member.aiEnabled === false ? '' : 'checked'}>
+        <span style="font-size:12.5px;"><strong>AI Kullanımı</strong> (sohbet, Dosya Analizi, Dilekçe Sihirbazı vb. — kapatılırsa hiçbiri kullanılamaz)</span>
+      </label>
+
+      ${modules.map(mod => `
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:10px 0 4px;">${mod.label}</div>
+        ${mod.items.map(item => `
+          <label style="display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;">
+            <input type="checkbox" class="ekip-perm-tool" value="${item.id}" ${blocked.has(item.id) ? '' : 'checked'}>
+            <span style="font-size:12px;">${item.name}</span>
+          </label>
+        `).join('')}
+      `).join('')}
+
+      <button class="pop-cta-btn b" style="width:100%;margin-top:14px;" onclick="ekipSavePermissions('${memberId}')"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
+    </div>
+  `;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function ekipSavePermissions(memberId) {
+  const aiEnabled = document.getElementById('ekip-perm-ai').checked;
+  const checkboxes = document.querySelectorAll('.ekip-perm-tool');
+  const blockedTools = Array.from(checkboxes).filter(cb => !cb.checked).map(cb => cb.value);
+
+  const res = await fetch(`/api/workspace/members/${memberId}/permissions`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ blockedTools, aiEnabled })
+  });
+  if (res.ok) {
+    toast('Yetkiler güncellendi', 'fa-solid fa-check', true);
+    ekipOnOpen();
+  } else {
+    toast('Güncellenemedi', 'fa-solid fa-triangle-exclamation');
+  }
 }

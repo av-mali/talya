@@ -35,3 +35,28 @@ export async function requireOwnedCase(caseId: string): Promise<{ userId: string
   const found = await prisma.case.findFirst({ where: { id: caseId, client: { workspaceId: ws.workspaceId } } });
   return found ? ws : null;
 }
+
+// Bir üyenin belirli bir aracı kullanmaya yetkisi var mı? (Büro yöneticisi
+// kapatmışsa false döner.) Yönetici hesapları her zaman her şeyi kullanabilir.
+export async function hasToolAccess(userId: string, toolKey: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { workspaceRole: true, blockedTools: true },
+  });
+  if (!user) return false;
+  if (user.workspaceRole === "admin") return true;
+  const blocked = (user.blockedTools as string[] | null) || [];
+  return !blocked.includes(toolKey);
+}
+
+// AI özelliklerini (sohbet, Dosya Analizi, Dilekçe Sihirbazı vb.) kullanma
+// yetkisi var mı? Yönetici hesapları her zaman kullanabilir.
+export async function hasAiAccess(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { workspaceRole: true, aiEnabled: true },
+  });
+  if (!user) return false;
+  if (user.workspaceRole === "admin") return true;
+  return user.aiEnabled !== false;
+}
