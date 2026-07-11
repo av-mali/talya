@@ -123,7 +123,7 @@ function parseMevzuatSearchText(text: string) {
 
 
 
-export async function searchMevzuat(query: string, maxResults = 100): Promise<{ items: any[]; total: number | null; rawDebug: string }> {
+export async function searchMevzuat(query: string, maxResults = 20): Promise<{ items: any[]; total: number | null; rawDebug: string }> {
   const sessionId = await getSession();
   const isNumeric = /^\d+$/.test(query.trim());
 
