@@ -15,9 +15,36 @@ window.CURRENT_MODULE = {
     {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"},
     {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
     {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"},
-    {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"}
+    {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
+    {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"},
+    {"id": "kvkk", "icon": "fa-shield-halved", "name": "KVKK Kontrol Listesi"}
   ],
   popups: {
+    // ── SÖZLEŞME TAKİP ── bitiş/yenileme tarihi yaklaşan sözleşmeler
+    sozlesmetakip: {
+      badge: 'b', badgeText: 'Bitiş Tarihi Takibi', titleHtml: 'Sözleşme <em class="b">Takip</em>',
+      desc: 'Büronuzun/müvekkillerinizin sözleşmelerinin bitiş tarihlerini takip edin.',
+      btnClass: 'b', btnIco: 'fa-file-contract', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><div class="fl">Sözleşme Adı</div><input type="text" id="sz-title" placeholder="Ofis Kira Sözleşmesi…"></div>
+        <div class="fg"><div class="fl">Karşı Taraf</div><input type="text" id="sz-counterparty" placeholder="…"></div>
+        <div class="fg"><div class="fl">Başlangıç Tarihi (opsiyonel)</div><input type="date" id="sz-start"></div>
+        <div class="fg"><div class="fl">Bitiş Tarihi</div><input type="date" id="sz-end"></div>
+        <div class="fg"><div class="fl">Not</div><textarea id="sz-notes" rows="2"></textarea></div>
+        <button class="pop-cta-btn b" style="width:100%;" onclick="szAdd()"><i class="fa-solid fa-plus"></i><span>Sözleşme Ekle</span></button>
+      `,
+      onOpen: () => szOnOpen(),
+      prompt: () => ''
+    },
+    // ── KVKK KONTROL LİSTESİ ── standart uyum maddeleri, işaretlenebilir
+    kvkk: {
+      badge: 'b', badgeText: 'Uyum Kontrolü', titleHtml: 'KVKK <em class="b">Kontrol Listesi</em>',
+      desc: 'Standart KVKK uyum adımlarını işaretleyerek takip edin.',
+      btnClass: 'b', btnIco: 'fa-shield-halved', btnLbl: '', hideCta: true,
+      body: `<div id="kvkk-box">Yükleniyor…</div>`,
+      onOpen: () => kvkkOnOpen(),
+      prompt: () => ''
+    },
     // ── GLOBAL ARAMA ── müvekkil, not, görev, şablon içinde birden arar
     globalarama: {
       badge: 'b', badgeText: 'Tüm Verilerde Ara', titleHtml: 'Global <em class="b">Arama</em>',
@@ -189,6 +216,7 @@ function detailPlaceholder(text) {
 // MÜVEKKİL YÖNETİMİ
 // ══════════════════════════════════════════════════════
 let mvSelectedId = null;
+let mvCaseCache = null;
 let mvLastQuery = '';
 let mvClientCache = null;
 let mvOpenCaseId = null;
@@ -329,6 +357,7 @@ async function mvOpenCase(caseId) {
   const data = await res.json();
   if (!data.case) { mvRenderClientView(); return; }
   const cs = data.case;
+  mvCaseCache = cs;
 
   const toplamSaat = cs.timeEntries.reduce((s, t) => s + t.hours, 0);
   const toplamUcret = cs.timeEntries.reduce((s, t) => s + (t.hours * (t.hourlyRate || 0)), 0);
@@ -344,6 +373,7 @@ async function mvOpenCase(caseId) {
       <div style="display:flex;align-items:flex-start;justify-content:space-between;">
         <div style="font-family:'Instrument Serif',serif;font-size:19px;">${cs.title}</div>
         <div style="display:flex;gap:6px;">
+          <button class="pop-cta-btn b" style="width:auto;padding:5px 10px;font-size:11px;" onclick="mvShowTimeline()"><i class="fa-solid fa-timeline"></i> Zaman Çizelgesi</button>
           <select onchange="mvSetCaseStatus('${cs.id}', this.value)" style="width:110px;font-size:11px;">
             <option value="acik" ${cs.status==='acik'?'selected':''}>Açık</option>
             <option value="kapali" ${cs.status==='kapali'?'selected':''}>Kapalı</option>
@@ -1277,4 +1307,195 @@ async function noteAnalyze(noteId) {
   } catch (e) {
     box.innerHTML = `<div style="font-size:12px;color:var(--danger);">Bağlantı hatası.</div>`;
   }
+}
+
+// ══════════════════════════════════════════════════════
+// SÖZLEŞME TAKİP
+// ══════════════════════════════════════════════════════
+async function szOnOpen() {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  await szRenderList();
+}
+
+function szDaysLeftInfo(endDate) {
+  const end = new Date(endDate);
+  const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  const now = new Date();
+  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((endMidnight.getTime() - nowMidnight.getTime()) / 86400000);
+  if (days < 0) return { text: `${Math.abs(days)} gün önce doldu`, color: 'var(--danger)' };
+  if (days === 0) return { text: 'Bugün doluyor', color: 'var(--danger)' };
+  if (days <= 30) return { text: `${days} gün kaldı`, color: days <= 7 ? 'var(--danger)' : 'var(--warn)' };
+  return { text: `${days} gün kaldı`, color: 'var(--t2)' };
+}
+
+async function szRenderList() {
+  const dp = document.getElementById('detailPane');
+  try {
+    const res = await fetch('/api/contracts');
+    const data = await res.json();
+    const contracts = data.contracts || [];
+    dp.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Sözleşmeler (${contracts.length})</div>
+        ${contracts.length ? contracts.map(c => {
+          const dl = szDaysLeftInfo(c.endDate);
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+              <div>
+                <div style="font-size:13.5px;font-weight:500;">${c.title}</div>
+                <div style="font-size:11px;color:var(--t3);">${c.counterparty || ''}${c.notes ? ' — ' + c.notes : ''}</div>
+              </div>
+              <span style="cursor:pointer;color:var(--t3);flex-shrink:0;" onclick="szDelete('${c.id}')"><i class="fa-solid fa-xmark"></i></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;">
+              <span style="font-size:11px;color:var(--t3);">Bitiş: ${new Date(c.endDate).toLocaleDateString('tr-TR')}</span>
+              <span style="font-size:11px;font-weight:600;color:${dl.color};">${dl.text}</span>
+            </div>
+          </div>`;
+        }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz sözleşme eklenmedi.</div>'}
+      </div>
+    `;
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+async function szAdd() {
+  const title = document.getElementById('sz-title').value.trim();
+  const counterparty = document.getElementById('sz-counterparty').value;
+  const startDate = document.getElementById('sz-start').value;
+  const endDate = document.getElementById('sz-end').value;
+  const notes = document.getElementById('sz-notes').value;
+  if (!title || !endDate) { toast('Sözleşme adı ve bitiş tarihi gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+
+  await fetch('/api/contracts', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, counterparty, startDate: startDate || null, endDate, notes })
+  });
+  document.getElementById('sz-title').value = '';
+  document.getElementById('sz-counterparty').value = '';
+  document.getElementById('sz-start').value = '';
+  document.getElementById('sz-end').value = '';
+  document.getElementById('sz-notes').value = '';
+  toast('Sözleşme eklendi', 'fa-solid fa-check', true);
+  szRenderList();
+}
+
+async function szDelete(id) {
+  if (!confirm('Bu sözleşmeyi silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/contracts/' + id, { method: 'DELETE' });
+  toast('Sözleşme silindi', 'fa-solid fa-trash');
+  szRenderList();
+}
+
+// ══════════════════════════════════════════════════════
+// KVKK KONTROL LİSTESİ
+// ══════════════════════════════════════════════════════
+const KVKK_ITEMS = [
+  { key: 'aydinlatma', label: 'Aydınlatma metni hazırlandı ve müvekkillere sunuluyor' },
+  { key: 'aciKriza', label: 'Gerekli hallerde açık rıza formu alınıyor' },
+  { key: 'veriEnvanteri', label: 'Kişisel veri envanteri çıkarıldı' },
+  { key: 'verbis', label: 'VERBİS kaydı (gerekiyorsa) yapıldı' },
+  { key: 'saklamaImha', label: 'Veri saklama ve imha politikası belirlendi' },
+  { key: 'veriGuvenligi', label: 'Teknik/idari veri güvenliği önlemleri alındı (şifreleme, erişim kontrolü)' },
+  { key: 'ihlalPlani', label: 'Veri ihlali müdahale planı hazırlandı' },
+  { key: 'ucuncuTaraf', label: 'Üçüncü taraflarla (kargo, muhasebeci vb.) veri paylaşım sözleşmeleri gözden geçirildi' },
+  { key: 'calisanEgitimi', label: 'Çalışanlara KVKK farkındalık eğitimi verildi' },
+  { key: 'basvuruSureci', label: 'İlgili kişi başvurularını yanıtlama süreci tanımlandı' },
+];
+
+async function kvkkOnOpen() {
+  const box = document.getElementById('kvkk-box');
+  try {
+    const res = await fetch('/api/kvkk-checklist');
+    const data = await res.json();
+    const checklist = data.checklist || {};
+    kvkkRender(checklist);
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function kvkkRender(checklist) {
+  const box = document.getElementById('kvkk-box');
+  const doneCount = KVKK_ITEMS.filter(i => checklist[i.key]).length;
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:12px;color:var(--t2);">İlerleme</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gold);">${doneCount}/${KVKK_ITEMS.length}</div>
+    </div>
+    <div style="height:6px;background:var(--bg2);border-radius:3px;margin-bottom:16px;overflow:hidden;">
+      <div style="height:100%;background:var(--gold);width:${(doneCount / KVKK_ITEMS.length) * 100}%;"></div>
+    </div>
+    ${KVKK_ITEMS.map(item => `
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="kvkkToggle('${item.key}')">
+        <div style="width:18px;height:18px;border-radius:5px;border:1.5px solid ${checklist[item.key] ? 'var(--gold)' : 'var(--border2)'};background:${checklist[item.key] ? 'var(--gold)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+          ${checklist[item.key] ? '<i class="fa-solid fa-check" style="color:#fff;font-size:10px;"></i>' : ''}
+        </div>
+        <span style="font-size:12.5px;color:${checklist[item.key] ? 'var(--t3)' : 'var(--t0)'};text-decoration:${checklist[item.key] ? 'line-through' : 'none'};">${item.label}</span>
+      </div>
+    `).join('')}
+  `;
+  box.dataset.checklist = JSON.stringify(checklist);
+}
+
+async function kvkkToggle(key) {
+  const box = document.getElementById('kvkk-box');
+  const checklist = JSON.parse(box.dataset.checklist || '{}');
+  checklist[key] = !checklist[key];
+  kvkkRender(checklist);
+  await fetch('/api/kvkk-checklist', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ checklist })
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// ZAMAN ÇİZELGESİ — bir dosyanın tarihlerini, faturalarını ve zaman
+// kayıtlarını tek kronolojik görünümde birleştirir.
+// ══════════════════════════════════════════════════════
+function mvShowTimeline() {
+  const cs = mvCaseCache;
+  if (!cs) return;
+  const dp = document.getElementById('detailPane');
+
+  const items = [];
+  (cs.events || []).forEach(e => items.push({
+    date: new Date(e.dueDate), icon: 'fa-gavel', color: 'var(--danger)',
+    label: eventTypeLabel(e.type), text: e.title,
+  }));
+  (cs.invoices || []).forEach(i => items.push({
+    date: new Date(i.createdAt), icon: 'fa-file-invoice-dollar', color: 'var(--success)',
+    label: 'Fatura', text: `${fmtTL(i.amount)}${i.note ? ' — ' + i.note : ''}`,
+  }));
+  (cs.timeEntries || []).forEach(t => items.push({
+    date: new Date(t.date), icon: 'fa-stopwatch', color: 'var(--gold)',
+    label: 'Zaman Kaydı', text: `${t.hours} saat${t.description ? ' — ' + t.description : ''}`,
+  }));
+  items.sort((a, b) => b.date - a.date);
+
+  dp.innerHTML = `
+    <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="mvOpenCase('${cs.id}')">
+        <i class="fa-solid fa-arrow-left"></i> Dosya Detayına Dön
+      </div>
+      <div style="font-family:'Instrument Serif',serif;font-size:19px;margin-bottom:16px;">${cs.title} — Zaman Çizelgesi</div>
+      ${items.length ? `
+        <div style="position:relative;padding-left:28px;">
+          <div style="position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--border);"></div>
+          ${items.map(it => `
+            <div style="position:relative;margin-bottom:18px;">
+              <div style="position:absolute;left:-28px;top:0;width:20px;height:20px;border-radius:50%;background:var(--card);border:2px solid ${it.color};display:flex;align-items:center;justify-content:center;">
+                <i class="fa-solid ${it.icon}" style="font-size:9px;color:${it.color};"></i>
+              </div>
+              <div style="font-size:10px;color:var(--t3);margin-bottom:2px;">${it.date.toLocaleDateString('tr-TR')} · ${it.label}</div>
+              <div style="font-size:13px;">${it.text}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : '<div style="font-size:12px;color:var(--t3);">Henüz bir kayıt yok.</div>'}
+    </div>
+  `;
 }

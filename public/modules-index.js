@@ -90,6 +90,16 @@ window.MODULES_INDEX = [
         "id": "gelirgider",
         "icon": "fa-scale-balanced",
         "name": "Gelir-Gider"
+      },
+      {
+        "id": "sozlesmetakip",
+        "icon": "fa-file-contract",
+        "name": "Sözleşme Takip"
+      },
+      {
+        "id": "kvkk",
+        "icon": "fa-shield-halved",
+        "name": "KVKK Kontrol Listesi"
       }
     ]
   },

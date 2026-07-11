@@ -23,6 +23,7 @@ model User {
   approved     Boolean   @default(true)
   isAdmin      Boolean   @default(false)
   notifPrefs   Json?
+  kvkkChecklist Json?
   createdAt    DateTime  @default(now())
   messages     Message[]
   clients      Client[]
@@ -33,6 +34,7 @@ model User {
   readNotifs   NotificationRead[]
   syncToken    String?   @unique
   importBatches ImportBatch[]
+  contracts    Contract[]
 }
 
 // Chrome eklentisinin UYAP'tan okuduğu ham metni Claude'a gönderip
@@ -185,6 +187,19 @@ model Template {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+}
+
+// Sözleşme Takip — bitiş/yenileme tarihi yaklaşan sözleşmeleri takip eder.
+model Contract {
+  id           String    @id @default(cuid())
+  title        String    // ör. "Ofis Kira Sözleşmesi"
+  counterparty String?   // karşı taraf
+  startDate    DateTime?
+  endDate      DateTime
+  notes        String?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
 }
 
 // Sık değişen hukuki sabitler (kıdem tavanı, yasal faiz oranı, kira TÜFE
