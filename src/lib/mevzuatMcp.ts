@@ -123,7 +123,7 @@ function parseMevzuatSearchText(text: string) {
 
 
 
-export async function searchMevzuat(query: string, maxResults = 100): Promise<{ items: any[]; total: number | null }> {
+export async function searchMevzuat(query: string, maxResults = 100): Promise<{ items: any[]; total: number | null; rawDebug: string }> {
   const sessionId = await getSession();
   const isNumeric = /^\d+$/.test(query.trim());
 
@@ -139,6 +139,7 @@ export async function searchMevzuat(query: string, maxResults = 100): Promise<{ 
   const allResults: any[] = [];
   const seenIds = new Set<string>();
   let total: number | null = null;
+  let rawDebug = "";
 
   for (const s of searches) {
     try {
@@ -147,6 +148,10 @@ export async function searchMevzuat(query: string, maxResults = 100): Promise<{ 
         sessionId
       );
       const raw = extractToolResult(callRes);
+      rawDebug += `[${s.name} ${JSON.stringify(s.arguments)}] -> ${JSON.stringify(raw).slice(0, 800)}\n`;
+      if (callRes.data?.error) {
+        rawDebug += `HATA: ${JSON.stringify(callRes.data.error)}\n`;
+      }
       if (typeof raw === "string") {
         const totalMatch = raw.match(/Results:\s*(\d+)\s*total/i);
         if (totalMatch) total = Math.max(total || 0, parseInt(totalMatch[1], 10));
@@ -159,12 +164,12 @@ export async function searchMevzuat(query: string, maxResults = 100): Promise<{ 
           allResults.push(item);
         }
       }
-    } catch (e) {
-      /* bu arama türü başarısız oldu, diğerine devam et */
+    } catch (e: any) {
+      rawDebug += `İSTİSNA: ${e?.message || e}\n`;
     }
   }
 
-  return { items: allResults, total };
+  return { items: allResults, total, rawDebug };
 }
 
 // Farklı mevzuat türleri, sunucuda FARKLI özel araçlar kullanıyor —
