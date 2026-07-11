@@ -1,16 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-// useSearchParams() kullandığımız için Next.js'in derleme sırasında bu
-// sayfayı statik olarak önceden oluşturmaya çalışmaması gerekiyor —
-// yoksa "prerendering error" ile build başarısız oluyor.
-export const dynamic = "force-dynamic";
-
+// useSearchParams() kullanan bir bileşen, Next.js'in derleme sırasında
+// bu sayfayı statik oluşturmaya çalışmaması için MUTLAKA bir <Suspense>
+// sınırının içinde olmalı — resmi Next.js kuralı budur.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
