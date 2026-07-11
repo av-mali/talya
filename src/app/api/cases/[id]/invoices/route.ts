@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireWorkspace } from "@/lib/workspace";
 
 async function requireOwnedCase(caseId: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  const userId = (session.user as any).id as string;
+  const ws = await requireWorkspace();
+  if (!ws) return null;
   const found = await prisma.case.findFirst({
-    where: { id: caseId, client: { userId } },
+    where: { id: caseId, client: { workspaceId: ws.workspaceId } },
     include: { client: true },
   });
-  return found ? { userId, caseInfo: found } : null;
+  return found ? { userId: ws.userId, caseInfo: found } : null;
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {

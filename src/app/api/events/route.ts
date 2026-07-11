@@ -3,20 +3,22 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
+import { requireWorkspace } from "@/lib/workspace";
 
-// Takvim VE ana sayfadaki "Yaklaşan Süreler" için: kullanıcının tüm
-// müvekkillerindeki duruşma/ödeme tarihleri + tarihi olan görevler.
+// Takvim VE ana sayfadaki "Yaklaşan Süreler" için: büronun tüm
+// müvekkillerindeki duruşma/ödeme tarihleri + kullanıcının tarihi olan görevleri.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const userId = (session.user as any).id as string;
+  const ws = await requireWorkspace();
 
   const [events, tasks] = await Promise.all([
-    prisma.clientEvent.findMany({
-      where: { case: { client: { userId } } },
+    ws ? prisma.clientEvent.findMany({
+      where: { case: { client: { workspaceId: ws.workspaceId } } },
       include: { case: { include: { client: true } } },
       orderBy: { dueDate: "asc" },
-    }),
+    }) : Promise.resolve([]),
     prisma.task.findMany({
       where: { userId, done: false, dueDate: { not: null } },
       orderBy: { dueDate: "asc" },

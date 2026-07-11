@@ -23,6 +23,14 @@ type PendingUser = {
   createdAt: string;
 };
 
+type WorkspaceRow = {
+  id: string;
+  name: string;
+  memberLimit: number;
+  memberCount: number;
+  memberEmails: string[];
+};
+
 type Stats = { userCount: number; messageCount: number };
 type Constants = { kidemTavani: number; faizOrani: number; kiraTufeOrani: number };
 
@@ -31,17 +39,19 @@ export default function AdminPage() {
   const router = useRouter();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[] | null>(null);
+  const [workspaces, setWorkspaces] = useState<WorkspaceRow[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [constants, setConstants] = useState<Constants | null>(null);
   const [savingConstants, setSavingConstants] = useState(false);
 
   const load = useCallback(async () => {
-    const [uRes, sRes, cRes, pRes] = await Promise.all([
+    const [uRes, sRes, cRes, pRes, wRes] = await Promise.all([
       fetch("/api/admin/users"),
       fetch("/api/admin/stats"),
       fetch("/api/constants"),
       fetch("/api/admin/pending-users"),
+      fetch("/api/admin/workspaces"),
     ]);
     if (uRes.status === 403 || sRes.status === 403) {
       setForbidden(true);
@@ -59,6 +69,10 @@ export default function AdminPage() {
       const pData = await pRes.json();
       setPendingUsers(pData.users || []);
     }
+    if (wRes.ok) {
+      const wData = await wRes.json();
+      setWorkspaces(wData.workspaces || []);
+    }
   }, []);
 
   useEffect(() => {
@@ -71,6 +85,34 @@ export default function AdminPage() {
     const res = await fetch(`/api/admin/users/${id}/approve`, { method: "POST" });
     if (res.ok) load();
     else alert("Onaylanamadı.");
+  }
+
+  const [migrating, setMigrating] = useState(false);
+  const [migrateResult, setMigrateResult] = useState<string | null>(null);
+  async function handleMigrateWorkspaces() {
+    setMigrating(true);
+    setMigrateResult(null);
+    try {
+      const res = await fetch("/api/admin/migrate-workspaces", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setMigrateResult(`Tamamlandı: ${data.workspacesCreated} büro oluşturuldu, ${data.clientsMigrated} müvekkil taşındı.`);
+      } else {
+        setMigrateResult(data.error || "Göç başarısız oldu.");
+      }
+    } catch (e) {
+      setMigrateResult("Bağlantı hatası.");
+    }
+    setMigrating(false);
+  }
+
+  async function handleUpdateLimit(id: string, newLimit: number) {
+    const res = await fetch(`/api/admin/workspaces/${id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberLimit: newLimit }),
+    });
+    if (res.ok) load();
+    else alert("Güncellenemedi.");
   }
 
   async function handleSaveConstants(e: React.FormEvent) {
@@ -207,6 +249,68 @@ export default function AdminPage() {
                 </div>
               </form>
             )}
+          </div>
+
+          {/* BÜROLAR — üye limiti yönetimi */}
+          {workspaces.length > 0 && (
+            <div className="dash-card" style={{ marginTop: 24 }}>
+              <div className="dash-head">
+                <div className="dash-title"><i className="fa-solid fa-building"></i> Bürolar ({workspaces.length})</div>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                      <th style={styles.th}>Büro Adı</th>
+                      <th style={styles.th}>Üyeler</th>
+                      <th style={styles.th}>Üye Sayısı</th>
+                      <th style={styles.th}>Limit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workspaces.map((w) => (
+                      <tr key={w.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                        <td style={styles.td}>{w.name}</td>
+                        <td style={styles.td}>{w.memberEmails.join(", ")}</td>
+                        <td style={styles.td}>{w.memberCount}</td>
+                        <td style={styles.td}>
+                          <input
+                            type="number"
+                            min={1}
+                            defaultValue={w.memberLimit}
+                            onBlur={(e) => {
+                              const v = parseInt(e.target.value, 10);
+                              if (v && v !== w.memberLimit) handleUpdateLimit(w.id, v);
+                            }}
+                            style={{ width: 60, padding: "4px 6px", borderRadius: 6, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--t0)" }}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* BÜRO (WORKSPACE) GÖÇÜ — tek seferlik, güvenle tekrar çalıştırılabilir */}
+          <div className="dash-card" style={{ marginTop: 24 }}>
+            <div className="dash-head">
+              <div className="dash-title"><i className="fa-solid fa-people-group"></i> Büro (Ekip) Sistemine Göç</div>
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--t2)", marginBottom: 10, lineHeight: 1.6 }}>
+              Ekip Yönetimi özelliğini kullanabilmek için mevcut kullanıcı ve müvekkil verilerinin
+              yeni "büro" yapısına taşınması gerekiyor. Bu işlem hiçbir veriyi silmez, güvenle
+              birden fazla kez çalıştırılabilir.
+            </div>
+            <button
+              onClick={handleMigrateWorkspaces}
+              disabled={migrating}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#fff", cursor: migrating ? "default" : "pointer", opacity: migrating ? 0.6 : 1 }}
+            >
+              {migrating ? "Çalışıyor…" : "Göçü Başlat"}
+            </button>
+            {migrateResult && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--t2)" }}>{migrateResult}</div>}
           </div>
 
           {/* BEKLEYEN ONAYLAR */}

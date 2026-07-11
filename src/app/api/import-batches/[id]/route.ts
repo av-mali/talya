@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireWorkspace } from "@/lib/workspace";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -21,6 +22,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const userId = (session.user as any).id as string;
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Bürolu bir hesap gerekli." }, { status: 400 });
 
   const batch = await prisma.importBatch.findFirst({ where: { id: params.id, userId } });
   if (!batch) return NextResponse.json({ error: "Kayıt bulunamadı." }, { status: 404 });
@@ -39,16 +42,16 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     let clientId = item.clientId as string | null;
 
     if (!clientId && item.newClientName) {
-      // Aynı kullanıcının, aynı isimde bir müvekkili zaten var mı? (büyük/küçük
+      // Aynı büronun, aynı isimde bir müvekkili zaten var mı? (büyük/küçük
       // harf duyarsız) — varsa onu kullan, yeni bir mükerrer müvekkil AÇMA.
       const existingClient = await prisma.client.findFirst({
-        where: { userId, name: { equals: item.newClientName.trim(), mode: "insensitive" } },
+        where: { workspaceId: ws.workspaceId, name: { equals: item.newClientName.trim(), mode: "insensitive" } },
       });
       if (existingClient) {
         clientId = existingClient.id;
       } else {
         const newClient = await prisma.client.create({
-          data: { name: item.newClientName.trim(), userId },
+          data: { name: item.newClientName.trim(), workspaceId: ws.workspaceId },
         });
         clientId = newClient.id;
       }

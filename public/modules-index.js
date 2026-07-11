@@ -49,6 +49,11 @@ window.MODULES_INDEX = [
         "name": "Global Arama"
       },
       {
+        "id": "ekip",
+        "icon": "fa-people-group",
+        "name": "Ekip Yönetimi"
+      },
+      {
         "id": "muvekkilekle",
         "icon": "fa-user-plus",
         "name": "Müvekkil Ekle",

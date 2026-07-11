@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
+  const loginHref = callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +48,7 @@ export default function RegisterPage() {
             Hesabınız oluşturuldu ve şu an <strong>onay bekliyor</strong>. Yönetici
             bilgilerinizi onayladıktan sonra giriş yapabileceksiniz.
           </div>
-          <Link href="/login" style={{ ...styles.btn, textAlign: "center", textDecoration: "none", display: "block" }}>
+          <Link href={loginHref} style={{ ...styles.btn, textAlign: "center", textDecoration: "none", display: "block" }}>
             Giriş Sayfasına Dön
           </Link>
         </div>
@@ -111,7 +114,7 @@ export default function RegisterPage() {
           Kaydınız, yönetici onayından sonra aktif olur.
         </div>
         <div style={styles.foot}>
-          Zaten hesabın var mı? <Link href="/login" style={{ color: "var(--gold)" }}>Giriş yap</Link>
+          Zaten hesabın var mı? <Link href={loginHref} style={{ color: "var(--gold)" }}>Giriş yap</Link>
         </div>
       </form>
     </div>

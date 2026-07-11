@@ -26,7 +26,7 @@ model User {
   kvkkChecklist Json?
   createdAt    DateTime  @default(now())
   messages     Message[]
-  clients      Client[]
+  clients      Client[] // ESKİ ilişki — göç sonrası kullanılmayacak ama veri kaybı olmasın diye duruyor
   tasks        Task[]
   notes        Note[]
   transactions Transaction[]
@@ -35,6 +35,36 @@ model User {
   syncToken    String?   @unique
   importBatches ImportBatch[]
   contracts    Contract[]
+  // ── Büro (Workspace) — Ekip Yönetimi ──
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id])
+  workspaceId  String?
+  workspaceRole String   @default("admin") // "admin" | "member"
+}
+
+// Büro (Workspace) — birden fazla kullanıcının aynı müvekkil/dosya
+// verisini paylaştığı çalışma alanı. Her yeni kayıt olan kullanıcı
+// otomatik olarak kendi (tek kişilik) bürosunu alır; isterse başkalarını
+// davet edip büyütebilir.
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  memberLimit Int      @default(5)
+  createdAt   DateTime @default(now())
+  members     User[]
+  clients     Client[]
+  invites     WorkspaceInvite[]
+}
+
+// Davet bağlantısı — tek kullanımlık token, /davet/[token] sayfasında
+// açılır, kabul edilince kullanıcı bu büroya üye olur.
+model WorkspaceInvite {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String
+  createdAt   DateTime  @default(now())
+  usedAt      DateTime?
+  usedByEmail String?
 }
 
 // Chrome eklentisinin UYAP'tan okuduğu ham metni Claude'a gönderip
@@ -74,16 +104,22 @@ model Message {
 }
 
 model Client {
-  id        String    @id @default(cuid())
-  name      String
-  phone     String?
-  email     String?
-  notes     String?   // genel not (dava konusu vb.)
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  logs      ClientLog[]
-  cases     Case[]
+  id          String    @id @default(cuid())
+  name        String
+  phone       String?
+  email       String?
+  notes       String?   // genel not (dava konusu vb.)
+  createdAt   DateTime  @default(now())
+  // ── GÖÇ NOTU: workspaceId yeni sistem, userId eski sistem ──
+  // Veri kaybı olmasın diye ikisini de bir arada tutuyoruz. Bir
+  // göç script'i userId'den workspaceId'yi dolduracak. Sonra (ayrı bir
+  // adımda) userId tamamen kaldırılacak.
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?
+  logs        ClientLog[]
+  cases       Case[]
 }
 
 // "Ne zaman ne konuşmuşuz" — müvekkille genel görüşme / iletişim kaydı

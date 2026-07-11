@@ -8,6 +8,7 @@ window.CURRENT_MODULE = {
   color: 'b',
   items: [
     {"id": "globalarama", "icon": "fa-magnifying-glass", "name": "Global Arama"},
+    {"id": "ekip", "icon": "fa-people-group", "name": "Ekip Yönetimi"},
     {"id": "muvekkilekle", "icon": "fa-user-plus", "name": "Müvekkil Ekle", "group": "Müvekkil Yönetimi"},
     {"id": "tablo", "icon": "fa-table-list", "name": "Müvekkil Tablosu", "group": "Müvekkil Yönetimi"},
     {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu", "group": "Müvekkil Yönetimi"},
@@ -33,6 +34,15 @@ window.CURRENT_MODULE = {
         <button class="pop-cta-btn b" style="width:100%;" onclick="szAdd()"><i class="fa-solid fa-plus"></i><span>Sözleşme Ekle</span></button>
       `,
       onOpen: () => szOnOpen(),
+      prompt: () => ''
+    },
+    // ── EKİP YÖNETİMİ ── büro üyeleri, davet linki
+    ekip: {
+      badge: 'b', badgeText: 'Büro & Ekip', titleHtml: 'Ekip <em class="b">Yönetimi</em>',
+      desc: 'Büronuzun üyelerini görün, yeni üye davet edin.',
+      btnClass: 'b', btnIco: 'fa-people-group', btnLbl: '', hideCta: true,
+      body: `<div id="ekip-box">Yükleniyor…</div>`,
+      onOpen: () => ekipOnOpen(),
       prompt: () => ''
     },
     // ── GLOBAL ARAMA ── müvekkil, not, görev, şablon içinde birden arar
@@ -1426,4 +1436,88 @@ function mvShowTimeline() {
       ` : '<div style="font-size:12px;color:var(--t3);">Henüz bir kayıt yok.</div>'}
     </div>
   `;
+}
+
+// ══════════════════════════════════════════════════════
+// EKİP YÖNETİMİ — büro üyeleri, davet linki oluşturma
+// ══════════════════════════════════════════════════════
+async function ekipOnOpen() {
+  const box = document.getElementById('ekip-box');
+  try {
+    const res = await fetch('/api/workspace');
+    const data = await res.json();
+    if (!res.ok) { box.innerHTML = `<div style="color:var(--danger);font-size:13px;">${data.error || 'Yüklenemedi.'}</div>`; return; }
+    ekipRender(data.workspace, data.myRole);
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function ekipRender(ws, myRole) {
+  const box = document.getElementById('ekip-box');
+  const isAdmin = myRole === 'admin';
+  box.innerHTML = `
+    <div class="fg">
+      <div class="fl">Büro Adı</div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="ekip-name" value="${ws.name.replace(/"/g,'&quot;')}" ${isAdmin ? '' : 'disabled'} style="flex:1;min-width:0;">
+        ${isAdmin ? `<button class="pop-cta-btn b" style="width:auto;padding:6px 12px;flex-shrink:0;" onclick="ekipSaveName()">Kaydet</button>` : ''}
+      </div>
+    </div>
+
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 8px;">
+      Üyeler (${ws.members.length}/${ws.memberLimit})
+    </div>
+    ${ws.members.map(m => `
+      <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">
+        <span>${m.name || m.email} <span style="font-size:10px;color:var(--t3);">${m.workspaceRole === 'admin' ? '(Yönetici)' : '(Üye)'}</span></span>
+        ${isAdmin && m.workspaceRole !== 'admin' ? `<span style="cursor:pointer;color:var(--danger);font-size:11px;" onclick="ekipRemoveMember('${m.id}')">Çıkar</span>` : ''}
+      </div>
+    `).join('')}
+
+    ${isAdmin ? `
+      <button class="pop-cta-btn b" style="width:100%;margin-top:16px;" onclick="ekipCreateInvite()" ${ws.members.length >= ws.memberLimit ? 'disabled' : ''}>
+        <i class="fa-solid fa-user-plus"></i><span>Davet Linki Oluştur</span>
+      </button>
+      ${ws.members.length >= ws.memberLimit ? '<div style="font-size:11px;color:var(--warn);margin-top:6px;">Üye limitine ulaşıldı.</div>' : ''}
+      <div id="ekip-invite-result" style="margin-top:10px;"></div>
+    ` : '<div style="font-size:11px;color:var(--t3);margin-top:12px;">Sadece büro yöneticisi üye davet edebilir/çıkarabilir.</div>'}
+  `;
+  box.dataset.workspaceId = ws.id;
+}
+
+async function ekipSaveName() {
+  const name = document.getElementById('ekip-name').value.trim();
+  if (!name) { toast('Büro adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+  const res = await fetch('/api/workspace', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
+  if (res.ok) toast('Büro adı güncellendi', 'fa-solid fa-check', true);
+  else toast('Güncellenemedi', 'fa-solid fa-triangle-exclamation');
+}
+
+async function ekipCreateInvite() {
+  const res = await fetch('/api/workspace/invite', { method: 'POST' });
+  const data = await res.json();
+  const box = document.getElementById('ekip-invite-result');
+  if (!res.ok) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);">${data.error || 'Oluşturulamadı.'}</div>`;
+    return;
+  }
+  const link = window.location.origin + '/davet/' + data.token;
+  box.innerHTML = `
+    <div style="font-size:11px;color:var(--t3);margin-bottom:4px;">Bu bağlantıyı davet etmek istediğiniz kişiye gönderin:</div>
+    <div style="display:flex;gap:6px;">
+      <input type="text" readonly value="${link}" style="flex:1;min-width:0;font-size:11px;" onclick="this.select()">
+      <button class="pop-cta-btn b" style="width:auto;padding:6px 10px;flex-shrink:0;" onclick="navigator.clipboard.writeText('${link}');toast('Kopyalandı','fa-solid fa-check',true)"><i class="fa-solid fa-copy"></i></button>
+    </div>
+  `;
+}
+
+async function ekipRemoveMember(userId) {
+  if (!confirm('Bu üyeyi bürodan çıkarmak istediğinize emin misiniz? Kendi ayrı bürosuna taşınacak.')) return;
+  const res = await fetch('/api/workspace/members/' + userId, { method: 'DELETE' });
+  if (res.ok) { toast('Üye çıkarıldı', 'fa-solid fa-check', true); ekipOnOpen(); }
+  else toast('Çıkarılamadı', 'fa-solid fa-triangle-exclamation');
 }

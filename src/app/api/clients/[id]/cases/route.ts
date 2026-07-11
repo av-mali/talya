@@ -1,15 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireOwnedClient(clientId: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  const userId = (session.user as any).id as string;
-  const client = await prisma.client.findFirst({ where: { id: clientId, userId } });
-  return client ? userId : null;
-}
+import { requireOwnedClient } from "@/lib/workspace";
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const ok = await requireOwnedClient(params.id);

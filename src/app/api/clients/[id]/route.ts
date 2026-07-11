@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireUser() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  return (session.user as any).id as string;
-}
+import { requireWorkspace } from "@/lib/workspace";
 
 // Müvekkil detayı: bilgiler + görüşme geçmişi + faturalar + duruşma/ödeme tarihleri
 export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   const client = await prisma.client.findFirst({
-    where: { id: params.id, userId },
+    where: { id: params.id, workspaceId: ws.workspaceId },
     include: {
       logs: { orderBy: { createdAt: "desc" } },
       cases: {
@@ -34,10 +27,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
-  const existing = await prisma.client.findFirst({ where: { id: params.id, userId } });
+  const existing = await prisma.client.findFirst({ where: { id: params.id, workspaceId: ws.workspaceId } });
   if (!existing) return NextResponse.json({ error: "Müvekkil bulunamadı." }, { status: 404 });
 
   const { name, phone, email, notes } = await req.json();
@@ -50,10 +43,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
-  const existing = await prisma.client.findFirst({ where: { id: params.id, userId } });
+  const existing = await prisma.client.findFirst({ where: { id: params.id, workspaceId: ws.workspaceId } });
   if (!existing) return NextResponse.json({ error: "Müvekkil bulunamadı." }, { status: 404 });
 
   await prisma.client.delete({ where: { id: params.id } });

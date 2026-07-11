@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireUser() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  return (session.user as any).id as string;
-}
+import { requireWorkspace } from "@/lib/workspace";
 
 // Tüm müvekkilleri listele (arama isteğe bağlı: ?q=isim, tablo görünümü: ?full=1)
 export async function GET(req: Request) {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const { workspaceId } = ws;
 
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim();
@@ -21,7 +15,7 @@ export async function GET(req: Request) {
   if (full) {
     // Tablo/rapor görünümü için: dosya sayısı, toplam faturalanan tutar dahil.
     const clients = await prisma.client.findMany({
-      where: { userId, ...(q ? { name: { contains: q, mode: "insensitive" } } : {}) },
+      where: { workspaceId, ...(q ? { name: { contains: q, mode: "insensitive" } } : {}) },
       orderBy: { name: "asc" },
       include: {
         cases: {
@@ -54,7 +48,7 @@ export async function GET(req: Request) {
 
   const clients = await prisma.client.findMany({
     where: {
-      userId,
+      workspaceId,
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },
     orderBy: { name: "asc" },
@@ -80,8 +74,8 @@ export async function GET(req: Request) {
 
 // Yeni müvekkil oluştur
 export async function POST(req: Request) {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   const { name, phone, email, notes } = await req.json();
   if (!name || !name.trim()) {
@@ -89,7 +83,7 @@ export async function POST(req: Request) {
   }
 
   const client = await prisma.client.create({
-    data: { name: name.trim(), phone, email, notes, userId },
+    data: { name: name.trim(), phone, email, notes, workspaceId: ws.workspaceId },
   });
 
   return NextResponse.json({ client });

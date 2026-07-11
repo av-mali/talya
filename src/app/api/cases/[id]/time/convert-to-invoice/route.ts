@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireWorkspace } from "@/lib/workspace";
 
 // Henüz faturalanmamış (invoiced=false), saatlik ücreti girilmiş zaman
 // kayıtlarının toplamını tek bir faturaya çevirir ve o kayıtları
 // "faturalandı" olarak işaretler — aynı zaman iki kez faturalanmaz.
 export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
-  const userId = (session.user as any).id as string;
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const { userId } = ws;
 
   const found = await prisma.case.findFirst({
-    where: { id: params.id, client: { userId } },
+    where: { id: params.id, client: { workspaceId: ws.workspaceId } },
     include: { client: true },
   });
   if (!found) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });

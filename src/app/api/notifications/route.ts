@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
+import { requireWorkspace } from "@/lib/workspace";
 
 // Önümüzdeki 14 gün içindeki (ve geçmiş, henüz görülmemiş) duruşma/ödeme
 // tarihlerini VE süresi yaklaşan görevleri bildirim olarak döndürür —
@@ -11,6 +12,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const userId = (session.user as any).id as string;
+  const ws = await requireWorkspace();
 
   const now = new Date();
   // Bildirim zili artık sadece ACİL (2 gün ve altı) kayıtları gösterir —
@@ -28,11 +30,11 @@ export async function GET() {
   }
 
   const [events, tasks, readRows] = await Promise.all([
-    prisma.clientEvent.findMany({
-      where: { case: { client: { userId } }, dueDate: { lte: in2days } },
+    ws ? prisma.clientEvent.findMany({
+      where: { case: { client: { workspaceId: ws.workspaceId } }, dueDate: { lte: in2days } },
       include: { case: { include: { client: true } } },
       orderBy: { dueDate: "asc" },
-    }),
+    }) : Promise.resolve([]),
     prisma.task.findMany({
       where: { userId, done: false, dueDate: { not: null, lte: in2days } },
       orderBy: { dueDate: "asc" },
