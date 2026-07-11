@@ -76,13 +76,27 @@ window.CURRENT_MODULE = {
       prompt: () => ''
     },
     durusma: {
-      badge: 'g', badgeText: 'Celse Hazırlığı', titleHtml: 'Duruşma <em class="g">Hazırlık</em>',
-      desc: 'Duruşma bilgilerini girin; strateji ve sorular oluşturulsun.',
-      btnClass: 'g', btnIco: 'fa-person-chalkboard', btnLbl: 'Hazırlık Başlat',
-      body: `<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-day"></i> Duruşma Tarihi</div><input type="text" id="f-dtarih" placeholder="GG/AA/YYYY"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Güncel Durum</div><textarea id="f-ddur" rows="4" placeholder="Son celse kararı, bekleyen adımlar…"></textarea></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-lightbulb"></i> İstenen Çıktı</div><div class="sw"><select id="f-dcikti"><option>Olası hakim soruları ve cevaplar</option><option>Tanık soru listesi</option><option>Kapanış beyanı taslağı</option><option>Kronolojik olay örgüsü</option></select></div></div>`,
-      prompt: () => `${document.getElementById('f-dtarih')?.value || ''} tarihli duruşma için hazırlık yap. İstenen: ${document.getElementById('f-dcikti')?.value || ''}.\n\nGüncel durum:\n${document.getElementById('f-ddur')?.value || ''}`
+      badge: 'g', badgeText: 'Çoklu Belge Analizi', titleHtml: 'Duruşma <em class="g">Hazırlık</em>',
+      desc: 'İddianame, celse tutanakları gibi belgeleri birlikte yükleyin; AI duruşma stratejisi çıkarsın.',
+      btnClass: 'g', btnIco: 'fa-person-chalkboard', btnLbl: '', hideCta: true,
+      body: `
+        <div class="fg"><div class="fl"><i class="fa-solid fa-file-arrow-up"></i> Belgeleri Yükle (birden fazla seçebilirsiniz)</div><input type="file" id="ds-files" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif,.docx,.txt,.html,.htm,.xml,.csv,.udf"></div>
+        <div id="ds-filelist" style="font-size:11px;color:var(--t3);margin:-6px 0 10px;"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-comment-dots"></i> Ek Talimat (opsiyonel)</div><textarea id="ds-question" rows="2" placeholder="Özellikle şu noktaya odaklan… (boş bırakılırsa genel strateji çıkarılır)"></textarea></div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);margin-bottom:10px;">
+          <input type="checkbox" id="ds-udf"> Sonucu UDF/Word/PDF olarak da indirebilir hale getir
+        </label>
+        <button class="pop-cta-btn g" style="width:100%;" onclick="durusmaAnalyzeSubmit()"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Strateji Çıkar</span></button>
+        <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Gizlilik</div><p>Yüklediğiniz belgeler hiçbir yerde saklanmaz — anlık işlenir, silinir. Sonuç sağdaki panelde görünür.</p></div>
+      `,
+      onOpen: () => {
+        const fi = document.getElementById('ds-files');
+        if (fi) fi.onchange = () => {
+          const list = document.getElementById('ds-filelist');
+          list.textContent = fi.files.length ? `${fi.files.length} dosya seçildi: ` + Array.from(fi.files).map(f => f.name).join(', ') : '';
+        };
+      },
+      prompt: () => ''
     }
   }
 };
@@ -124,6 +138,39 @@ function fillQuickInstruction(prefix, type) {
   if (el && QUICK_INSTRUCTIONS[type]) {
     el.value = QUICK_INSTRUCTIONS[type];
     el.focus();
+  }
+}
+
+async function durusmaAnalyzeSubmit() {
+  const filesInput = document.getElementById('ds-files');
+  const question = document.getElementById('ds-question').value.trim();
+  const wantUdf = document.getElementById('ds-udf').checked;
+  const files = filesInput.files ? Array.from(filesInput.files) : [];
+
+  if (!files.length) { toast('En az bir belge yükleyin', 'fa-solid fa-triangle-exclamation'); return; }
+
+  const fileNames = files.map(f => f.name).join(', ');
+  appendMsg('user', `<strong>Duruşma Hazırlık</strong> — ${files.length} belge: ${fileNames.replace(/</g, '&lt;')}${question ? '<br><span style="opacity:.85;">' + question.replace(/</g, '&lt;') + '</span>' : ''}`);
+  showTyping();
+
+  const form = new FormData();
+  files.forEach(f => form.append('files', f));
+  form.append('instruction', question || 'Bu belgelere göre kapsamlı bir duruşma stratejisi çıkar.');
+  form.append('mode', 'durusma');
+  form.append('wantUdf', wantUdf ? '1' : '0');
+
+  try {
+    const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    removeTyping();
+    if (!res.ok) {
+      appendMsg('ai', `<span style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i> ${data.error || 'Hata oluştu.'}</span>`);
+      return;
+    }
+    appendMsg('ai', fmtAI(data.analysis || ''), data.udfBase64 || null, data.docxBase64 || null, data.pdfBase64 || null);
+  } catch (e) {
+    removeTyping();
+    appendMsg('ai', '<span style="color:var(--danger)">Bağlantı hatası.</span>');
   }
 }
 

@@ -30,11 +30,44 @@ const SYSTEM_HINTS: Record<string, string> = {
   dosya: "Sen Türk hukuku konusunda uzman bir asistansın. Sana verilen belgeyi dikkatle incele ve kullanıcının sorusunu, somut ve hukuki referanslarla (varsa ilgili kanun maddeleri) destekleyerek cevapla." + HALLUCINATION_GUARD,
   sozlesme: "Sen bir sözleşme inceleme uzmanısın. Sana verilen sözleşmeyi dikkatle incele; riskli/eksik/belirsiz maddeleri, tarafların lehine/aleyhine olan noktaları vurgula. Kullanıcının sorusuna bu çerçevede cevap ver." + HALLUCINATION_GUARD,
   dilekce: "Sen Türk hukuku konusunda uzman bir avukat asistanısın. Kullanıcının verdiği dava türü, olay örgüsü ve varsa özel taleplere göre, Hukuk Muhakemeleri Kanunu'na (HMK) uygun, resmi dilde, doğru başlıklandırılmış bir dilekçe taslağı yaz. Olay örgüsünde belirtilen somut detayları (isim, tarih, tutar, olay akışı ne varsa) MUTLAKA dilekçenin 'Açıklamalar' kısmına işle — genel/soyut bir metin yazma. Taslağı doğrudan dilekçe metni olarak ver, ekstra açıklama ekleme." + HALLUCINATION_GUARD,
+  durusma: "Sen Türk hukuku konusunda uzman, duruşma hazırlığı yapan bir avukat asistanısın. Sana verilen belgeleri (iddianame, celse tutanakları, dilekçeler vb.) BİRLİKTE, bütünsel olarak değerlendir. Şu başlıklar altında bir duruşma stratejisi çıkar: (1) Dosyanın Kronolojik Özeti, (2) Güçlü Yönler, (3) Zayıf Yönler / Karşı Tarafın Muhtemel İddiaları, (4) Hakimin Sorabileceği Olası Sorular ve Önerilen Cevaplar, (5) Duruşmada Vurgulanması Gereken Kilit Noktalar, (6) Önerilen Strateji. Belgeler arasında çelişki/tutarsızlık varsa mutlaka belirt." + HALLUCINATION_GUARD,
 };
 
 function getExt(filename: string) {
   const m = filename.match(/\.([a-zA-Z0-9]+)$/);
   return m ? m[1].toLowerCase() : "";
+}
+
+// Tek bir dosyayı Gemini'ye gönderilecek "part" haline çevirir. Hata
+// olursa bir Error fırlatır (üst katman kullanıcıya net mesaj gösterir).
+async function fileToPart(file: File): Promise<any> {
+  const ext = getExt(file.name);
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  if (ext === "pdf" || ["jpg", "jpeg", "png", "webp"].includes(ext)) {
+    const mimeType = ext === "pdf" ? "application/pdf" : `image/${ext === "jpg" ? "jpeg" : ext}`;
+    return { inline_data: { mime_type: mimeType, data: buffer.toString("base64") } };
+  }
+  if (["bmp", "tiff", "tif"].includes(ext)) {
+    try {
+      const pngBuffer = await sharp(buffer).png().toBuffer();
+      return { inline_data: { mime_type: "image/png", data: pngBuffer.toString("base64") } };
+    } catch (e) {
+      throw new Error(`${ext.toUpperCase()} dosyası (${file.name}) okunamadı/dönüştürülemedi.`);
+    }
+  }
+  if (["txt", "html", "htm", "xml", "csv"].includes(ext)) {
+    return { text: `BELGE (${file.name}):\n` + buffer.toString("utf-8") };
+  }
+  if (ext === "docx") {
+    const result = await mammoth.extractRawText({ buffer });
+    return { text: `BELGE (${file.name}):\n` + result.value };
+  }
+  if (ext === "udf") {
+    const text = await readUdfText(buffer);
+    return { text: `BELGE (${file.name}, UYAP/UDF):\n` + text };
+  }
+  throw new Error(`Desteklenmeyen dosya formatı: ${file.name}`);
 }
 
 export async function POST(req: Request) {
@@ -52,7 +85,9 @@ export async function POST(req: Request) {
 
   try {
     const form = await req.formData();
-    const file = form.get("file") as File | null;
+    const multiFiles = form.getAll("files") as File[]; // yeni: çoklu dosya (Duruşma Hazırlık)
+    const singleFile = form.get("file") as File | null; // eski: tekli dosya (geri uyum)
+    const files = multiFiles.length ? multiFiles : (singleFile ? [singleFile] : []);
     const pastedText = (form.get("pastedText") as string) || "";
     const instruction = (form.get("instruction") as string) || "";
     const mode = (form.get("mode") as string) || "dosya";
@@ -61,48 +96,21 @@ export async function POST(req: Request) {
     if (!instruction.trim() && mode !== "dilekce") {
       return NextResponse.json({ error: "Lütfen bir soru/talimat girin." }, { status: 400 });
     }
-    if (!file && !pastedText.trim() && mode !== "dilekce") {
+    if (!files.length && !pastedText.trim() && mode !== "dilekce") {
       return NextResponse.json({ error: "Lütfen bir dosya yükleyin veya metin yapıştırın." }, { status: 400 });
     }
 
     const parts: any[] = [];
     const systemHint = SYSTEM_HINTS[mode] || SYSTEM_HINTS.dosya;
 
-    if (file) {
-      const ext = getExt(file.name);
-      const buffer = Buffer.from(await file.arrayBuffer());
-
-      if (ext === "pdf" || ["jpg", "jpeg", "png", "webp"].includes(ext)) {
-        // PDF ve görselleri Gemini doğrudan (multimodal) okuyabiliyor —
-        // metne çevirmeye gerek yok, ham veriyi olduğu gibi gönderiyoruz.
-        const mimeType = ext === "pdf" ? "application/pdf" : `image/${ext === "jpg" ? "jpeg" : ext}`;
-        parts.push({ inline_data: { mime_type: mimeType, data: buffer.toString("base64") } });
-      } else if (["bmp", "tiff", "tif"].includes(ext)) {
-        // Gemini bu formatları doğrudan kabul etmiyor — önce PNG'ye çeviriyoruz.
-        try {
-          const pngBuffer = await sharp(buffer).png().toBuffer();
-          parts.push({ inline_data: { mime_type: "image/png", data: pngBuffer.toString("base64") } });
-        } catch (e) {
-          return NextResponse.json(
-            { error: `${ext.toUpperCase()} dosyası okunamadı/dönüştürülemedi. Dosya bozuk olabilir ya da desteklenmeyen bir sıkıştırma kullanıyor olabilir.` },
-            { status: 400 }
-          );
-        }
-      } else if (["txt", "html", "htm", "xml", "csv"].includes(ext)) {
-        parts.push({ text: "BELGE İÇERİĞİ:\n" + buffer.toString("utf-8") });
-      } else if (ext === "docx") {
-        const result = await mammoth.extractRawText({ buffer });
-        parts.push({ text: "BELGE İÇERİĞİ:\n" + result.value });
-      } else if (ext === "udf") {
-        const text = await readUdfText(buffer);
-        parts.push({ text: "BELGE İÇERİĞİ (UYAP/UDF):\n" + text });
-      } else {
-        return NextResponse.json(
-          { error: "Desteklenmeyen dosya formatı. PDF, JPG, PNG, WEBP, BMP, TIFF, DOCX, TXT, HTML, XML, CSV veya UDF yükleyin." },
-          { status: 400 }
-        );
+    for (const file of files) {
+      try {
+        parts.push(await fileToPart(file));
+      } catch (e: any) {
+        return NextResponse.json({ error: e?.message || "Dosya işlenemedi." }, { status: 400 });
       }
-    } else if (pastedText.trim()) {
+    }
+    if (!files.length && pastedText.trim()) {
       parts.push({ text: "BELGE İÇERİĞİ:\n" + pastedText.trim() });
     }
 
