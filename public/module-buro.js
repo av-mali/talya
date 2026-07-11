@@ -40,7 +40,7 @@ window.CURRENT_MODULE = {
     ekip: {
       badge: 'b', badgeText: 'Büro & Ekip', titleHtml: 'Ekip <em class="b">Yönetimi</em>',
       desc: 'Büronuzun üyelerini görün, yeni üye davet edin.',
-      btnClass: 'b', btnIco: 'fa-people-group', btnLbl: '', hideCta: true, hideChatInput: true,
+      btnClass: 'b', btnIco: 'fa-people-group', btnLbl: '', hideCta: true,
       body: `<div id="ekip-box">Yükleniyor…</div>`,
       onOpen: () => ekipOnOpen(),
       prompt: () => ''
@@ -1530,9 +1530,7 @@ async function ekipRemoveMember(userId) {
 let ekipMembersCache = [];
 
 function ekipGetPane() {
-  const empty = document.getElementById('chatEmpty');
-  if (empty) empty.style.display = 'none';
-  return document.getElementById('chatMsgs');
+  return document.getElementById('detailPane');
 }
 
 function ekipShowPermissions(memberId) {
