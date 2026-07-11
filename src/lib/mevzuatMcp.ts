@@ -172,6 +172,10 @@ export async function searchMevzuat(query: string, maxResults = 20): Promise<{ i
   return { items: allResults, total, rawDebug };
 }
 
+function isRateLimitError(rawDebug: string): boolean {
+  return /429|too many requests/i.test(rawDebug);
+}
+
 // Farklı mevzuat türleri, sunucuda FARKLI özel araçlar kullanıyor —
 // genel "get_mevzuat_content" aracı bazı türlerde (ör. Cumhurbaşkanı
 // Kararı gibi PDF kaynaklı belgelerde) ham/bozuk veri döndürebiliyor.

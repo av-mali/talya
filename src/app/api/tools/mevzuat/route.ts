@@ -17,6 +17,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Arama terimi girin." }, { status: 400 });
       }
       const { items, total, rawDebug } = await searchMevzuat(query.trim());
+      if (!items.length && /429|too many requests/i.test(rawDebug)) {
+        return NextResponse.json(
+          { error: "Adalet Bakanlığı'nın mevzuat sistemi şu an çok yoğun (kısa süreli erişim sınırı). Birkaç dakika bekleyip tekrar dener misiniz?" },
+          { status: 429 }
+        );
+      }
       return NextResponse.json({ result: items, total, _debug: rawDebug.slice(0, 2500) });
     }
 
