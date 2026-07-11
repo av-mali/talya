@@ -123,7 +123,7 @@ function parseMevzuatSearchText(text: string) {
 
 
 
-export async function searchMevzuat(query: string, maxResults = 6) {
+export async function searchMevzuat(query: string, maxResults = 100): Promise<{ items: any[]; total: number | null }> {
   const sessionId = await getSession();
   const isNumeric = /^\d+$/.test(query.trim());
 
@@ -138,6 +138,7 @@ export async function searchMevzuat(query: string, maxResults = 6) {
 
   const allResults: any[] = [];
   const seenIds = new Set<string>();
+  let total: number | null = null;
 
   for (const s of searches) {
     try {
@@ -146,6 +147,10 @@ export async function searchMevzuat(query: string, maxResults = 6) {
         sessionId
       );
       const raw = extractToolResult(callRes);
+      if (typeof raw === "string") {
+        const totalMatch = raw.match(/Results:\s*(\d+)\s*total/i);
+        if (totalMatch) total = Math.max(total || 0, parseInt(totalMatch[1], 10));
+      }
       const parsed = Array.isArray(raw) ? raw : parseMevzuatSearchText(raw);
       for (const item of parsed) {
         const id = item.mevzuatId || item.mevzuatNo;
@@ -159,7 +164,7 @@ export async function searchMevzuat(query: string, maxResults = 6) {
     }
   }
 
-  return allResults;
+  return { items: allResults, total };
 }
 
 // Farklı mevzuat türleri, sunucuda FARKLI özel araçlar kullanıyor —

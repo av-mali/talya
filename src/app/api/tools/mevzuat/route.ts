@@ -16,8 +16,8 @@ export async function POST(req: Request) {
       if (!query || !query.trim()) {
         return NextResponse.json({ error: "Arama terimi girin." }, { status: 400 });
       }
-      const result = await searchMevzuat(query.trim());
-      return NextResponse.json({ result, _debug: JSON.stringify(result).slice(0, 2000) });
+      const { items, total } = await searchMevzuat(query.trim());
+      return NextResponse.json({ result: items, total, _debug: JSON.stringify(items).slice(0, 2000) });
     }
 
     if (action === "content") {

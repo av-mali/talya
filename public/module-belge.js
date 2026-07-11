@@ -337,7 +337,10 @@ async function mevzuatSearch() {
     // işareti geçince tıklamayı bozuyordu — bunun yerine sonuçları global
     // bir listede tutup sadece index'i geçiyoruz.
     mevzuatSearchResults = list;
-    box.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">${list.length} sonuç</div>` +
+    const totalNote = data.total && data.total > list.length
+      ? `<div style="font-size:11px;color:var(--warn);margin-bottom:8px;">Toplam ${data.total} sonuçtan ${list.length} tanesi gösteriliyor — daha dar bir terimle aramayı dene.</div>`
+      : '';
+    box.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">${list.length} sonuç</div>${totalNote}` +
       list.map((item, i) => {
         const title = mvzField(item, 'mevzuatAdi', 'mevzuat_adi', 'title', 'ad') || 'İsimsiz Mevzuat';
         const tur = mvzField(item, 'mevzuatTur', 'mevzuat_tur', 'type', 'tur') || '';
@@ -394,7 +397,8 @@ async function mevzuatShowTree(index) {
       box.innerHTML = `
         <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
         <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
-        <div style="font-size:12px;color:var(--t3);padding:10px 0;">Bu belge için metin çıkarma şu an başarısız oluyor (servis ham PDF verisi döndürdü). Bu, "${mevzuatTur}" türü için bilinen bir sınır — geliştiriliyor.</div>
+        <div style="font-size:12px;color:var(--t3);padding:10px 0;">Bu belge için metin çıkarma şu an başarısız oluyor (servis ham PDF verisi döndürdü). Bu, "${mevzuatTur}" türü için bilinen bir sınır.</div>
+        <a href="https://www.google.com/search?q=site:mevzuat.gov.tr+${encodeURIComponent(title)}" target="_blank" rel="noopener" style="color:var(--gold);font-size:12px;">mevzuat.gov.tr'de orijinalini ara ↗</a>
       `;
       return;
     }
@@ -404,6 +408,9 @@ async function mevzuatShowTree(index) {
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
       <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;max-height:500px;overflow-y:auto;">${(text || '').replace(/</g, '&lt;')}</div>
       <button class="pop-cta-btn b" style="width:100%;margin-top:10px;" onclick="mevzuatCopyContent()"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>
+      ${text && text.length < 600 ? `
+        <div class="ic" style="margin-top:10px;"><div class="ic-t"><i class="fa-solid fa-triangle-exclamation"></i> Kısa görünüyor</div><p>Bu metin eksik/kısa gelmiş olabilir (bazı belgelerde ek/tablo kısmı otomatik okunamıyor). Orijinalini kontrol etmek için: <a href="https://www.google.com/search?q=site:mevzuat.gov.tr+${encodeURIComponent(title)}" target="_blank" rel="noopener" style="color:var(--gold);">mevzuat.gov.tr'de ara ↗</a></p></div>
+      ` : ''}
     `;
     box.dataset.currentText = text;
   } catch (e) {
