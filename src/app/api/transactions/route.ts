@@ -1,28 +1,21 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireUser() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  return (session.user as any).id as string;
-}
+import { requireWorkspace } from "@/lib/workspace";
 
 export async function GET() {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   const transactions = await prisma.transaction.findMany({
-    where: { userId },
+    where: { workspaceId: ws.workspaceId },
     orderBy: { date: "desc" },
   });
   return NextResponse.json({ transactions });
 }
 
 export async function POST(req: Request) {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   const { type, amount, description, date } = await req.json();
   const amountNum = parseFloat(String(amount).replace(/[^\d.]/g, ""));
@@ -36,7 +29,8 @@ export async function POST(req: Request) {
       amount: amountNum,
       description,
       date: date ? new Date(date) : new Date(),
-      userId,
+      userId: ws.userId,
+      workspaceId: ws.workspaceId,
     },
   });
   return NextResponse.json({ transaction: tx });

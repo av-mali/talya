@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireWorkspace } from "@/lib/workspace";
 
 async function requireOwnedTask(taskId: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  const userId = (session.user as any).id as string;
-  const task = await prisma.task.findFirst({ where: { id: taskId, userId } });
-  return task ? userId : null;
+  const ws = await requireWorkspace();
+  if (!ws) return null;
+  const task = await prisma.task.findFirst({ where: { id: taskId, workspaceId: ws.workspaceId } });
+  return task ? ws : null;
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {

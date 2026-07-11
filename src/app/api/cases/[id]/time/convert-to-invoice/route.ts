@@ -46,6 +46,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       amount: total,
       description: `${found.client.name} — ${found.title} (zaman takibi faturası)`,
       userId,
+      workspaceId: ws.workspaceId,
       sourceInvoiceId: invoice.id,
     },
   });

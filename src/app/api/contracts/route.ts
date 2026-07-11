@@ -1,28 +1,21 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireUser() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  return (session.user as any).id as string;
-}
+import { requireWorkspace } from "@/lib/workspace";
 
 export async function GET() {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   const contracts = await prisma.contract.findMany({
-    where: { userId },
+    where: { workspaceId: ws.workspaceId },
     orderBy: { endDate: "asc" },
   });
   return NextResponse.json({ contracts });
 }
 
 export async function POST(req: Request) {
-  const userId = await requireUser();
-  if (!userId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const ws = await requireWorkspace();
+  if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
   const { title, counterparty, startDate, endDate, notes } = await req.json();
   if (!title || !title.trim() || !endDate) {
@@ -36,7 +29,8 @@ export async function POST(req: Request) {
       startDate: startDate ? new Date(startDate) : null,
       endDate: new Date(endDate),
       notes: notes || null,
-      userId,
+      userId: ws.userId,
+      workspaceId: ws.workspaceId,
     },
   });
   return NextResponse.json({ contract });

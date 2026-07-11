@@ -53,6 +53,11 @@ model Workspace {
   members     User[]
   clients     Client[]
   invites     WorkspaceInvite[]
+  tasks       Task[]
+  notes       Note[]
+  transactions Transaction[]
+  templates   Template[]
+  contracts   Contract[]
 }
 
 // Davet bağlantısı — tek kullanımlık token, /davet/[token] sayfasında
@@ -182,22 +187,26 @@ model TimeEntry {
 
 // Bürodaki genel (müvekkilden bağımsız) yapılacaklar listesi
 model Task {
-  id        String    @id @default(cuid())
-  title     String
-  done      Boolean   @default(false)
-  dueDate   DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+  id          String    @id @default(cuid())
+  title       String
+  done        Boolean   @default(false)
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String?
 }
 
 // Bürodaki genel (müvekkilden bağımsız) notlar/hatırlatıcılar
 model Note {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+  id          String   @id @default(cuid())
+  content     String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String?
 }
 
 // Gelir-gider takibi (büronun genel kasası — kira, personel, aidat vb.
@@ -211,18 +220,22 @@ model Transaction {
   createdAt     DateTime @default(now())
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId   String?
   sourceInvoiceId String? // otomatik oluşan fatura gelirleri için bağlantı
 }
 
 // Şablon kütüphanesi — sadece metin (dosya değil), sık kullanılan
 // dilekçe/ihtarname vb. taslak metinleri saklamak için
 model Template {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String?
 }
 
 // Sözleşme Takip — bitiş/yenileme tarihi yaklaşan sözleşmeleri takip eder.
@@ -236,6 +249,8 @@ model Contract {
   createdAt    DateTime  @default(now())
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId  String?
 }
 
 // Sık değişen hukuki sabitler (kıdem tavanı, yasal faiz oranı, kira TÜFE

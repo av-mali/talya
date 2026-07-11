@@ -9,7 +9,7 @@ async function requireOwnedCase(caseId: string) {
     where: { id: caseId, client: { workspaceId: ws.workspaceId } },
     include: { client: true },
   });
-  return found ? { userId: ws.userId, caseInfo: found } : null;
+  return found ? { userId: ws.userId, workspaceId: ws.workspaceId, caseInfo: found } : null;
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -34,6 +34,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       amount: amountNum,
       description: `${ctx.caseInfo.client.name} — ${ctx.caseInfo.title}${note ? " (" + note + ")" : ""}`,
       userId: ctx.userId,
+      workspaceId: ctx.workspaceId,
       sourceInvoiceId: invoice.id,
     },
   });

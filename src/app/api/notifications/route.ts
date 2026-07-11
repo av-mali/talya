@@ -35,10 +35,10 @@ export async function GET() {
       include: { case: { include: { client: true } } },
       orderBy: { dueDate: "asc" },
     }) : Promise.resolve([]),
-    prisma.task.findMany({
-      where: { userId, done: false, dueDate: { not: null, lte: in2days } },
+    ws ? prisma.task.findMany({
+      where: { workspaceId: ws.workspaceId, done: false, dueDate: { not: null, lte: in2days } },
       orderBy: { dueDate: "asc" },
-    }),
+    }) : Promise.resolve([]),
     prisma.notificationRead.findMany({ where: { userId }, select: { notifId: true } }),
   ]);
 
