@@ -95,11 +95,6 @@ window.MODULES_INDEX = [
         "id": "sozlesmetakip",
         "icon": "fa-file-contract",
         "name": "Sözleşme Takip"
-      },
-      {
-        "id": "kvkk",
-        "icon": "fa-shield-halved",
-        "name": "KVKK Kontrol Listesi"
       }
     ]
   },

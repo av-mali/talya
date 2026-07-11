@@ -70,8 +70,12 @@ window.CURRENT_MODULE = {
     sablon: {
       badge: 'g', badgeText: 'Metin Şablonları', titleHtml: 'Şablon <em class="g">Kütüphanesi</em>',
       desc: 'Sık kullandığınız dilekçe/ihtarname metinlerini burada saklayın.',
-      btnClass: 'g', btnIco: 'fa-layer-group', btnLbl: '', hideCta: true,
-      body: `<div id="tpl-box">Yükleniyor…</div>`,
+      btnClass: 'g', btnIco: 'fa-layer-group', btnLbl: '', hideCta: true, hideChatInput: true,
+      body: `
+        <div class="fg"><div class="fl">Şablon Adı</div><input type="text" id="tpl-title" placeholder="Kira İhtarnamesi…"></div>
+        <div class="fg"><div class="fl">İçerik</div><textarea id="tpl-content" rows="8" placeholder="Şablon metnini buraya yazın…"></textarea></div>
+        <button class="pop-cta-btn g" style="width:100%;" onclick="tplAdd()"><i class="fa-solid fa-plus"></i><span>Şablonu Kaydet</span></button>
+      `,
       onOpen: () => tplOnOpen(),
       prompt: () => ''
     },
@@ -255,10 +259,15 @@ async function dilekceSihirbaziSubmit() {
 
 // ══════════════════════════════════════════════════════
 // ŞABLON KÜTÜPHANESİ — Büro Yönetimi'nden buraya taşındı.
-// Bu modülde ayrı bir sağ panel (detailPane) olmadığı için liste ve
-// detay, aynı panel içinde (popBody) sırayla gösteriliyor.
-// ══════════════════════════════════════════════════════
+// Şablon Kütüphanesi artık klasik 3 sütun: ortada ekleme formu (popBody),
+// sağda liste/detay (sohbet panelinin alanı, mevzuatGetPane ile aynı mantık).
 let tplSelectedId = null;
+
+function tplGetPane() {
+  const empty = document.getElementById('chatEmpty');
+  if (empty) empty.style.display = 'none';
+  return document.getElementById('chatMsgs');
+}
 
 async function tplOnOpen() {
   tplSelectedId = null;
@@ -266,7 +275,7 @@ async function tplOnOpen() {
 }
 
 async function tplRenderList() {
-  const box = document.getElementById('tpl-box');
+  const box = tplGetPane();
   try {
     const res = await fetch('/api/templates');
     const data = await res.json();
@@ -274,13 +283,10 @@ async function tplRenderList() {
 
     if (!tplSelectedId) {
       box.innerHTML = `
-        <div class="fg"><input type="text" id="tpl-title" placeholder="Şablon adı (ör. Kira İhtarnamesi)…"></div>
-        <div class="fg"><textarea id="tpl-content" rows="5" placeholder="Şablon metnini buraya yazın…"></textarea></div>
-        <button class="pop-cta-btn g" style="width:100%;margin-bottom:16px;" onclick="tplAdd()"><i class="fa-solid fa-plus"></i><span>Şablonu Kaydet</span></button>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">Şablonlarınız (${templates.length})</div>
         ${templates.length ? templates.map(t => `<div class="s-item" style="margin:0 0 4px;" onclick="tplView('${t.id}')">
           <span class="ico"><i class="fa-solid fa-file-lines"></i></span>${t.title}
-        </div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz şablon eklenmedi.</div>'}
+        </div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz şablon eklenmedi. Soldan ekleyebilirsiniz.</div>'}
       `;
     } else {
       const tpl = templates.find(t => t.id === tplSelectedId);
@@ -327,6 +333,8 @@ async function tplAdd() {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, content })
   });
+  document.getElementById('tpl-title').value = '';
+  document.getElementById('tpl-content').value = '';
   toast('Şablon kaydedildi', 'fa-solid fa-check', true);
   tplRenderList();
 }

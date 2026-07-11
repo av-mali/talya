@@ -16,8 +16,7 @@ window.CURRENT_MODULE = {
     {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
     {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"},
     {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
-    {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"},
-    {"id": "kvkk", "icon": "fa-shield-halved", "name": "KVKK Kontrol Listesi"}
+    {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"}
   ],
   popups: {
     // ── SÖZLEŞME TAKİP ── bitiş/yenileme tarihi yaklaşan sözleşmeler
@@ -34,15 +33,6 @@ window.CURRENT_MODULE = {
         <button class="pop-cta-btn b" style="width:100%;" onclick="szAdd()"><i class="fa-solid fa-plus"></i><span>Sözleşme Ekle</span></button>
       `,
       onOpen: () => szOnOpen(),
-      prompt: () => ''
-    },
-    // ── KVKK KONTROL LİSTESİ ── standart uyum maddeleri, işaretlenebilir
-    kvkk: {
-      badge: 'b', badgeText: 'Uyum Kontrolü', titleHtml: 'KVKK <em class="b">Kontrol Listesi</em>',
-      desc: 'Standart KVKK uyum adımlarını işaretleyerek takip edin.',
-      btnClass: 'b', btnIco: 'fa-shield-halved', btnLbl: '', hideCta: true,
-      body: `<div id="kvkk-box">Yükleniyor…</div>`,
-      onOpen: () => kvkkOnOpen(),
       prompt: () => ''
     },
     // ── GLOBAL ARAMA ── müvekkil, not, görev, şablon içinde birden arar
@@ -1388,68 +1378,6 @@ async function szDelete(id) {
   await fetch('/api/contracts/' + id, { method: 'DELETE' });
   toast('Sözleşme silindi', 'fa-solid fa-trash');
   szRenderList();
-}
-
-// ══════════════════════════════════════════════════════
-// KVKK KONTROL LİSTESİ
-// ══════════════════════════════════════════════════════
-const KVKK_ITEMS = [
-  { key: 'aydinlatma', label: 'Aydınlatma metni hazırlandı ve müvekkillere sunuluyor' },
-  { key: 'aciKriza', label: 'Gerekli hallerde açık rıza formu alınıyor' },
-  { key: 'veriEnvanteri', label: 'Kişisel veri envanteri çıkarıldı' },
-  { key: 'verbis', label: 'VERBİS kaydı (gerekiyorsa) yapıldı' },
-  { key: 'saklamaImha', label: 'Veri saklama ve imha politikası belirlendi' },
-  { key: 'veriGuvenligi', label: 'Teknik/idari veri güvenliği önlemleri alındı (şifreleme, erişim kontrolü)' },
-  { key: 'ihlalPlani', label: 'Veri ihlali müdahale planı hazırlandı' },
-  { key: 'ucuncuTaraf', label: 'Üçüncü taraflarla (kargo, muhasebeci vb.) veri paylaşım sözleşmeleri gözden geçirildi' },
-  { key: 'calisanEgitimi', label: 'Çalışanlara KVKK farkındalık eğitimi verildi' },
-  { key: 'basvuruSureci', label: 'İlgili kişi başvurularını yanıtlama süreci tanımlandı' },
-];
-
-async function kvkkOnOpen() {
-  const box = document.getElementById('kvkk-box');
-  try {
-    const res = await fetch('/api/kvkk-checklist');
-    const data = await res.json();
-    const checklist = data.checklist || {};
-    kvkkRender(checklist);
-  } catch (e) {
-    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
-  }
-}
-
-function kvkkRender(checklist) {
-  const box = document.getElementById('kvkk-box');
-  const doneCount = KVKK_ITEMS.filter(i => checklist[i.key]).length;
-  box.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div style="font-size:12px;color:var(--t2);">İlerleme</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gold);">${doneCount}/${KVKK_ITEMS.length}</div>
-    </div>
-    <div style="height:6px;background:var(--bg2);border-radius:3px;margin-bottom:16px;overflow:hidden;">
-      <div style="height:100%;background:var(--gold);width:${(doneCount / KVKK_ITEMS.length) * 100}%;"></div>
-    </div>
-    ${KVKK_ITEMS.map(item => `
-      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="kvkkToggle('${item.key}')">
-        <div style="width:18px;height:18px;border-radius:5px;border:1.5px solid ${checklist[item.key] ? 'var(--gold)' : 'var(--border2)'};background:${checklist[item.key] ? 'var(--gold)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
-          ${checklist[item.key] ? '<i class="fa-solid fa-check" style="color:#fff;font-size:10px;"></i>' : ''}
-        </div>
-        <span style="font-size:12.5px;color:${checklist[item.key] ? 'var(--t3)' : 'var(--t0)'};text-decoration:${checklist[item.key] ? 'line-through' : 'none'};">${item.label}</span>
-      </div>
-    `).join('')}
-  `;
-  box.dataset.checklist = JSON.stringify(checklist);
-}
-
-async function kvkkToggle(key) {
-  const box = document.getElementById('kvkk-box');
-  const checklist = JSON.parse(box.dataset.checklist || '{}');
-  checklist[key] = !checklist[key];
-  kvkkRender(checklist);
-  await fetch('/api/kvkk-checklist', {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ checklist })
-  });
 }
 
 // ══════════════════════════════════════════════════════
