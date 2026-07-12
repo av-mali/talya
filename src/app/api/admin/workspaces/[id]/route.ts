@@ -19,3 +19,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   });
   return NextResponse.json({ workspace });
 }
+
+// Sadece üyesi kalmamış (boş/hayalet) büroları silmeye izin verir — hâlâ
+// kullanılan bir büroyu yanlışlıkla silip veri kaybına yol açmasın diye.
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || !(session.user as any).isAdmin) {
+    return NextResponse.json({ error: "Yetkiniz yok." }, { status: 403 });
+  }
+
+  const memberCount = await prisma.user.count({ where: { workspaceId: params.id } });
+  if (memberCount > 0) {
+    return NextResponse.json({ error: "Bu büroda hâlâ üye var, silinemez." }, { status: 400 });
+  }
+
+  await prisma.workspace.delete({ where: { id: params.id } });
+  return NextResponse.json({ ok: true });
+}

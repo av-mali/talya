@@ -96,6 +96,16 @@ export default function AdminPage() {
     else alert("Güncellenemedi.");
   }
 
+  async function handleDeleteWorkspace(id: string) {
+    if (!confirm("Bu (boş) büroyu silmek istediğinize emin misiniz?")) return;
+    const res = await fetch(`/api/admin/workspaces/${id}`, { method: "DELETE" });
+    if (res.ok) load();
+    else {
+      const data = await res.json();
+      alert(data.error || "Silinemedi.");
+    }
+  }
+
   async function handleSaveConstants(e: React.FormEvent) {
     e.preventDefault();
     if (!constants) return;
@@ -246,13 +256,14 @@ export default function AdminPage() {
                       <th style={styles.th}>Üyeler</th>
                       <th style={styles.th}>Üye Sayısı</th>
                       <th style={styles.th}>Limit</th>
+                      <th style={styles.th}></th>
                     </tr>
                   </thead>
                   <tbody>
                     {workspaces.map((w) => (
                       <tr key={w.id} style={{ borderBottom: "1px solid var(--border)" }}>
                         <td style={styles.td}>{w.name}</td>
-                        <td style={styles.td}>{w.memberEmails.join(", ")}</td>
+                        <td style={styles.td}>{w.memberEmails.join(", ") || <span style={{ color: "var(--t3)" }}>Boş (kimse yok)</span>}</td>
                         <td style={styles.td}>{w.memberCount}</td>
                         <td style={styles.td}>
                           <input
@@ -265,6 +276,13 @@ export default function AdminPage() {
                             }}
                             style={{ width: 60, padding: "4px 6px", borderRadius: 6, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--t0)" }}
                           />
+                        </td>
+                        <td style={styles.td}>
+                          {w.memberCount === 0 && (
+                            <button style={styles.deleteBtn} onClick={() => handleDeleteWorkspace(w.id)}>
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
