@@ -492,25 +492,65 @@ async function renderGelirGiderOzet() {
     if (!visibleKeys.length) { card.style.display = 'none'; return; }
 
     box.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(${visibleKeys.length}, 1fr);gap:10px;">
+      <div style="display:grid;grid-template-columns:repeat(${visibleKeys.length}, 1fr);gap:12px;">
         ${visibleKeys.map(key => {
           const meta = HOME_STAT_META[key];
           if (!meta) return '';
-          let valueHtml = '';
+
           if (key === 'gelirgider') {
+            const gelir = stats.gelirgider?.gelir || 0;
+            const gider = stats.gelirgider?.gider || 0;
             const net = stats.gelirgider?.net || 0;
-            valueHtml = `<span style="color:${net>=0?'var(--gold)':'var(--danger)'};">${fmtTLShort(net)}</span>`;
-          } else if (key === 'muvekkil') {
-            valueHtml = `${stats.muvekkil?.total ?? 0}`;
-          } else if (key === 'dosya') {
-            valueHtml = `${stats.dosya?.open ?? 0} açık / ${stats.dosya?.closed ?? 0} kapalı`;
+            const positive = net >= 0;
+            return `
+              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${positive ? 'var(--gold)' : 'var(--danger)'};"></div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
+                  <i class="fa-solid fa-scale-balanced"></i> Bu Ay Net
+                </div>
+                <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:${positive ? 'var(--gold)' : 'var(--danger)'};margin-bottom:8px;">
+                  ${fmtTLShort(net)}
+                </div>
+                <div style="display:flex;gap:12px;font-size:10.5px;color:var(--t3);">
+                  <span><i class="fa-solid fa-arrow-up" style="color:var(--success);font-size:9px;"></i> ${fmtTLShort(gelir)}</span>
+                  <span><i class="fa-solid fa-arrow-down" style="color:var(--danger);font-size:9px;"></i> ${fmtTLShort(gider)}</span>
+                </div>
+              </div>
+            `;
           }
-          return `
-            <div style="background:var(--bg2);border-radius:var(--r);padding:12px;text-align:center;">
-              <div style="font-size:10px;color:var(--t3);margin-bottom:4px;"><i class="fa-solid ${meta.icon}"></i> ${meta.label}</div>
-              <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:14px;">${valueHtml}</div>
-            </div>
-          `;
+
+          if (key === 'muvekkil') {
+            return `
+              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
+                  <i class="fa-solid fa-users"></i> Toplam Müvekkil
+                </div>
+                <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:var(--gold);">
+                  ${stats.muvekkil?.total ?? 0}
+                </div>
+              </div>
+            `;
+          }
+
+          if (key === 'dosya') {
+            const open = stats.dosya?.open ?? 0;
+            const closed = stats.dosya?.closed ?? 0;
+            return `
+              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
+                  <i class="fa-solid fa-folder-open"></i> Dosya Durumu
+                </div>
+                <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:var(--gold);margin-bottom:8px;">
+                  ${open}<span style="font-size:14px;color:var(--t3);"> açık</span>
+                </div>
+                <div style="font-size:10.5px;color:var(--t3);">${closed} kapalı dosya</div>
+              </div>
+            `;
+          }
+
+          return '';
         }).join('')}
       </div>
     `;
