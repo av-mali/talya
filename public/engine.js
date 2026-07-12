@@ -520,9 +520,10 @@ async function renderGelirGiderOzet() {
             const gelir = stats.gelirgider?.gelir || 0;
             const gider = stats.gelirgider?.gider || 0;
             const net = stats.gelirgider?.net || 0;
+            const bekleyen = stats.gelirgider?.bekleyen || 0;
             const positive = net >= 0;
             return `
-              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;">
+              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${positive ? 'var(--gold)' : 'var(--danger)'};"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-scale-balanced"></i> Bu Ay Net
@@ -530,17 +531,22 @@ async function renderGelirGiderOzet() {
                 <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:${positive ? 'var(--gold)' : 'var(--danger)'};margin-bottom:8px;">
                   ${fmtTLShort(net)}
                 </div>
-                <div style="display:flex;gap:12px;font-size:10.5px;color:var(--t3);">
+                <div style="display:flex;justify-content:center;gap:12px;font-size:10.5px;color:var(--t3);margin-bottom:${bekleyen > 0 ? '6px' : '0'};">
                   <span><i class="fa-solid fa-arrow-up" style="color:var(--success);font-size:9px;"></i> ${fmtTLShort(gelir)}</span>
                   <span><i class="fa-solid fa-arrow-down" style="color:var(--danger);font-size:9px;"></i> ${fmtTLShort(gider)}</span>
                 </div>
+                ${bekleyen > 0 ? `
+                  <div style="font-size:10.5px;color:var(--warn);border-top:1px solid var(--border);padding-top:6px;width:100%;">
+                    <i class="fa-solid fa-hourglass-half"></i> Bekleyen: ${fmtTLShort(bekleyen)}
+                  </div>
+                ` : ''}
               </div>
             `;
           }
 
           if (key === 'muvekkil') {
             return `
-              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;">
+              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-users"></i> Toplam Müvekkil
@@ -556,7 +562,7 @@ async function renderGelirGiderOzet() {
             const open = stats.dosya?.open ?? 0;
             const closed = stats.dosya?.closed ?? 0;
             return `
-              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;">
+              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-folder-open"></i> Dosya Durumu
