@@ -11,7 +11,7 @@ window.CURRENT_MODULE = {
     badge:'t', badgeText:'Chrome Eklentisi · Otomatik Aktarım', titleHtml:'Eklenti <em class="t">Bağlantısı</em>',
     desc:'UYAP verilerini otomatik aktarmak için Talya Chrome Eklentisi\'ni bu anahtarla eşleştirin.',
     btnClass:'t', btnIco:'fa-plug', btnLbl:'', hideCta: true,
-    body:`<div id="ext-box">Yükleniyor…</div>
+    body:`<div id="ext-box"></div>
       <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Nasıl kullanılır</div>
       <p>1) Talya Chrome Eklentisi'ni tarayıcına kur.<br>2) Eklenti simgesine tıkla, bu anahtarı yapıştır.<br>3) UYAP Avukat Portalı'na her girişinde eklenti sessizce senkronize eder — çıkan onay ekranını sen kontrol edip kaydedersin.</p></div>`,
     onOpen: () => extOnOpen(),
@@ -63,7 +63,7 @@ window.CURRENT_MODULE = {
 // ══════════════════════════════════════════════════════
 async function extOnOpen() {
   const box = document.getElementById('ext-box');
-  box.innerHTML = 'Yükleniyor…';
+  box.innerHTML = skeletonLines(2);
   try {
     const [tokenRes, batchesRes] = await Promise.all([
       fetch('/api/sync-token'),

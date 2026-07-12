@@ -24,6 +24,20 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         />
+        {/* Ana stil dosyası artık burada, kök düzeyde — her sayfa kendi
+            içinde ayrı ayrı yüklemek yerine, tarayıcı içerik boyanmadan
+            ÖNCE bunu garanti şekilde indirmiş oluyor. Böylece "önce
+            stilsiz, sonra renkli" titremesi (hem açık hem koyu modda)
+            ortadan kalkıyor. */}
+        <link rel="stylesheet" href="/talya-original.css" />
+        {/* Karanlık mod titremesini (flash) önler — tema, sayfa içeriği
+            boyanmadan ÖNCE, senkron olarak uygulanır. engine.js'in geç
+            yüklenmesini beklemez. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('talya-theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}`,
+          }}
+        />
       </head>
       <body>
         <Providers>{children}</Providers>

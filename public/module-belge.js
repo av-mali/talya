@@ -286,7 +286,7 @@ async function tplRenderList() {
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">Şablonlarınız (${templates.length})</div>
         ${templates.length ? templates.map(t => `<div class="s-item" style="margin:0 0 4px;" onclick="tplView('${t.id}')">
           <span class="ico"><i class="fa-solid fa-file-lines"></i></span>${t.title}
-        </div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz şablon eklenmedi. Soldan ekleyebilirsiniz.</div>'}
+        </div>`).join('') : emptyState('fa-layer-group', 'Henüz şablon eklenmedi', 'Soldaki formdan ilk şablonunuzu ekleyin.')}
       `;
     } else {
       const tpl = templates.find(t => t.id === tplSelectedId);

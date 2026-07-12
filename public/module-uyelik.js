@@ -48,7 +48,7 @@ window.CURRENT_MODULE = {
       badge: 'g', badgeText: 'Hesap Bilgileri', titleHtml: 'Profil <em class="g">Bilgileri</em>',
       desc: 'Hesap bilgilerinizi görüntüleyin ve güncelleyin.',
       btnClass: 'g', btnIco: 'fa-floppy-disk', btnLbl: '', hideCta: true,
-      body: `<div id="profil-box">Yükleniyor…</div>`,
+      body: `<div id="profil-box"></div>`,
       onOpen: () => profilOnOpen(),
       prompt: () => ''
     },
@@ -73,7 +73,7 @@ window.CURRENT_MODULE = {
       badge: 'g', badgeText: 'Bildirimler', titleHtml: 'Bildirim <em class="g">Ayarları</em>',
       desc: 'Hangi bildirim türlerini görmek istediğinizi seçin.',
       btnClass: 'g', btnIco: 'fa-bell', btnLbl: '', hideCta: true,
-      body: `<div id="bildirim-box">Yükleniyor…</div>`,
+      body: `<div id="bildirim-box"></div>`,
       onOpen: () => bildirimOnOpen(),
       prompt: () => ''
     },
@@ -81,7 +81,7 @@ window.CURRENT_MODULE = {
       badge: 'g', badgeText: 'Ana Sayfa', titleHtml: 'Ana Sayfa <em class="g">İstatistikleri</em>',
       desc: 'Ana sayfada hangi istatistiklerin gösterileceğini seçin (en fazla 2).',
       btnClass: 'g', btnIco: 'fa-chart-simple', btnLbl: '', hideCta: true,
-      body: `<div id="homestats-box">Yükleniyor…</div>`,
+      body: `<div id="homestats-box"></div>`,
       onOpen: () => homeStatsOnOpen(),
       prompt: () => ''
     }
@@ -93,6 +93,7 @@ window.CURRENT_MODULE = {
 // ══════════════════════════════════════════════════════
 async function profilOnOpen() {
   const box = document.getElementById('profil-box');
+  box.innerHTML = skeletonLines(4);
   try {
     const res = await fetch('/api/profile');
     const data = await res.json();
@@ -176,6 +177,7 @@ async function guvenlikSave() {
 // ══════════════════════════════════════════════════════
 async function bildirimOnOpen() {
   const box = document.getElementById('bildirim-box');
+  box.innerHTML = skeletonLines(2);
   try {
     const res = await fetch('/api/profile/notif-prefs');
     const data = await res.json();
@@ -230,6 +232,7 @@ const HOME_STATS_MAX = 2;
 
 async function homeStatsOnOpen() {
   const box = document.getElementById('homestats-box');
+  box.innerHTML = skeletonLines(3);
   try {
     const res = await fetch('/api/profile/home-stats-prefs');
     const data = await res.json();

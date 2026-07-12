@@ -41,7 +41,7 @@ window.CURRENT_MODULE = {
       badge: 'b', badgeText: 'Büro & Ekip', titleHtml: 'Ekip <em class="b">Yönetimi</em>',
       desc: 'Büronuzun üyelerini görün, yeni üye davet edin.',
       btnClass: 'b', btnIco: 'fa-people-group', btnLbl: '', hideCta: true,
-      body: `<div id="ekip-box">Yükleniyor…</div>`,
+      body: `<div id="ekip-box"></div>`,
       onOpen: () => ekipOnOpen(),
       prompt: () => ''
     },
@@ -187,13 +187,13 @@ function mvDaysLeft(dueDate) {
 async function loadClientList(containerId, q, selectFnName, selectedId) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  el.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  el.innerHTML = skeletonRows(4);
   try {
     const res = await fetch('/api/clients' + (q ? '?q=' + encodeURIComponent(q) : ''));
     const data = await res.json();
     const clients = data.clients || [];
     if (!clients.length) {
-      el.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Müvekkil bulunamadı.</div>`;
+      el.innerHTML = emptyState('fa-user-large', 'Müvekkil bulunamadı', '');
       return;
     }
     el.innerHTML = clients.map(c => `
@@ -276,7 +276,7 @@ async function mvSelect(id) {
   mvSelectedId = id;
   mvOpenCaseId = null;
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   const res = await fetch('/api/clients/' + id);
   const data = await res.json();
   if (!data.client) { dp.innerHTML = detailPlaceholder(); return; }
@@ -352,7 +352,7 @@ async function mvAddCase() {
 async function mvOpenCase(caseId) {
   mvOpenCaseId = caseId;
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   const res = await fetch('/api/cases/' + caseId);
   const data = await res.json();
   if (!data.case) { mvRenderClientView(); return; }
@@ -713,7 +713,7 @@ async function rpSelect(id) {
   rpSelectedId = id;
   loadClientList('rp-list', document.getElementById('rp-search')?.value || '', 'rpSelect', id);
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   const res = await fetch('/api/clients/' + id);
   const data = await res.json();
   if (!data.client) { dp.innerHTML = detailPlaceholder(); return; }
@@ -785,7 +785,7 @@ async function fatSelect(id) {
   fatSelectedCaseId = null;
   loadClientList('fat-list', document.getElementById('fat-search')?.value || '', 'fatSelect', id);
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   const res = await fetch('/api/clients/' + id);
   const data = await res.json();
   if (!data.client) { dp.innerHTML = detailPlaceholder(); return; }
@@ -811,7 +811,7 @@ function fatRenderCaseList(c) {
 async function fatSelectCase(clientId, caseId) {
   fatSelectedCaseId = caseId;
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   const res = await fetch('/api/cases/' + caseId);
   const data = await res.json();
   if (!data.case) { dp.innerHTML = detailPlaceholder(); return; }
@@ -900,7 +900,7 @@ function fatPrint() {
 // ══════════════════════════════════════════════════════
 async function taskOnOpen() {
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   await taskRenderList();
 }
 
@@ -918,7 +918,7 @@ async function taskRenderList() {
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">
           Açık Görevler (${acikGorevler.length})
         </div>
-        ${acikGorevler.length ? acikGorevler.map(t => taskRow(t)).join('') : '<div style="font-size:12px;color:var(--t3);margin-bottom:16px;">Açık görev yok.</div>'}
+        ${acikGorevler.length ? acikGorevler.map(t => taskRow(t)).join('') : emptyState('fa-list-check', 'Açık görev yok', 'Yeni bir görev ekleyerek başlayın.')}
 
         ${bitenGorevler.length ? `
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 10px;">
@@ -979,7 +979,7 @@ async function taskDelete(id) {
 // ══════════════════════════════════════════════════════
 async function noteOnOpen() {
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   await noteRenderList();
 }
 
@@ -1006,7 +1006,7 @@ async function noteRenderList() {
             <button class="pop-cta-btn b" style="width:auto;padding:4px 10px;font-size:11px;margin-top:6px;" onclick="noteAnalyze('${n.id}')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>AI ile Analiz Et</span></button>
             <div id="note-ai-${n.id}" style="margin-top:8px;"></div>
           </div>
-        `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz not yok.</div>'}
+        `).join('') : emptyState('fa-note-sticky', 'Henüz not yok', 'İlk notunuzu yukarıdan ekleyin.')}
       </div>
     `;
   } catch (e) {
@@ -1036,7 +1036,7 @@ async function noteDelete(id) {
 // ══════════════════════════════════════════════════════
 async function txOnOpen() {
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   await txRenderList();
 }
 
@@ -1100,7 +1100,7 @@ async function txRenderList() {
               <span style="cursor:pointer;color:var(--t3);" onclick="txDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
             </span>
           </div>
-        `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz kayıt yok.</div>'}
+        `).join('') : emptyState('fa-scale-balanced', 'Henüz kayıt yok', 'İlk gelir/gider kaydınızı yukarıdan ekleyin.')}
       </div>
     `;
   } catch (e) {
@@ -1137,7 +1137,7 @@ let tblAllRows = [];
 
 async function tblOnOpen() {
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   try {
     const res = await fetch('/api/clients?full=1');
     const data = await res.json();
@@ -1185,7 +1185,7 @@ function tblRender(rows) {
           `).join('')}
         </tbody>
       </table>
-      ${!rows.length ? '<div style="padding:20px;color:var(--t3);font-size:12px;">Müvekkil bulunamadı.</div>' : ''}
+      ${!rows.length ? emptyState('fa-user-large', 'Müvekkil bulunamadı', 'Arama teriminizi değiştirin ya da yeni bir müvekkil ekleyin.') : ''}
     </div>
   `;
 }
@@ -1314,7 +1314,7 @@ async function noteAnalyze(noteId) {
 // ══════════════════════════════════════════════════════
 async function szOnOpen() {
   const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:20px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   await szRenderList();
 }
 
@@ -1354,7 +1354,7 @@ async function szRenderList() {
               <span style="font-size:11px;font-weight:600;color:${dl.color};">${dl.text}</span>
             </div>
           </div>`;
-        }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz sözleşme eklenmedi.</div>'}
+        }).join('') : emptyState('fa-file-contract', 'Henüz sözleşme eklenmedi', 'Takip etmek istediğiniz ilk sözleşmeyi ekleyin.')}
       </div>
     `;
   } catch (e) {
@@ -1444,6 +1444,7 @@ function mvShowTimeline() {
 async function ekipOnOpen() {
   ekipGetPane().innerHTML = `<div style="padding:30px 24px;color:var(--t3);font-size:13px;">Bir üyenin "Yetkiler" bağlantısına tıklayınca, erişim ayarları burada görünecek.</div>`;
   const box = document.getElementById('ekip-box');
+  box.innerHTML = skeletonLines(3);
   try {
     const res = await fetch('/api/workspace');
     const data = await res.json();

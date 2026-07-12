@@ -210,6 +210,25 @@ function submitPopup() {
 // ── CHAT ──
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
+// İskelet (skeleton) yükleme bloğu üretir — "Yükleniyor…" yazısı yerine.
+function skeletonRows(n) {
+  n = n || 3;
+  let html = '';
+  for (let i = 0; i < n; i++) html += '<div class="skel skel-row"></div>';
+  return html;
+}
+function skeletonLines(n) {
+  n = n || 3;
+  let html = '';
+  for (let i = 0; i < n; i++) html += '<div class="skel skel-line" style="width:' + (60 + Math.random() * 35) + '%;"></div>';
+  return html;
+}
+
+// Boş durum (empty state) bloğu üretir — ikon + başlık + açıklama.
+function emptyState(icon, title, desc) {
+  return `<div class="empty-state"><i class="fa-solid ${icon}"></i><div class="empty-title">${title}</div>${desc ? `<div class="empty-desc">${desc}</div>` : ''}</div>`;
+}
+
 async function improvePrompt() {
   const inp = document.getElementById('chatIn');
   if (!inp) return;
@@ -428,7 +447,7 @@ async function openDeadlinesModal() {
   if (!scrim) return;
   scrim.style.display = 'flex';
   const list = document.getElementById('deadlinesModalList');
-  list.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--t3);font-size:13px;">Yükleniyor…</div>`;
+  list.innerHTML = skeletonLines(4);
   try {
     const res = await fetch('/api/events');
     const data = await res.json();
@@ -567,7 +586,7 @@ function fmtTLShort(n) {
 async function renderDashDeadlines() {
   const wrap = document.getElementById('dashDeadlines');
   if (!wrap) return;
-  wrap.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Yükleniyor…</div>`;
+  wrap.innerHTML = skeletonLines(3);
   try {
     const res = await fetch('/api/events');
     const data = await res.json();
@@ -578,7 +597,7 @@ async function renderDashDeadlines() {
       .slice(0, 3);
 
     if (!upcoming.length) {
-      wrap.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--t3);">Yaklaşan duruşma/ödeme tarihi yok.</div>`;
+      wrap.innerHTML = emptyState('fa-calendar-check', 'Yaklaşan süre yok', 'Duruşma/ödeme tarihi eklendikçe burada görünecek.');
       return;
     }
 

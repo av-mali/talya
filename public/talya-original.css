@@ -486,3 +486,47 @@ textarea{resize:none;line-height:1.6;}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
 }
+
+/* ═══ İSKELET YÜKLEME (skeleton loading) ═══
+   Düz "Yükleniyor…" yazısı yerine, veri gelene kadar o verinin
+   şeklini taklit eden, hafif parıldayan gri bloklar gösterir —
+   ekran "zıplamaz", daha profesyonel/kurumsal bir his verir. */
+.skel {
+  background: linear-gradient(90deg, var(--bg2) 25%, var(--border) 50%, var(--bg2) 75%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skel-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skel-row { height: 46px; margin-bottom: 8px; }
+.skel-line { height: 12px; margin-bottom: 8px; }
+.skel-card { height: 76px; border-radius: var(--r); }
+
+/* ═══ BOŞ DURUM (empty state) ═══
+   Bir liste boşken düz yazı yerine, ortalanmış bir ikon + başlık +
+   açıklama gösterir — "burası bitmemiş" hissi yerine "henüz
+   başlamadın, hadi başla" hissi verir. */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--t3);
+}
+.empty-state i {
+  font-size: 26px;
+  opacity: .35;
+  display: block;
+  margin-bottom: 12px;
+}
+.empty-state .empty-title {
+  font-size: 13.5px;
+  color: var(--t2);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.empty-state .empty-desc {
+  font-size: 12px;
+  color: var(--t3);
+}
