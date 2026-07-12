@@ -24,6 +24,7 @@ model User {
   isAdmin      Boolean   @default(false)
   notifPrefs   Json?
   kvkkChecklist Json?
+  homeStatsPrefs Json?
   createdAt    DateTime  @default(now())
   messages     Message[]
   clients      Client[] // ESKİ ilişki — göç sonrası kullanılmayacak ama veri kaybı olmasın diye duruyor

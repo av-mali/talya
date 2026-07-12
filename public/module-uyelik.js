@@ -10,7 +10,8 @@ window.CURRENT_MODULE = {
     {"id": "faturalar", "icon": "fa-file-invoice", "name": "Fatura Geçmişi"},
     {"id": "profil", "icon": "fa-user-circle", "name": "Profil Bilgileri"},
     {"id": "guvenlik", "icon": "fa-shield-halved", "name": "Güvenlik & Şifre"},
-    {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"}
+    {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"},
+    {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa İstatistikleri"}
   ],
   popups: {
     plan: {
@@ -74,6 +75,14 @@ window.CURRENT_MODULE = {
       btnClass: 'g', btnIco: 'fa-bell', btnLbl: '', hideCta: true,
       body: `<div id="bildirim-box">Yükleniyor…</div>`,
       onOpen: () => bildirimOnOpen(),
+      prompt: () => ''
+    },
+    anasayfaistatistik: {
+      badge: 'g', badgeText: 'Ana Sayfa', titleHtml: 'Ana Sayfa <em class="g">İstatistikleri</em>',
+      desc: 'Ana sayfada hangi istatistiklerin gösterileceğini seçin (en fazla 2).',
+      btnClass: 'g', btnIco: 'fa-chart-simple', btnLbl: '', hideCta: true,
+      body: `<div id="homestats-box">Yükleniyor…</div>`,
+      onOpen: () => homeStatsOnOpen(),
       prompt: () => ''
     }
   }
@@ -207,4 +216,66 @@ async function bildirimToggle(type, el) {
   });
   if (typeof notifPrefs !== 'undefined') { notifPrefs[type] = newVal; }
   toast('Bildirim tercihi güncellendi', 'fa-solid fa-check', true);
+}
+
+// ══════════════════════════════════════════════════════
+// ANA SAYFA İSTATİSTİKLERİ — en fazla 2 tanesi seçilebilir
+// ══════════════════════════════════════════════════════
+const HOME_STATS_OPTIONS = [
+  { key: 'gelirgider', label: 'Bu Ay Net Gelir-Gider' },
+  { key: 'muvekkil', label: 'Toplam Müvekkil Sayısı' },
+  { key: 'dosya', label: 'Açık / Kapalı Dosya Sayısı' },
+];
+const HOME_STATS_MAX = 2;
+
+async function homeStatsOnOpen() {
+  const box = document.getElementById('homestats-box');
+  try {
+    const res = await fetch('/api/profile/home-stats-prefs');
+    const data = await res.json();
+    homeStatsRender(data.selected || ['gelirgider']);
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function homeStatsRender(selected) {
+  const box = document.getElementById('homestats-box');
+  box.innerHTML = `
+    <div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-bottom:14px;">
+      Ana sayfadaki istatistik kutusunun büyümemesi için en fazla <strong>${HOME_STATS_MAX}</strong> tanesini seçebilirsiniz.
+    </div>
+    ${HOME_STATS_OPTIONS.map(opt => `
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+        <input type="checkbox" class="homestats-cb" value="${opt.key}" ${selected.includes(opt.key) ? 'checked' : ''} onchange="homeStatsToggle()">
+        <span style="font-size:13px;">${opt.label}</span>
+      </label>
+    `).join('')}
+    <div id="homestats-msg" style="font-size:11px;color:var(--warn);margin-top:8px;"></div>
+  `;
+  box.dataset.selected = JSON.stringify(selected);
+}
+
+function homeStatsToggle() {
+  const checkboxes = document.querySelectorAll('.homestats-cb');
+  const checked = Array.from(checkboxes).filter(cb => cb.checked);
+  const msg = document.getElementById('homestats-msg');
+
+  if (checked.length > HOME_STATS_MAX) {
+    // Son işaretleneni geri al, limiti aş­tırma.
+    const last = checked[checked.length - 1];
+    last.checked = false;
+    msg.textContent = `En fazla ${HOME_STATS_MAX} istatistik seçebilirsiniz.`;
+    return;
+  }
+  msg.textContent = '';
+
+  const selected = Array.from(document.querySelectorAll('.homestats-cb'))
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
+
+  fetch('/api/profile/home-stats-prefs', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selected })
+  }).then(() => toast('Kaydedildi', 'fa-solid fa-check', true));
 }

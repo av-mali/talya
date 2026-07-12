@@ -467,54 +467,51 @@ function closeDeadlinesModal() {
 }
 
 // ── ANA EKRAN: YAKLAŞAN SÜRELER (gerçek veri) ──
+const HOME_STAT_META = {
+  gelirgider: { icon: 'fa-scale-balanced', label: 'Bu Ay Net Gelir-Gider' },
+  muvekkil: { icon: 'fa-users', label: 'Toplam Müvekkil' },
+  dosya: { icon: 'fa-folder-open', label: 'Dosya Durumu' },
+};
+
 async function renderGelirGiderOzet() {
   const card = document.getElementById('gelirGiderOzetCard');
   const box = document.getElementById('ggOzetBox');
   if (!card || !box) return;
   try {
-    const [txRes, recRes] = await Promise.all([
-      fetch('/api/transactions'),
-      fetch('/api/receivables'),
-    ]);
-    // Yönetici bu kullanıcı için Gelir-Gider'i kapatmışsa, API 403 döner —
-    // bu durumda kutuyu ana sayfadan tamamen kaldırıyoruz.
-    if (txRes.status === 403 || recRes.status === 403) {
-      card.style.display = 'none';
-      return;
-    }
-    const txData = await txRes.json();
-    const recData = await recRes.json();
-    const txs = txData.transactions || [];
+    const prefRes = await fetch('/api/profile/home-stats-prefs');
+    const prefData = await prefRes.json();
+    const selected = prefData.selected || ['gelirgider'];
 
-    const now = new Date();
-    const thisMonthTxs = txs.filter(t => {
-      const d = new Date(t.date);
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    });
-    const gelir = thisMonthTxs.filter(t => t.type === 'gelir').reduce((s, t) => s + t.amount, 0);
-    const gider = thisMonthTxs.filter(t => t.type === 'gider').reduce((s, t) => s + t.amount, 0);
-    const net = gelir - gider;
-    const bekleyen = recData.total || 0;
+    const statsRes = await fetch('/api/home-stats');
+    if (statsRes.status === 403) { card.style.display = 'none'; return; }
+    const statsData = await statsRes.json();
+    const stats = statsData.stats || {};
+
+    // "gelirgider" seçili ama bu kullanıcının erişimi yoksa, o kutuyu atla.
+    const visibleKeys = selected.filter(k => k !== 'gelirgider' || statsData.canSeeGelirGider);
+    if (!visibleKeys.length) { card.style.display = 'none'; return; }
 
     box.innerHTML = `
-      <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Bu Ay</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;">
-          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">Gelir</div>
-          <div style="font-family:'JetBrains Mono',monospace;color:var(--success);font-weight:600;font-size:13px;">${fmtTLShort(gelir)}</div>
-        </div>
-        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;">
-          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">Gider</div>
-          <div style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:600;font-size:13px;">${fmtTLShort(gider)}</div>
-        </div>
-        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;">
-          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">Net</div>
-          <div style="font-family:'JetBrains Mono',monospace;color:${net>=0?'var(--gold)':'var(--danger)'};font-weight:600;font-size:13px;">${fmtTLShort(net)}</div>
-        </div>
-        <div style="background:var(--gold-lo);border:1px solid var(--gold-rule);border-radius:var(--r);padding:10px;text-align:center;">
-          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">Bekleyen</div>
-          <div style="font-family:'JetBrains Mono',monospace;color:var(--warn);font-weight:600;font-size:13px;">${fmtTLShort(bekleyen)}</div>
-        </div>
+      <div style="display:grid;grid-template-columns:repeat(${visibleKeys.length}, 1fr);gap:10px;">
+        ${visibleKeys.map(key => {
+          const meta = HOME_STAT_META[key];
+          if (!meta) return '';
+          let valueHtml = '';
+          if (key === 'gelirgider') {
+            const net = stats.gelirgider?.net || 0;
+            valueHtml = `<span style="color:${net>=0?'var(--gold)':'var(--danger)'};">${fmtTLShort(net)}</span>`;
+          } else if (key === 'muvekkil') {
+            valueHtml = `${stats.muvekkil?.total ?? 0}`;
+          } else if (key === 'dosya') {
+            valueHtml = `${stats.dosya?.open ?? 0} açık / ${stats.dosya?.closed ?? 0} kapalı`;
+          }
+          return `
+            <div style="background:var(--bg2);border-radius:var(--r);padding:12px;text-align:center;">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:4px;"><i class="fa-solid ${meta.icon}"></i> ${meta.label}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:14px;">${valueHtml}</div>
+            </div>
+          `;
+        }).join('')}
       </div>
     `;
   } catch (e) {

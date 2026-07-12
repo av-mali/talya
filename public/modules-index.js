@@ -211,6 +211,11 @@ window.MODULES_INDEX = [
         "id": "bildirim",
         "icon": "fa-bell",
         "name": "Bildirim Ayarları"
+      },
+      {
+        "id": "anasayfaistatistik",
+        "icon": "fa-chart-simple",
+        "name": "Ana Sayfa İstatistikleri"
       }
     ]
   }
