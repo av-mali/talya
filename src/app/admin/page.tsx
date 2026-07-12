@@ -87,25 +87,6 @@ export default function AdminPage() {
     else alert("Onaylanamadı.");
   }
 
-  const [migrating, setMigrating] = useState(false);
-  const [migrateResult, setMigrateResult] = useState<string | null>(null);
-  async function handleMigrateWorkspaces() {
-    setMigrating(true);
-    setMigrateResult(null);
-    try {
-      const res = await fetch("/api/admin/migrate-workspaces", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        setMigrateResult(`Tamamlandı: ${data.workspacesCreated} büro oluşturuldu, ${data.clientsMigrated} müvekkil taşındı.`);
-      } else {
-        setMigrateResult(data.error || "Göç başarısız oldu.");
-      }
-    } catch (e) {
-      setMigrateResult("Bağlantı hatası.");
-    }
-    setMigrating(false);
-  }
-
   async function handleUpdateLimit(id: string, newLimit: number) {
     const res = await fetch(`/api/admin/workspaces/${id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
@@ -292,26 +273,6 @@ export default function AdminPage() {
               </div>
             </div>
           )}
-
-          {/* BÜRO (WORKSPACE) GÖÇÜ — tek seferlik, güvenle tekrar çalıştırılabilir */}
-          <div className="dash-card" style={{ marginTop: 24 }}>
-            <div className="dash-head">
-              <div className="dash-title"><i className="fa-solid fa-people-group"></i> Büro (Ekip) Sistemine Göç</div>
-            </div>
-            <div style={{ fontSize: 12.5, color: "var(--t2)", marginBottom: 10, lineHeight: 1.6 }}>
-              Ekip Yönetimi özelliğini kullanabilmek için mevcut kullanıcı ve müvekkil verilerinin
-              yeni "büro" yapısına taşınması gerekiyor. Bu işlem hiçbir veriyi silmez, güvenle
-              birden fazla kez çalıştırılabilir.
-            </div>
-            <button
-              onClick={handleMigrateWorkspaces}
-              disabled={migrating}
-              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#fff", cursor: migrating ? "default" : "pointer", opacity: migrating ? 0.6 : 1 }}
-            >
-              {migrating ? "Çalışıyor…" : "Göçü Başlat"}
-            </button>
-            {migrateResult && <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--t2)" }}>{migrateResult}</div>}
-          </div>
 
           {/* BEKLEYEN ONAYLAR */}
           {pendingUsers && pendingUsers.length > 0 && (
