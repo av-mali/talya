@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 // Bu bileşen, verilen HTML gövdesini ve script'leri sırayla yükler.
@@ -35,6 +35,13 @@ export default function TalyaShell({
 
       const pill = document.getElementById("userEmailPill");
       if (pill) pill.textContent = session?.user?.name?.trim() || session?.user?.email || "";
+
+      // Statik HTML kabukları (home-body.html vb.) "Çıkış Yap" için bunu
+      // çağırır — NextAuth'un kendi çıplak onay ekranına gitmek yerine,
+      // hiç ara ekran göstermeden temiz bir şekilde çıkış yapar.
+      (window as any).talyaSignOut = () => {
+        signOut({ callbackUrl: "/login" });
+      };
 
       // Yönetici hesabıysa, üst menüye "Yönetici Paneli" bağlantısı ekle —
       // sadece admin=true olan hesaplar görür, adres elle yazılmasın diye.

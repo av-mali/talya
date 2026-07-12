@@ -384,8 +384,8 @@ async function mevzuatSearch() {
     }
     const list = Array.isArray(data.result) ? data.result : (data.result?.results || data.result?.items || data.result?.mevzuatlar || []);
     if (!list.length) {
-      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sonuç bulunamadı.</div>
-        <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis (geliştirici için): ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`;
+      console.log('[Mevzuat] Sonuç bulunamadı, ham cevap:', data._debug);
+      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sonuç bulunamadı. Farklı bir terimle tekrar deneyin.</div>`;
       return;
     }
     // JSON'u doğrudan HTML özniteliğine gömmek, mevzuat adında tırnak/kesme
@@ -440,8 +440,7 @@ async function mevzuatShowTree(index) {
       return;
     }
     if (!data.result) {
-      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">İçerik alınamadı.</div>
-        <div style="font-size:10px;color:var(--t3);margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;word-break:break-all;">Teşhis: ${(data._debug || 'boş').replace(/</g,'&lt;')}</div>`;
+      box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">İçerik alınamadı. Bu belge için metin çıkarma şu an desteklenmiyor olabilir.</div>`;
       return;
     }
     let text = typeof data.result === 'string' ? data.result : (data.result?.content || data.result?.text || JSON.stringify(data.result));
