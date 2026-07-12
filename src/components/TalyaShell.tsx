@@ -34,7 +34,7 @@ export default function TalyaShell({
       containerRef.current.innerHTML = html;
 
       const pill = document.getElementById("userEmailPill");
-      if (pill && session?.user?.email) pill.textContent = session.user.email;
+      if (pill) pill.textContent = session?.user?.name?.trim() || session?.user?.email || "";
 
       // Yönetici hesabıysa, üst menüye "Yönetici Paneli" bağlantısı ekle —
       // sadece admin=true olan hesaplar görür, adres elle yazılmasın diye.

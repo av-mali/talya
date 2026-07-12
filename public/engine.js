@@ -210,6 +210,32 @@ function submitPopup() {
 // ── CHAT ──
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
+// ── BİNLİK AYRACI (para alanları) ──
+// "tl-amount" sınıflı her giriş alanına, kullanıcı yazarken otomatik
+// olarak "150.000" gibi binlik ayraç ekler. Sayfa yeniden yüklenmeden
+// dinamik olarak eklenen alanlarda da çalışsın diye, tek tek her alana
+// dinleyici bağlamak yerine tüm sayfayı (document) dinliyoruz (event
+// delegation) — hangi modülde/ne zaman oluşturulursa oluşturulsun çalışır.
+function tlParseValue(str) {
+  // "150.000" -> "150000" (hesaplama/kaydetme için temiz sayı)
+  if (typeof str !== 'string') return str;
+  return str.replace(/\./g, '').replace(',', '.');
+}
+function tlFormatValue(digits) {
+  if (!digits) return '';
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+document.addEventListener('input', function (e) {
+  const el = e.target;
+  if (!el.classList || !el.classList.contains('tl-amount')) return;
+  const cursorFromEnd = el.value.length - (el.selectionStart || el.value.length);
+  const digitsOnly = el.value.replace(/[^\d]/g, '');
+  const formatted = tlFormatValue(digitsOnly);
+  el.value = formatted;
+  const newPos = Math.max(0, formatted.length - cursorFromEnd);
+  try { el.setSelectionRange(newPos, newPos); } catch (err) {}
+});
+
 // İskelet (skeleton) yükleme bloğu üretir — "Yükleniyor…" yazısı yerine.
 function skeletonRows(n) {
   n = n || 3;

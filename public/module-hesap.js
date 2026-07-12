@@ -27,7 +27,7 @@ window.CURRENT_MODULE = {
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
       body:`<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> İşe Giriş</div><input type="date" id="k-giris" oninput="cKidem()"></div>
         <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-xmark"></i> İşten Çıkış</div><input type="date" id="k-cikis" oninput="cKidem()"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Brüt Aylık Maaş (TL)</div><input type="text" id="k-maas" placeholder="45000" oninput="cKidem()"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Brüt Aylık Maaş (TL)</div><input type="text" id="k-maas" class="tl-amount" placeholder="45.000" oninput="cKidem()"></div>
         <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cKidem()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="k-res">
           <div class="cr-lbl">Kıdem Tazminatı</div>
@@ -46,7 +46,7 @@ window.CURRENT_MODULE = {
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
       body:`<div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> İşe Giriş</div><input type="date" id="i-giris" oninput="cIhbar()"></div>
         <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-xmark"></i> Çıkış</div><input type="date" id="i-cikis" oninput="cIhbar()"></div>
-        <div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Brüt Günlük Ücret (TL)</div><input type="text" id="i-gun" placeholder="1500" oninput="cIhbar()"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Brüt Günlük Ücret (TL)</div><input type="text" id="i-gun" class="tl-amount" placeholder="1.500" oninput="cIhbar()"></div>
         <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cIhbar()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="i-res">
           <div class="cr-lbl">İhbar Tazminatı (Brüt)</div>
@@ -86,7 +86,7 @@ window.CURRENT_MODULE = {
       badge:'p', badgeText:'TBK Md.88 · Güncel Oran', titleHtml:'Yasal <em class="p">Faiz</em>',
       desc:'Alacak ve tarih aralığı girin; işlemiş faiz hesaplansın.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Faiz Hesapla', hideCta: true,
-      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Asıl Alacak (TL)</div><input type="text" id="f-asl" placeholder="100000" oninput="cFaiz()"></div>
+      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Asıl Alacak (TL)</div><input type="text" id="f-asl" class="tl-amount" placeholder="100.000" oninput="cFaiz()"></div>
         <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-plus"></i> Başlangıç Tarihi</div><input type="date" id="f-bas" oninput="cFaiz()"></div>
         <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cFaiz()"><i class="fa-solid fa-calculator"></i><span>Faiz Hesapla</span></button>
         <div class="cr" id="f-res">
@@ -105,7 +105,7 @@ window.CURRENT_MODULE = {
       badge:'p', badgeText:'TBK Md.120 · Temerrüt', titleHtml:'Gecikme <em class="p">Faizi</em>',
       desc:'Temerrüt tarihinden itibaren gecikme faizi hesaplayın.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
-      body:`<div class="fg"><div class="fl">Borç Miktarı (TL)</div><input type="text" id="gf-b" placeholder="50000" oninput="cGecikme()"></div>
+      body:`<div class="fg"><div class="fl">Borç Miktarı (TL)</div><input type="text" id="gf-b" class="tl-amount" placeholder="50.000" oninput="cGecikme()"></div>
         <div class="fg"><div class="fl">Temerrüt Tarihi</div><input type="date" id="gf-t" oninput="cGecikme()"></div>
         <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cGecikme()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="gf-res"><div class="cr-lbl">Gecikme Faizi</div><div class="cr-val" id="gf-top">—</div><div class="cr-rows"><div class="cr-row"><span>Uygulanan oran</span><span id="gf-r0">—</span></div><div class="cr-row"><span>Süre</span><span id="gf-r1">—</span></div><div class="cr-row"><span>Toplam</span><span id="gf-r2">—</span></div></div></div>`,
@@ -115,7 +115,7 @@ window.CURRENT_MODULE = {
       badge:'p', badgeText:'TBK Md.344 · Güncel TÜFE', titleHtml:'Kira Artış <em class="p">Hesabı</em>',
       desc:'Yasal azami kira artışı, güncel TÜFE oranıyla otomatik hesaplanır.',
       btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
-      body:`<div class="fg"><div class="fl">Mevcut Kira (TL/ay)</div><input type="text" id="ka-k" placeholder="15000" oninput="cKira()"></div>
+      body:`<div class="fg"><div class="fl">Mevcut Kira (TL/ay)</div><input type="text" id="ka-k" class="tl-amount" placeholder="15.000" oninput="cKira()"></div>
         <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cKira()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="ka-res"><div class="cr-lbl">Yeni Azami Kira</div><div class="cr-val" id="ka-top">—</div><div class="cr-rows"><div class="cr-row"><span>Uygulanan TÜFE oranı</span><span id="ka-r0">—</span></div><div class="cr-row"><span>Artış miktarı</span><span id="ka-r1">—</span></div></div></div>
         <div class="ic"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Not</div><p>2022-2024 arasında konut kiralarında geçerli olan %25 sınırlaması 1 Temmuz 2024'te tamamen kalktı — tek yasal sınır artık TÜFE 12 aylık ortalamasıdır. Bu oran her ay değiştiği için Yönetici Paneli'nden güncel tutulmalıdır.</p></div>`,

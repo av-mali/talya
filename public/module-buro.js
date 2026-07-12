@@ -141,7 +141,7 @@ window.CURRENT_MODULE = {
           <div class="fl">Tür</div>
           <select id="tx-type"><option value="gelir">Gelir</option><option value="gider">Gider</option></select>
         </div>
-        <div class="fg"><div class="fl">Tutar (TL)</div><input type="text" id="tx-amount" placeholder="5000"></div>
+        <div class="fg"><div class="fl">Tutar (TL)</div><input type="text" id="tx-amount" class="tl-amount" placeholder="5.000"></div>
         <div class="fg"><div class="fl">Açıklama</div><input type="text" id="tx-desc" placeholder="Ofis kirası, personel maaşı…"></div>
         <div class="fg"><div class="fl">Tarih</div><input type="date" id="tx-date"></div>
         <button class="pop-cta-btn b" style="width:100%;" onclick="txAdd()"><i class="fa-solid fa-plus"></i><span>Kaydet</span></button>
@@ -405,7 +405,7 @@ async function mvOpenCase(caseId) {
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-handshake"></i> Anlaşılan Ücret</div>
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
-        <input type="text" id="mv-agreed-fee" placeholder="Anlaşılan toplam tutar (TL)" value="${cs.agreedFee ? cs.agreedFee : ''}" style="flex:1;min-width:0;">
+        <input type="text" id="mv-agreed-fee" class="tl-amount" placeholder="Anlaşılan toplam tutar (TL)" value="${cs.agreedFee ? cs.agreedFee : ''}" style="flex:1;min-width:0;">
         <button class="pop-cta-btn b" style="width:auto;padding:6px 12px;flex-shrink:0;" onclick="mvSaveAgreedFee('${cs.id}')"><span>Kaydet</span></button>
       </div>
       ${cs.agreedFee ? (() => {
@@ -424,7 +424,7 @@ async function mvOpenCase(caseId) {
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Faturalar</div>
       <div id="mv-invoices">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span><span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-        <input type="text" id="mv-inv-amount" placeholder="Tutar (TL)" style="width:120px;">
+        <input type="text" id="mv-inv-amount" class="tl-amount" placeholder="Tutar (TL)" style="width:120px;">
         <input type="text" id="mv-inv-note" placeholder="Açıklama…" style="flex:1;min-width:160px;">
         <button class="pop-cta-btn g" style="padding:6px 12px;" onclick="mvAddInvoice()"><span>Fatura Oluştur</span></button>
       </div>
@@ -443,7 +443,7 @@ async function mvOpenCase(caseId) {
       <div id="mv-time">${cs.timeEntries.length ? cs.timeEntries.map(t => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(t.date).toLocaleDateString('tr-TR')} — ${t.hours} saat${t.description?(' — '+t.description):''}${t.invoiced ? ' <span style="color:var(--success);font-size:10px;">(faturalandı)</span>' : ''}</span><span style="display:flex;align-items:center;gap:8px;">${t.hourlyRate?`<span style="font-family:'JetBrains Mono',monospace;color:var(--t3);">${fmtTL(t.hours*t.hourlyRate)}</span>`:''}<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteTime('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz zaman kaydı yok.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <input type="text" id="mv-time-hours" placeholder="Saat (ör. 1.5)" style="width:110px;">
-        <input type="text" id="mv-time-rate" placeholder="Saatlik ücret (ops.)" style="width:150px;">
+        <input type="text" id="mv-time-rate" class="tl-amount" placeholder="Saatlik ücret (ops.)" style="width:150px;">
         <input type="text" id="mv-time-desc" placeholder="Açıklama…" style="flex:1;min-width:120px;">
         <button class="pop-cta-btn b" style="padding:6px 12px;" onclick="mvAddTime()"><span>Ekle</span></button>
       </div>
@@ -452,7 +452,7 @@ async function mvOpenCase(caseId) {
 }
 
 async function mvSaveAgreedFee(caseId) {
-  const val = document.getElementById('mv-agreed-fee').value;
+  const val = tlParseValue(document.getElementById('mv-agreed-fee').value);
   await fetch('/api/cases/' + caseId, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ agreedFee: val })
@@ -537,7 +537,7 @@ async function mvDeleteEvent(eventId) {
 
 async function mvAddInvoice() {
   if (!mvOpenCaseId) return;
-  const amount = document.getElementById('mv-inv-amount').value;
+  const amount = tlParseValue(document.getElementById('mv-inv-amount').value);
   const note = document.getElementById('mv-inv-note').value;
   if (!amount) { toast('Tutar girin', 'fa-solid fa-triangle-exclamation'); return; }
   await fetch('/api/cases/' + mvOpenCaseId + '/invoices', {
@@ -559,7 +559,7 @@ async function mvDeleteInvoice(invoiceId) {
 async function mvAddTime() {
   if (!mvOpenCaseId) return;
   const hours = document.getElementById('mv-time-hours').value;
-  const hourlyRate = document.getElementById('mv-time-rate').value;
+  const hourlyRate = tlParseValue(document.getElementById('mv-time-rate').value);
   const description = document.getElementById('mv-time-desc').value;
   if (!hours) { toast('Süre girin', 'fa-solid fa-triangle-exclamation'); return; }
   await fetch('/api/cases/' + mvOpenCaseId + '/time', {
@@ -1110,7 +1110,7 @@ async function txRenderList() {
 
 async function txAdd() {
   const type = document.getElementById('tx-type').value;
-  const amount = document.getElementById('tx-amount').value;
+  const amount = tlParseValue(document.getElementById('tx-amount').value);
   const description = document.getElementById('tx-desc').value.trim();
   const date = document.getElementById('tx-date').value;
   if (!amount || !description) { toast('Tutar ve açıklama girin', 'fa-solid fa-triangle-exclamation'); return; }
