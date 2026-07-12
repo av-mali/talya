@@ -467,30 +467,64 @@ function closeDeadlinesModal() {
 }
 
 // ── ANA EKRAN: YAKLAŞAN SÜRELER (gerçek veri) ──
-async function renderAiUsage() {
-  const box = document.getElementById('aiUsageBox');
-  if (!box) return;
+async function renderGelirGiderOzet() {
+  const card = document.getElementById('gelirGiderOzetCard');
+  const box = document.getElementById('ggOzetBox');
+  if (!card || !box) return;
   try {
-    const res = await fetch('/api/ai-usage');
-    const data = await res.json();
-    const total = data.total || 0;
-    const days = data.days || [];
-    const maxCount = Math.max(1, ...days.map(d => d.count));
+    const [txRes, recRes] = await Promise.all([
+      fetch('/api/transactions'),
+      fetch('/api/receivables'),
+    ]);
+    // Yönetici bu kullanıcı için Gelir-Gider'i kapatmışsa, API 403 döner —
+    // bu durumda kutuyu ana sayfadan tamamen kaldırıyoruz.
+    if (txRes.status === 403 || recRes.status === 403) {
+      card.style.display = 'none';
+      return;
+    }
+    const txData = await txRes.json();
+    const recData = await recRes.json();
+    const txs = txData.transactions || [];
+
+    const now = new Date();
+    const thisMonthTxs = txs.filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+    const gelir = thisMonthTxs.filter(t => t.type === 'gelir').reduce((s, t) => s + t.amount, 0);
+    const gider = thisMonthTxs.filter(t => t.type === 'gider').reduce((s, t) => s + t.amount, 0);
+    const net = gelir - gider;
+    const bekleyen = recData.total || 0;
+
     box.innerHTML = `
-      <div style="font-family:'Instrument Serif',serif;font-size:28px;color:var(--gold);line-height:1;margin-bottom:2px;">${total}</div>
-      <div style="font-size:11px;color:var(--t3);margin-bottom:12px;">AI sorgusu (bu ay)</div>
-      <div style="display:flex;align-items:flex-end;gap:6px;height:50px;">
-        ${days.map(d => `
-          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <div style="width:100%;background:var(--gold-lo);border-radius:3px;height:${Math.max(4, (d.count / maxCount) * 36)}px;" title="${d.label}: ${d.count}"></div>
-            <div style="font-size:9px;color:var(--t3);">${d.label}</div>
-          </div>
-        `).join('')}
+      <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Bu Ay</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">Gelir</div>
+          <div style="font-family:'JetBrains Mono',monospace;color:var(--success);font-weight:600;font-size:13px;">${fmtTLShort(gelir)}</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">Gider</div>
+          <div style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-weight:600;font-size:13px;">${fmtTLShort(gider)}</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">Net</div>
+          <div style="font-family:'JetBrains Mono',monospace;color:${net>=0?'var(--gold)':'var(--danger)'};font-weight:600;font-size:13px;">${fmtTLShort(net)}</div>
+        </div>
+        <div style="background:var(--gold-lo);border:1px solid var(--gold-rule);border-radius:var(--r);padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">Bekleyen</div>
+          <div style="font-family:'JetBrains Mono',monospace;color:var(--warn);font-weight:600;font-size:13px;">${fmtTLShort(bekleyen)}</div>
+        </div>
       </div>
     `;
   } catch (e) {
-    box.innerHTML = `<div style="font-size:12px;color:var(--t3);">Yüklenemedi.</div>`;
+    card.style.display = 'none';
   }
+}
+
+function fmtTLShort(n) {
+  if (typeof fmtTL === 'function') return fmtTL(n);
+  return n.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 });
 }
 
 async function renderDashDeadlines() {
@@ -783,7 +817,7 @@ if (window.CURRENT_MODULE) {
 } else {
   runCountUp();
   renderDashDeadlines();
-  renderAiUsage();
+  renderGelirGiderOzet();
 }
 loadRealNotifications();
 loadNotifPrefs();
