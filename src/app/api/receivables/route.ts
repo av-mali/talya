@@ -14,10 +14,12 @@ export async function GET() {
     include: { client: true, invoices: true },
   });
 
+  const now = new Date();
   const rows = cases
     .map((c) => {
       const invoiced = c.invoices.reduce((s, i) => s + i.amount, 0);
       const remaining = (c.agreedFee || 0) - invoiced;
+      const overdue = c.paymentDueDate ? new Date(c.paymentDueDate) < now : false;
       return {
         caseId: c.id,
         clientId: c.clientId,
@@ -26,10 +28,15 @@ export async function GET() {
         agreedFee: c.agreedFee || 0,
         invoiced,
         remaining,
+        paymentDueDate: c.paymentDueDate,
+        overdue,
       };
     })
     .filter((r) => r.remaining > 0)
-    .sort((a, b) => b.remaining - a.remaining);
+    .sort((a, b) => {
+      if (a.overdue !== b.overdue) return a.overdue ? -1 : 1; // vadesi geçmiş önce
+      return b.remaining - a.remaining;
+    });
 
   const total = rows.reduce((s, r) => s + r.remaining, 0);
 

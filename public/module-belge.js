@@ -18,6 +18,7 @@ window.CURRENT_MODULE = {
     {"id": "dosya", "icon": "fa-file-shield", "name": "Dosya Analizi"},
     {"id": "mevzuat", "icon": "fa-book-open-reader", "name": "Mevzuat Arama"},
     {"id": "sablon", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"},
+    {"id": "kutuphanem", "icon": "fa-bookmark", "name": "Kütüphanem"},
     {"id": "durusma", "icon": "fa-timeline", "name": "Duruşma Hazırlık"}
   ],
   popups: {
@@ -61,7 +62,10 @@ window.CURRENT_MODULE = {
       btnClass: 'g', btnIco: 'fa-book-open-reader', btnLbl: '', hideCta: true, hideChatInput: true,
       body: `
         <div class="fg"><input type="text" id="mv-mevara" placeholder="Kıdem tazminatı, velayet, kira artışı…" onkeydown="if(event.key==='Enter')mevzuatSearch()"></div>
-        <button class="pop-cta-btn g" style="width:100%;" onclick="mevzuatSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Mevzuatta Ara</span></button>
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <button class="pop-cta-btn g" style="flex:1;" onclick="mevzuatSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Mevzuatta Ara</span></button>
+          <button class="pop-cta-btn b" style="width:auto;padding:8px 12px;" onclick="mevzuatSuggestKeyword()" title="AI ile anahtar kelime bul"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+        </div>
         <div class="ic" style="margin-top:14px;"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Kaynak</div><p>Sonuçlar, Adalet Bakanlığı Mevzuat Bilgi Sistemi'nden (mevzuat.gov.tr) gerçek zamanlı çekiliyor ve sağ panelde listelenir. Ücretsiz bir topluluk servisi üzerinden erişiliyor — nadiren yavaş/erişilemez olabilir.</p></div>
       `,
       onOpen: () => { mevzuatRenderInPane('<div style="padding:30px 24px;color:var(--t3);font-size:13px;">Aramak için sol taraftaki kutuyu kullanın.</div>'); },
@@ -77,6 +81,14 @@ window.CURRENT_MODULE = {
         <button class="pop-cta-btn g" style="width:100%;" onclick="tplAdd()"><i class="fa-solid fa-plus"></i><span>Şablonu Kaydet</span></button>
       `,
       onOpen: () => tplOnOpen(),
+      prompt: () => ''
+    },
+    kutuphanem: {
+      badge: 'g', badgeText: 'Kaydettikleriniz', titleHtml: '<em class="g">Kütüphanem</em>',
+      desc: 'Mevzuat Arama\'da kaydettiğiniz maddeler burada birikir.',
+      btnClass: 'g', btnIco: 'fa-bookmark', btnLbl: '', hideCta: true, hideChatInput: true,
+      body: `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sağ panelde kayıtlarınız listelenir. Bir sonuca tıklayarak tam metni görebilirsiniz.</div>`,
+      onOpen: () => libraryOnOpen(),
       prompt: () => ''
     },
     durusma: {
@@ -461,15 +473,66 @@ async function mevzuatShowTree(index) {
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
       <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;max-height:500px;overflow-y:auto;">${(text || '').replace(/</g, '&lt;')}</div>
-      <button class="pop-cta-btn b" style="width:100%;margin-top:10px;" onclick="mevzuatCopyContent()"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>
+      <div style="display:flex;gap:6px;margin-top:10px;">
+        <button class="pop-cta-btn b" style="flex:1;" onclick="mevzuatCopyContent()"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>
+        <button class="pop-cta-btn g" style="flex:1;" onclick="mevzuatSaveToLibrary()"><i class="fa-solid fa-bookmark"></i><span>Kütüphaneme Kaydet</span></button>
+      </div>
       ${text && text.length < 600 ? `
         <div class="ic" style="margin-top:10px;"><div class="ic-t"><i class="fa-solid fa-triangle-exclamation"></i> Kısa görünüyor</div><p>Bu metin eksik/kısa gelmiş olabilir (bazı belgelerde ek/tablo kısmı otomatik okunamıyor). Orijinalini kontrol etmek için: <a href="https://www.google.com/search?q=site:mevzuat.gov.tr+${encodeURIComponent(title)}" target="_blank" rel="noopener" style="color:var(--gold);">mevzuat.gov.tr'de ara ↗</a></p></div>
       ` : ''}
     `;
     box.dataset.currentText = text;
+    box.dataset.currentTitle = title;
   } catch (e) {
     box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">Bağlantı hatası.</div>`;
   }
+}
+
+async function mevzuatSaveToLibrary() {
+  const box = mevzuatGetPane();
+  const text = box?.dataset.currentText;
+  const title = box?.dataset.currentTitle;
+  if (!text || !title) return;
+  try {
+    const res = await fetch('/api/library', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'mevzuat', title, content: text, sourceRef: title })
+    });
+    if (res.ok) toast('Kütüphanene kaydedildi', 'fa-solid fa-bookmark', true);
+    else toast('Kaydedilemedi', 'fa-solid fa-triangle-exclamation');
+  } catch (e) {
+    toast('Bağlantı hatası', 'fa-solid fa-triangle-exclamation');
+  }
+}
+
+async function mevzuatSuggestKeyword() {
+  const input = document.getElementById('mv-mevara');
+  const current = input.value.trim();
+  if (!current) { toast('Önce bir şeyler yazın', 'fa-solid fa-triangle-exclamation'); return; }
+
+  const form = new FormData();
+  form.append('instruction', `Kullanıcı mevzuat.gov.tr'de şunu aramak istiyor: "${current}". Bu aramayı daha isabetli sonuç getirecek, kısa (en fazla 3-4 kelime) bir arama terimine dönüştür. Sadece o kısa terimi yaz, başka hiçbir açıklama ekleme.`);
+  form.append('mode', 'dosya');
+  form.append('pastedText', current);
+  form.append('wantUdf', '0');
+
+  input.disabled = true;
+  input.placeholder = 'AI öneri hazırlıyor…';
+  try {
+    const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    if (res.ok && data.analysis) {
+      const clean = data.analysis.split('\n')[0].replace(/["“”]/g, '').replace(/\s*---[\s\S]*/, '').trim();
+      input.value = clean;
+      toast('Öneri hazır — istersen düzenleyip arayabilirsin', 'fa-solid fa-wand-magic-sparkles', true);
+    } else {
+      toast(data.error || 'Öneri alınamadı', 'fa-solid fa-triangle-exclamation');
+    }
+  } catch (e) {
+    toast('Bağlantı hatası', 'fa-solid fa-triangle-exclamation');
+  }
+  input.disabled = false;
+  input.placeholder = 'Kıdem tazminatı, velayet, kira artışı…';
 }
 
 function mevzuatCopyContent() {
@@ -477,4 +540,75 @@ function mevzuatCopyContent() {
   const text = box?.dataset.currentText;
   if (!text) return;
   navigator.clipboard?.writeText(text).then(() => toast('Panoya kopyalandı', 'fa-solid fa-check', true));
+}
+
+// ══════════════════════════════════════════════════════
+// KÜTÜPHANEM — Mevzuat Arama'da kaydedilen maddeler
+// ══════════════════════════════════════════════════════
+let libraryItemsCache = [];
+
+function libraryGetPane() {
+  const empty = document.getElementById('chatEmpty');
+  if (empty) empty.style.display = 'none';
+  return document.getElementById('chatMsgs');
+}
+
+async function libraryOnOpen() {
+  const pane = libraryGetPane();
+  pane.innerHTML = skeletonLines(3);
+  try {
+    const res = await fetch('/api/library');
+    const data = await res.json();
+    libraryItemsCache = data.items || [];
+    libraryRenderList();
+  } catch (e) {
+    pane.innerHTML = `<div style="color:var(--danger);font-size:13px;padding:20px;">Yüklenemedi.</div>`;
+  }
+}
+
+function libraryRenderList() {
+  const pane = libraryGetPane();
+  if (!libraryItemsCache.length) {
+    pane.innerHTML = `
+      <div class="empty-state">
+        <i class="fa-solid fa-bookmark"></i>
+        <div class="empty-title">Henüz kayıt yok</div>
+        <div class="empty-desc">Mevzuat Arama'da bulduğunuz bir maddeyi "Kütüphaneme Kaydet" ile buraya ekleyebilirsiniz.</div>
+      </div>
+    `;
+    return;
+  }
+  pane.innerHTML = `
+    <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Kayıtlarınız (${libraryItemsCache.length})</div>
+      ${libraryItemsCache.map((it, i) => `
+        <div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick="libraryShowItem(${i})">
+          <span class="ico"><i class="fa-solid fa-scale-balanced"></i></span>${it.title}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function libraryShowItem(index) {
+  const item = libraryItemsCache[index];
+  if (!item) return;
+  const pane = libraryGetPane();
+  pane.innerHTML = `
+    <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="libraryRenderList()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${item.title}</div>
+        <span style="cursor:pointer;color:var(--danger);font-size:11px;flex-shrink:0;" onclick="libraryDeleteItem('${item.id}')"><i class="fa-solid fa-trash"></i> Sil</span>
+      </div>
+      <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;">${item.content.replace(/</g, '&lt;')}</div>
+    </div>
+  `;
+}
+
+async function libraryDeleteItem(id) {
+  if (!confirm('Bu kaydı silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/library/' + id, { method: 'DELETE' });
+  toast('Kayıt silindi', 'fa-solid fa-trash');
+  libraryOnOpen();
 }

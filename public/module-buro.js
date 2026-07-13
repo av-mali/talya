@@ -64,6 +64,7 @@ window.CURRENT_MODULE = {
       btnClass: 'b', btnIco: 'fa-user-plus', btnLbl: '', hideCta: true,
       body: `
         <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-n-name" placeholder="Müvekkil adı…"></div>
+        <div class="fg"><div class="fl">TC Kimlik / Mersis No <span class="opt">(opsiyonel)</span></div><input type="text" id="mv-n-tc" placeholder="12345678901"></div>
         <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-n-phone" placeholder="05__ ___ __ __"></div>
         <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-n-email" placeholder="mail@ornek.com"></div>
         <div class="fg"><div class="fl">Dava Konusu / Not</div><textarea id="mv-n-note" rows="2" placeholder="Kısa not…"></textarea></div>
@@ -239,6 +240,7 @@ async function mvSaveNew() {
   const phone = document.getElementById('mv-n-phone').value;
   const email = document.getElementById('mv-n-email').value;
   const notes = document.getElementById('mv-n-note').value;
+  const tcMersis = document.getElementById('mv-n-tc').value;
 
   // Kaydetmeden önce aynı isimde zaten kayıtlı bir müvekkil var mı kontrol et.
   try {
@@ -253,12 +255,13 @@ async function mvSaveNew() {
 
   const res = await fetch('/api/clients', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, phone, email, notes })
+    body: JSON.stringify({ name, phone, email, notes, tcMersis })
   });
   const data = await res.json();
   if (data.client) {
     toast('Müvekkil eklendi', 'fa-solid fa-check', true);
     document.getElementById('mv-n-name').value = '';
+    document.getElementById('mv-n-tc').value = '';
     document.getElementById('mv-n-phone').value = '';
     document.getElementById('mv-n-email').value = '';
     document.getElementById('mv-n-note').value = '';
@@ -404,9 +407,15 @@ async function mvOpenCase(caseId) {
       </div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-handshake"></i> Anlaşılan Ücret</div>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
         <input type="text" id="mv-agreed-fee" class="tl-amount" placeholder="Anlaşılan toplam tutar (TL)" value="${cs.agreedFee ? cs.agreedFee : ''}" style="flex:1;min-width:0;">
-        <button class="pop-cta-btn b" style="width:auto;padding:6px 12px;flex-shrink:0;" onclick="mvSaveAgreedFee('${cs.id}')"><span>Kaydet</span></button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:2px;">Vade Tarihi (opsiyonel)</div>
+          <input type="date" id="mv-payment-due" value="${cs.paymentDueDate ? cs.paymentDueDate.slice(0,10) : ''}" style="width:100%;">
+        </div>
+        <button class="pop-cta-btn b" style="width:auto;padding:6px 12px;flex-shrink:0;align-self:flex-end;" onclick="mvSaveAgreedFee('${cs.id}')"><span>Kaydet</span></button>
       </div>
       ${cs.agreedFee ? (() => {
         const invoicedTotal = cs.invoices.reduce((s, i) => s + i.amount, 0);
@@ -453,9 +462,10 @@ async function mvOpenCase(caseId) {
 
 async function mvSaveAgreedFee(caseId) {
   const val = tlParseValue(document.getElementById('mv-agreed-fee').value);
+  const paymentDueDate = document.getElementById('mv-payment-due').value;
   await fetch('/api/cases/' + caseId, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agreedFee: val })
+    body: JSON.stringify({ agreedFee: val, paymentDueDate: paymentDueDate || null })
   });
   toast('Anlaşılan ücret kaydedildi', 'fa-solid fa-check', true);
   mvOpenCase(caseId);
@@ -1034,6 +1044,70 @@ async function noteDelete(id) {
 // ══════════════════════════════════════════════════════
 // GELİR-GİDER — büronun genel kasası
 // ══════════════════════════════════════════════════════
+const AY_ADLARI = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+let txOpenMonths = new Set();
+
+function txGroupsHtml(txs) {
+  if (!txs.length) return emptyState('fa-scale-balanced', 'Henüz kayıt yok', 'İlk gelir/gider kaydınızı yukarıdan ekleyin.');
+
+  const groups = {};
+  txs.forEach(t => {
+    const d = new Date(t.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (!groups[key]) groups[key] = { year: d.getFullYear(), month: d.getMonth(), items: [] };
+    groups[key].items.push(t);
+  });
+  const sortedKeys = Object.keys(groups).sort().reverse();
+
+  // İlk açılışta en güncel ay otomatik açık gelsin.
+  if (!txOpenMonths.size && sortedKeys.length) txOpenMonths.add(sortedKeys[0]);
+
+  return `
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Hareketler — Aylara Göre</div>
+    ${sortedKeys.map(key => {
+      const g = groups[key];
+      const gelir = g.items.filter(t => t.type === 'gelir').reduce((s, t) => s + t.amount, 0);
+      const gider = g.items.filter(t => t.type === 'gider').reduce((s, t) => s + t.amount, 0);
+      const net = gelir - gider;
+      const isOpen = txOpenMonths.has(key);
+      return `
+        <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;background:var(--bg2);" onclick="txToggleMonth('${key}')">
+            <span style="font-size:13px;font-weight:500;"><i class="fa-solid fa-chevron-${isOpen ? 'down' : 'right'}" style="font-size:10px;margin-right:8px;color:var(--t3);"></i>${AY_ADLARI[g.month]} ${g.year} <span style="color:var(--t3);font-weight:400;">(${g.items.length} kayıt)</span></span>
+            <span style="display:flex;gap:10px;font-family:'JetBrains Mono',monospace;font-size:12px;">
+              <span style="color:var(--success);">+${fmtTL(gelir)}</span>
+              <span style="color:var(--danger);">-${fmtTL(gider)}</span>
+              <span style="color:${net>=0?'var(--gold)':'var(--danger)'};font-weight:600;">${fmtTL(net)}</span>
+            </span>
+          </div>
+          ${isOpen ? `
+            <div style="padding:4px 14px;">
+              ${g.items.map(t => `
+                <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">
+                  <span>
+                    <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${t.type==='gelir'?'var(--success)':'var(--danger)'};margin-right:6px;"></span>
+                    ${t.description} <span style="color:var(--t3);font-size:11px;">— ${new Date(t.date).toLocaleDateString('tr-TR')}</span>
+                  </span>
+                  <span style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-family:'JetBrains Mono',monospace;color:${t.type==='gelir'?'var(--success)':'var(--danger)'};">${t.type==='gelir'?'+':'-'}${fmtTL(t.amount)}</span>
+                    <span style="cursor:pointer;color:var(--t3);" onclick="txDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+function txToggleMonth(key) {
+  if (txOpenMonths.has(key)) txOpenMonths.delete(key);
+  else txOpenMonths.add(key);
+  txRenderList();
+}
+
 async function txOnOpen() {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
@@ -1081,26 +1155,14 @@ async function txRenderList() {
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;"><i class="fa-solid fa-hourglass-half"></i> Bekleyen Alacaklar (${receivables.length})</div>
           ${receivables.map(r => `
             <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${r.clientId}')">
-              <span>${r.clientName} — ${r.caseTitle}</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:var(--warn);">${fmtTL(r.remaining)}</span>
+              <span>${r.overdue ? '<span style="color:var(--danger);font-size:10px;font-weight:600;margin-right:6px;">VADESİ GEÇTİ</span>' : ''}${r.clientName} — ${r.caseTitle}</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:${r.overdue ? 'var(--danger)' : 'var(--warn)'};">${fmtTL(r.remaining)}</span>
             </div>
           `).join('')}
           <div style="margin-bottom:20px;"></div>
         ` : ''}
 
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Hareketler (${txs.length})</div>
-        ${txs.length ? txs.map(t => `
-          <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">
-            <span>
-              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${t.type==='gelir'?'var(--success)':'var(--danger)'};margin-right:6px;"></span>
-              ${t.description} <span style="color:var(--t3);font-size:11px;">— ${new Date(t.date).toLocaleDateString('tr-TR')}</span>
-            </span>
-            <span style="display:flex;align-items:center;gap:8px;">
-              <span style="font-family:'JetBrains Mono',monospace;color:${t.type==='gelir'?'var(--success)':'var(--danger)'};">${t.type==='gelir'?'+':'-'}${fmtTL(t.amount)}</span>
-              <span style="cursor:pointer;color:var(--t3);" onclick="txDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
-            </span>
-          </div>
-        `).join('') : emptyState('fa-scale-balanced', 'Henüz kayıt yok', 'İlk gelir/gider kaydınızı yukarıdan ekleyin.')}
+        ${txGroupsHtml(txs)}
       </div>
     `;
   } catch (e) {
@@ -1135,11 +1197,18 @@ async function txDelete(id) {
 // ══════════════════════════════════════════════════════
 let tblAllRows = [];
 
+let tblShowArchived = false;
+
 async function tblOnOpen() {
+  tblShowArchived = false;
+  await tblLoad();
+}
+
+async function tblLoad() {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   try {
-    const res = await fetch('/api/clients?full=1');
+    const res = await fetch('/api/clients?full=1&archived=' + (tblShowArchived ? '1' : '0'));
     const data = await res.json();
     tblAllRows = data.clients || [];
     tblRender(tblAllRows);
@@ -1148,16 +1217,34 @@ async function tblOnOpen() {
   }
 }
 
+function tblSwitchTab(archived) {
+  tblShowArchived = archived;
+  tblLoad();
+}
+
 function tblFilter() {
   const q = (document.getElementById('tbl-search')?.value || '').toLowerCase();
   const filtered = q ? tblAllRows.filter(r => r.name.toLowerCase().includes(q)) : tblAllRows;
   tblRender(filtered);
 }
 
+async function tblToggleArchive(id, archive) {
+  await fetch('/api/clients/' + id, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ archived: archive })
+  });
+  toast(archive ? 'Müvekkil arşivlendi' : 'Müvekkil aktife alındı', 'fa-solid fa-check', true);
+  tblLoad();
+}
+
 function tblRender(rows) {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow:auto;height:100%;">
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        <button class="pop-cta-btn ${!tblShowArchived ? 'b' : ''}" style="width:auto;padding:6px 14px;${tblShowArchived ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab(false)"><i class="fa-solid fa-users"></i><span>Aktif Müvekkiller</span></button>
+        <button class="pop-cta-btn ${tblShowArchived ? 'b' : ''}" style="width:auto;padding:6px 14px;${!tblShowArchived ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab(true)"><i class="fa-solid fa-box-archive"></i><span>Arşivlenenler</span></button>
+      </div>
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">
         Toplam ${rows.length} müvekkil
       </div>
@@ -1165,27 +1252,36 @@ function tblRender(rows) {
         <thead>
           <tr style="border-bottom:1px solid var(--border);text-align:left;">
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Ad Soyad</th>
+            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">TC/Mersis</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Telefon</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">E-posta</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Dosya</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Toplam Fatura</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Yaklaşan Tarih</th>
+            <th style="padding:8px 10px;"></th>
           </tr>
         </thead>
         <tbody>
           ${rows.map(r => `
-            <tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${r.id}')">
-              <td style="padding:8px 10px;">${r.name}</td>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:8px 10px;cursor:pointer;" onclick="mvSelect('${r.id}')">${r.name}</td>
+              <td style="padding:8px 10px;color:var(--t2);font-family:'JetBrains Mono',monospace;font-size:11px;">${r.tcMersis || '—'}</td>
               <td style="padding:8px 10px;color:var(--t2);">${r.phone || '—'}</td>
               <td style="padding:8px 10px;color:var(--t2);">${r.email || '—'}</td>
               <td style="padding:8px 10px;text-align:center;">${r.caseCount}</td>
               <td style="padding:8px 10px;font-family:'JetBrains Mono',monospace;">${r.totalInvoiced ? fmtTL(r.totalInvoiced) : '—'}</td>
               <td style="padding:8px 10px;color:var(--t2);">${r.nextEventDate ? new Date(r.nextEventDate).toLocaleDateString('tr-TR') : '—'}</td>
+              <td style="padding:8px 10px;">
+                ${tblShowArchived
+                  ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="tblToggleArchive('${r.id}', false)">Aktife Al</span>`
+                  : `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="tblToggleArchive('${r.id}', true)">Arşivle</span>`
+                }
+              </td>
             </tr>
           `).join('')}
         </tbody>
       </table>
-      ${!rows.length ? emptyState('fa-user-large', 'Müvekkil bulunamadı', 'Arama teriminizi değiştirin ya da yeni bir müvekkil ekleyin.') : ''}
+      ${!rows.length ? emptyState('fa-user-large', tblShowArchived ? 'Arşivde müvekkil yok' : 'Müvekkil bulunamadı', tblShowArchived ? 'Arşivlediğiniz müvekkiller burada listelenir.' : 'Arama teriminizi değiştirin ya da yeni bir müvekkil ekleyin.') : ''}
     </div>
   `;
 }

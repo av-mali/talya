@@ -22,12 +22,15 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const ok = await requireOwnedCase(params.id);
   if (!ok) return NextResponse.json({ error: "Yetkisiz veya dosya bulunamadı." }, { status: 401 });
 
-  const { title, status, agreedFee } = await req.json();
+  const { title, status, agreedFee, paymentDueDate } = await req.json();
   const data: any = {};
   if (title !== undefined) data.title = title;
   if (status !== undefined) data.status = status;
   if (agreedFee !== undefined) {
     data.agreedFee = agreedFee === null || agreedFee === "" ? null : parseFloat(String(agreedFee).replace(/[^\d.]/g, ""));
+  }
+  if (paymentDueDate !== undefined) {
+    data.paymentDueDate = paymentDueDate ? new Date(paymentDueDate) : null;
   }
 
   const updated = await prisma.case.update({
