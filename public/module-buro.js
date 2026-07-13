@@ -1045,7 +1045,55 @@ async function noteDelete(id) {
 // GELİR-GİDER — büronun genel kasası
 // ══════════════════════════════════════════════════════
 const AY_ADLARI = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const AY_KISA = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
 let txOpenMonths = new Set();
+
+// Son 6 ayın gelir/gider/net trendini basit bir SVG çubuk grafikte gösterir
+// — dış kütüphane gerekmeden, projenin geri kalanıyla tutarlı bir tarz.
+function txChartSvg(txs) {
+  const now = new Date();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ year: d.getFullYear(), month: d.getMonth(), gelir: 0, gider: 0 });
+  }
+  txs.forEach(t => {
+    const d = new Date(t.date);
+    const m = months.find(mo => mo.year === d.getFullYear() && mo.month === d.getMonth());
+    if (!m) return;
+    if (t.type === 'gelir') m.gelir += t.amount; else m.gider += t.amount;
+  });
+
+  const maxVal = Math.max(1, ...months.map(m => Math.max(m.gelir, m.gider)));
+  const chartW = 640, chartH = 180, padBottom = 26, padTop = 10;
+  const groupW = chartW / months.length;
+  const barW = groupW * 0.28;
+
+  const bars = months.map((m, i) => {
+    const cx = i * groupW + groupW / 2;
+    const gelirH = (m.gelir / maxVal) * (chartH - padBottom - padTop);
+    const giderH = (m.gider / maxVal) * (chartH - padBottom - padTop);
+    const baseY = chartH - padBottom;
+    return `
+      <rect x="${cx - barW - 2}" y="${baseY - gelirH}" width="${barW}" height="${Math.max(gelirH, 1)}" rx="3" fill="var(--success)" opacity="0.85"><title>${AY_ADLARI[m.month]} ${m.year} — Gelir: ${fmtTL(m.gelir)}</title></rect>
+      <rect x="${cx + 2}" y="${baseY - giderH}" width="${barW}" height="${Math.max(giderH, 1)}" rx="3" fill="var(--danger)" opacity="0.85"><title>${AY_ADLARI[m.month]} ${m.year} — Gider: ${fmtTL(m.gider)}</title></rect>
+      <text x="${cx}" y="${chartH - 8}" text-anchor="middle" font-size="10" fill="var(--t3)">${AY_KISA[m.month]}</text>
+    `;
+  }).join('');
+
+  return `
+    <div style="background:var(--bg2);border-radius:var(--r);padding:16px 16px 10px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);">Son 6 Ay Trend</div>
+        <div style="display:flex;gap:14px;font-size:10.5px;color:var(--t3);">
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--success);margin-right:4px;"></span>Gelir</span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--danger);margin-right:4px;"></span>Gider</span>
+        </div>
+      </div>
+      <svg viewBox="0 0 ${chartW} ${chartH}" style="width:100%;height:auto;display:block;">${bars}</svg>
+    </div>
+  `;
+}
 
 function txGroupsHtml(txs) {
   if (!txs.length) return emptyState('fa-scale-balanced', 'Henüz kayıt yok', 'İlk gelir/gider kaydınızı yukarıdan ekleyin.');
@@ -1161,6 +1209,8 @@ async function txRenderList() {
           `).join('')}
           <div style="margin-bottom:20px;"></div>
         ` : ''}
+
+        ${txChartSvg(txs)}
 
         ${txGroupsHtml(txs)}
       </div>
