@@ -929,3 +929,89 @@ if (window.CURRENT_MODULE) {
 loadRealNotifications();
 loadNotifPrefs();
 if (window.__talyaReady) window.__talyaReady();
+
+// ══════════════════════════════════════════════════════
+// OTOMATİK OTURUM KAPATMA — 30 dakika hareketsizlikten sonra
+// güvenlik için otomatik çıkış yapar (son 2 dakikada uyarı gösterir).
+// Hassas müvekkil verisi taşıdığımız için, paylaşımlı bilgisayarlarda
+// unutulan oturumların açık kalmamasını sağlar.
+// ══════════════════════════════════════════════════════
+(function () {
+  // ⚠️ TEST AMAÇLI GEÇİCİ DEĞERLER — test edip onayladıktan sonra
+  // gerçek değerlere (30 dk / 2 dk) geri döndürülecek.
+  const IDLE_LIMIT_MS = 30 * 1000;           // TEST: 30 saniye (gerçekte 30 * 60 * 1000)
+  const WARNING_BEFORE_MS = 15 * 1000;       // TEST: 15 saniye (gerçekte 2 * 60 * 1000)
+  let idleTimer = null;
+  let warningTimer = null;
+  let countdownInterval = null;
+
+  function getModal() {
+    let modal = document.getElementById('idleWarningScrim');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'idleWarningScrim';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;';
+    modal.innerHTML = `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;width:min(360px,90vw);text-align:center;">
+        <i class="fa-solid fa-hourglass-half" style="font-size:26px;color:var(--warn);margin-bottom:14px;display:block;"></i>
+        <div style="font-family:'Instrument Serif',serif;font-size:19px;color:var(--t0);margin-bottom:8px;">Hâlâ orada mısınız?</div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:18px;">
+          Güvenliğiniz için, hareketsizlik nedeniyle <strong id="idleCountdown">2:00</strong> içinde oturumunuz otomatik kapanacak.
+        </div>
+        <button id="idleStayBtn" style="width:100%;padding:11px 18px;border-radius:8px;border:none;background:var(--gold);color:#fff;font-weight:500;cursor:pointer;font-size:13px;">
+          Oturumu Devam Ettir
+        </button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('#idleStayBtn').onclick = () => resetIdleTimer(true);
+    return modal;
+  }
+
+  function showWarning() {
+    const modal = getModal();
+    modal.style.display = 'flex';
+    let remaining = WARNING_BEFORE_MS;
+    const countdownEl = () => document.getElementById('idleCountdown');
+    countdownInterval = setInterval(() => {
+      remaining -= 1000;
+      if (remaining <= 0) {
+        clearInterval(countdownInterval);
+        if (window.talyaSignOut) window.talyaSignOut();
+        else window.location.href = '/login';
+        return;
+      }
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      const el = countdownEl();
+      if (el) el.textContent = mins + ':' + String(secs).padStart(2, '0');
+    }, 1000);
+  }
+
+  function hideWarning() {
+    const modal = document.getElementById('idleWarningScrim');
+    if (modal) modal.style.display = 'none';
+    if (countdownInterval) clearInterval(countdownInterval);
+  }
+
+  function resetIdleTimer(fromButton) {
+    hideWarning();
+    if (idleTimer) clearTimeout(idleTimer);
+    if (warningTimer) clearTimeout(warningTimer);
+    idleTimer = setTimeout(showWarning, IDLE_LIMIT_MS - WARNING_BEFORE_MS);
+    if (fromButton) toast('Oturum devam ettirildi', 'fa-solid fa-check', true);
+  }
+
+  // Sayfa etkileşimlerinde zamanlayıcıyı sıfırla — ama uyarı ekranı
+  // AÇIKKEN sıradan bir "mouse hareketi" onu kapatmasın; sadece
+  // butona tıklayarak devam edilebilsin (yanlışlıkla geçiştirmeyi önler).
+  ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+    document.addEventListener(evt, () => {
+      const modal = document.getElementById('idleWarningScrim');
+      if (modal && modal.style.display === 'flex') return; // uyarı açıkken sadece butonla devam edilir
+      resetIdleTimer(false);
+    }, { passive: true });
+  });
+
+  resetIdleTimer(false);
+})();
