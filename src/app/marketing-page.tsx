@@ -43,7 +43,7 @@ const PLANS = [
     period: "",
     yearly: "6.999 TL/ay'dan başlayan, kullanıcı sayısına göre özel fiyatlandırma",
     desc: "Büyük bürolar ve özel ihtiyaçlar için.",
-    features: ["Sınırsız kullanıcı sayısı", "Ekip'teki her şey", "Öncelikli destek", "Özel entegrasyon görüşmesi"],
+    features: ["Kullanıcı sayınıza göre özel teklif", "Ekip'teki her şey", "Öncelikli destek", "Özel entegrasyon görüşmesi"],
     highlight: false,
   },
 ];
