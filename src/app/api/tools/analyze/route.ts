@@ -32,6 +32,17 @@ const SYSTEM_HINTS: Record<string, string> = {
   sozlesme: "Sen bir sözleşme inceleme uzmanısın. Sana verilen sözleşmeyi dikkatle incele; riskli/eksik/belirsiz maddeleri, tarafların lehine/aleyhine olan noktaları vurgula. Kullanıcının sorusuna bu çerçevede cevap ver." + HALLUCINATION_GUARD,
   dilekce: "Sen Türk hukuku konusunda uzman bir avukat asistanısın. Kullanıcının verdiği dava türü, olay örgüsü ve varsa özel taleplere göre, Hukuk Muhakemeleri Kanunu'na (HMK) uygun, resmi dilde, doğru başlıklandırılmış bir dilekçe taslağı yaz. Olay örgüsünde belirtilen somut detayları (isim, tarih, tutar, olay akışı ne varsa) MUTLAKA dilekçenin 'Açıklamalar' kısmına işle — genel/soyut bir metin yazma. Taslağı doğrudan dilekçe metni olarak ver, ekstra açıklama ekleme." + HALLUCINATION_GUARD,
   durusma: "Sen Türk hukuku konusunda uzman, duruşma hazırlığı yapan bir avukat asistanısın. Sana verilen belgeleri (iddianame, celse tutanakları, dilekçeler vb.) BİRLİKTE, bütünsel olarak değerlendir. Şu başlıklar altında bir duruşma stratejisi çıkar: (1) Dosyanın Kronolojik Özeti, (2) Güçlü Yönler, (3) Zayıf Yönler / Karşı Tarafın Muhtemel İddiaları, (4) Hakimin Sorabileceği Olası Sorular ve Önerilen Cevaplar, (5) Duruşmada Vurgulanması Gereken Kilit Noktalar, (6) Önerilen Strateji. Belgeler arasında çelişki/tutarsızlık varsa mutlaka belirt." + HALLUCINATION_GUARD,
+  "crm-extract": `Sana bir hukuki belge (dava dilekçesi, tebligat, ihtarname vb.) veriliyor. Bu belgeden aşağıdaki bilgileri çıkar ve SADECE geçerli bir JSON nesnesi olarak döndür — başka hiçbir açıklama, markdown işareti (\`\`\`json gibi) veya ek metin EKLEME, sadece ham JSON:
+{
+  "muvekkilAdi": "belgedeki müvekkil/vekil edilen tarafın adı (bulamazsan null)",
+  "telefon": "varsa telefon numarası (yoksa null)",
+  "email": "varsa e-posta (yoksa null)",
+  "davaKonusu": "kısa bir dava konusu özeti, en fazla 1 cümle (yoksa null)",
+  "esasNo": "esas/dosya numarası varsa (yoksa null)",
+  "karsiTaraf": "karşı taraf adı varsa (yoksa null)",
+  "mahkeme": "mahkeme/kurum adı varsa (yoksa null)"
+}
+Emin olmadığın alanları uydurma — null bırak. Belgede müvekkil kimin tarafı olduğu net değilse, dilekçeyi/belgeyi hazırlayan tarafı müvekkil olarak varsay.`,
 };
 
 function getExt(filename: string) {
@@ -101,7 +112,10 @@ export async function POST(req: Request) {
     const wantUdf = form.get("wantUdf") === "1";
 
     // Bu spesifik aracı (mode) kullanma yetkisi de ayrıca kapatılmış olabilir.
-    if (!(await hasToolAccess(userId, mode))) {
+    // "crm-extract" ayrı bir görünür araç değil, Müvekkil Ekle'nin bir
+    // parçası — yetki kontrolünü de o araca göre yapıyoruz.
+    const toolKeyForAccess = mode === "crm-extract" ? "muvekkilekle" : mode;
+    if (!(await hasToolAccess(userId, toolKeyForAccess))) {
       return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
     }
 
@@ -167,9 +181,12 @@ export async function POST(req: Request) {
 
     // Uyarı etiketi sadece EKRANDA gösterilen cevaba eklenir — UDF/Word/PDF
     // çıktısı (yukarıda zaten üretildi) temiz kalır, resmi belgeye karışmaz.
+    // "crm-extract" modu ham JSON döndürür — uyarı metni eklenirse JSON bozulur.
     const displayAnalysis =
-      analysis +
-      "\n\n---\n⚠️ Bu metindeki içtihat/mevzuat atıfları yapay zeka tarafından oluşturulmuştur. Kullanmadan önce mutlaka resmi kaynaktan doğrulayın.";
+      mode === "crm-extract"
+        ? analysis
+        : analysis +
+          "\n\n---\n⚠️ Bu metindeki içtihat/mevzuat atıfları yapay zeka tarafından oluşturulmuştur. Kullanmadan önce mutlaka resmi kaynaktan doğrulayın.";
 
     return NextResponse.json({ analysis: displayAnalysis, udfBase64, docxBase64, pdfBase64 });
   } catch (err: any) {

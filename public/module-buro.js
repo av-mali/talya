@@ -63,6 +63,13 @@ window.CURRENT_MODULE = {
       desc: 'Yeni bir müvekkil kaydı oluşturun.',
       btnClass: 'b', btnIco: 'fa-user-plus', btnLbl: '', hideCta: true,
       body: `
+        <div class="ic" style="margin-bottom:14px;">
+          <div class="ic-t"><i class="fa-solid fa-wand-magic-sparkles"></i> Belgeden Otomatik Doldur</div>
+          <p>Bir dava dilekçesi, tebligat ya da ihtarname yükleyin — AI müvekkil bilgilerini bulup aşağıdaki formu otomatik doldursun. Kaydetmeden önce mutlaka kontrol edin.</p>
+          <input type="file" id="mv-n-autofile" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt" style="margin-top:8px;width:100%;">
+          <button class="pop-cta-btn b" style="width:100%;margin-top:8px;" onclick="mvAutoFillFromFile()"><i class="fa-solid fa-file-import"></i><span>Belgeden Doldur</span></button>
+          <div id="mv-autofill-status" style="font-size:11px;color:var(--t3);margin-top:6px;"></div>
+        </div>
         <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-n-name" placeholder="Müvekkil adı…"></div>
         <div class="fg"><div class="fl">TC Kimlik / Mersis No <span class="opt">(opsiyonel)</span></div><input type="text" id="mv-n-tc" placeholder="12345678901"></div>
         <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-n-phone" placeholder="05__ ___ __ __"></div>
@@ -232,6 +239,52 @@ function mvEkleOnOpen() {
   mvSelectedId = null;
   const dp = document.getElementById('detailPane');
   if (dp) dp.innerHTML = detailPlaceholder('Kaydettiğiniz müvekkilin detayı burada açılacak.');
+}
+
+async function mvAutoFillFromFile() {
+  const fileInput = document.getElementById('mv-n-autofile');
+  const statusEl = document.getElementById('mv-autofill-status');
+  const file = fileInput.files[0];
+  if (!file) { toast('Önce bir belge seçin', 'fa-solid fa-triangle-exclamation'); return; }
+
+  statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Belge okunuyor…';
+
+  const form = new FormData();
+  form.append('files', file);
+  form.append('instruction', 'Bu belgeden müvekkil bilgilerini çıkar.');
+  form.append('mode', 'crm-extract');
+  form.append('wantUdf', '0');
+
+  try {
+    const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) {
+      statusEl.innerHTML = `<span style="color:var(--danger);">${data.error || 'Okunamadı.'}</span>`;
+      return;
+    }
+    let parsed;
+    try {
+      const clean = data.analysis.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      statusEl.innerHTML = `<span style="color:var(--danger);">AI'dan gelen veri okunamadı — belge net değilse elle doldurun.</span>`;
+      return;
+    }
+
+    if (parsed.muvekkilAdi) document.getElementById('mv-n-name').value = parsed.muvekkilAdi;
+    if (parsed.telefon) document.getElementById('mv-n-phone').value = parsed.telefon;
+    if (parsed.email) document.getElementById('mv-n-email').value = parsed.email;
+    const notParts = [];
+    if (parsed.davaKonusu) notParts.push(parsed.davaKonusu);
+    if (parsed.esasNo) notParts.push('Esas No: ' + parsed.esasNo);
+    if (parsed.karsiTaraf) notParts.push('Karşı Taraf: ' + parsed.karsiTaraf);
+    if (parsed.mahkeme) notParts.push('Mahkeme: ' + parsed.mahkeme);
+    if (notParts.length) document.getElementById('mv-n-note').value = notParts.join(' — ');
+
+    statusEl.innerHTML = '<span style="color:var(--success);"><i class="fa-solid fa-check"></i> Form dolduruldu — kaydetmeden önce kontrol edin.</span>';
+  } catch (e) {
+    statusEl.innerHTML = `<span style="color:var(--danger);">Bağlantı hatası.</span>`;
+  }
 }
 
 async function mvSaveNew() {
