@@ -66,7 +66,7 @@ window.CURRENT_MODULE = {
         <div class="ic" style="margin-bottom:14px;">
           <div class="ic-t"><i class="fa-solid fa-wand-magic-sparkles"></i> Belgeden Otomatik Doldur</div>
           <p>Bir dava dilekçesi, tebligat ya da ihtarname yükleyin — AI müvekkil bilgilerini bulup aşağıdaki formu otomatik doldursun. Kaydetmeden önce mutlaka kontrol edin.</p>
-          <input type="file" id="mv-n-autofile" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt" style="margin-top:8px;width:100%;">
+          <input type="file" id="mv-n-autofile" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt,.udf" style="margin-top:8px;width:100%;">
           <button class="pop-cta-btn b" style="width:100%;margin-top:8px;" onclick="mvAutoFillFromFile()"><i class="fa-solid fa-file-import"></i><span>Belgeden Doldur</span></button>
           <div id="mv-autofill-status" style="font-size:11px;color:var(--t3);margin-top:6px;"></div>
         </div>
