@@ -33,9 +33,28 @@ async function loadMyPermissions() {
   } catch (e) { /* varsayılan (tam yetkili) ile devam */ }
 }
 
+// Orta panel (popBody), sağ panel (detailPane) ya da sohbet alanı
+// (chatMsgs) her innerHTML değişikliğinde otomatik olarak yumuşak bir
+// "belirme" animasyonu alır — tek tek her render fonksiyonuna eklemeye
+// gerek kalmadan tüm modüllerde çalışır.
+function attachPanelFadeObserver(id) {
+  const el = document.getElementById(id);
+  if (!el || el.dataset.fadeObserved) return;
+  el.dataset.fadeObserved = '1';
+  const observer = new MutationObserver(() => {
+    el.classList.remove('panel-fade-in');
+    void el.offsetWidth; // reflow'u zorlayarak animasyonun her seferinde yeniden başlamasını sağlıyoruz
+    el.classList.add('panel-fade-in');
+  });
+  observer.observe(el, { childList: true });
+}
+
 // Modül sayfası yüklendiğinde (module-*.js zaten window.CURRENT_MODULE'ü doldurmuş olmalı)
 async function initModulePage() {
   await loadMyPermissions();
+  attachPanelFadeObserver('popBody');
+  attachPanelFadeObserver('detailPane');
+  attachPanelFadeObserver('chatMsgs');
   const cfg = window.CURRENT_MODULE;
   if (!cfg) return;
   const nameEl = document.getElementById('appModuleName');

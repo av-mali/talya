@@ -430,6 +430,10 @@ textarea{resize:none;line-height:1.6;}
 @keyframes blink{50%{opacity:0}}
 
 .module-card{animation:card-rise .5s var(--ease) backwards;}
+/* Panel içeriği (orta/sağ panel) değiştiğinde yumuşak bir geçiş —
+   MutationObserver ile otomatik tetiklenir, tek tek her fonksiyona
+   eklemeye gerek kalmadan tüm modüllerde çalışır. */
+.panel-fade-in{animation:card-rise .22s var(--ease);}
 .module-card:nth-child(1){animation-delay:.02s;}
 .module-card:nth-child(2){animation-delay:.08s;}
 .module-card:nth-child(3){animation-delay:.14s;}
