@@ -14,8 +14,17 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const ok = await requireOwnedTask(params.id);
   if (!ok) return NextResponse.json({ error: "Yetkisiz veya görev bulunamadı." }, { status: 401 });
 
-  const { done } = await req.json();
-  const task = await prisma.task.update({ where: { id: params.id }, data: { done: !!done } });
+  const body = await req.json();
+  const data: any = {};
+  if (body.status !== undefined) {
+    data.status = body.status;
+    data.done = body.status === "tamamlandi"; // geri uyum için done alanı da senkron tutulur
+  } else if (body.done !== undefined) {
+    data.done = !!body.done;
+    data.status = body.done ? "tamamlandi" : "yapilacak";
+  }
+
+  const task = await prisma.task.update({ where: { id: params.id }, data });
   return NextResponse.json({ task });
 }
 

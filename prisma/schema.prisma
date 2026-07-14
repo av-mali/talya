@@ -200,6 +200,7 @@ model Task {
   id          String    @id @default(cuid())
   title       String
   done        Boolean   @default(false)
+  status      String    @default("yapilacak") // "yapilacak" | "devam" | "tamamlandi" — Kanban sütunu
   dueDate     DateTime?
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)

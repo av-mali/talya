@@ -109,8 +109,8 @@ window.CURRENT_MODULE = {
     },
     // ── GÖREVLER ── müvekkilden bağımsız, kişisel yapılacaklar listesi
     gorevler: {
-      badge: 'b', badgeText: 'Yapılacaklar', titleHtml: '<em class="b">Görevler</em>',
-      desc: 'Müvekkilden bağımsız, kişisel iş takibiniz.',
+      badge: 'b', badgeText: 'Kanban Pano', titleHtml: '<em class="b">Görevler</em>',
+      desc: 'Görevlerinizi sütunlar arasında sürükleyip bırakarak takip edin.',
       btnClass: 'b', btnIco: 'fa-list-check', btnLbl: '', hideCta: true,
       body: `
         <div class="fg"><input type="text" id="task-title" placeholder="Yeni görev…" onkeydown="if(event.key==='Enter')taskAdd()"></div>
@@ -908,6 +908,12 @@ function fatPrint() {
 // ══════════════════════════════════════════════════════
 // GÖREVLER — müvekkilden bağımsız yapılacaklar listesi
 // ══════════════════════════════════════════════════════
+const KANBAN_COLUMNS = [
+  { key: 'yapilacak', label: 'Yapılacak', color: 'var(--t3)' },
+  { key: 'devam', label: 'Devam Ediyor', color: 'var(--warn)' },
+  { key: 'tamamlandi', label: 'Tamamlandı', color: 'var(--success)' },
+];
+
 async function taskOnOpen() {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
@@ -920,22 +926,28 @@ async function taskRenderList() {
     const res = await fetch('/api/tasks');
     const data = await res.json();
     const tasks = data.tasks || [];
-    const acikGorevler = tasks.filter(t => !t.done);
-    const bitenGorevler = tasks.filter(t => t.done);
 
     dp.innerHTML = `
-      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">
-          Açık Görevler (${acikGorevler.length})
+      <div style="padding:22px 24px;overflow-x:auto;height:100%;box-sizing:border-box;">
+        <div style="display:flex;gap:14px;height:100%;min-width:700px;">
+          ${KANBAN_COLUMNS.map(col => {
+            const colTasks = tasks.filter(t => (t.status || 'yapilacak') === col.key);
+            return `
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;"
+                   ondragover="event.preventDefault()"
+                   ondrop="taskDropOnColumn(event, '${col.key}')">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <span style="width:8px;height:8px;border-radius:50%;background:${col.color};"></span>
+                  <span style="font-size:12px;font-weight:600;">${col.label}</span>
+                  <span style="font-size:11px;color:var(--t3);">(${colTasks.length})</span>
+                </div>
+                <div style="background:var(--bg2);border-radius:var(--r);padding:8px;flex:1;min-height:200px;">
+                  ${colTasks.length ? colTasks.map(t => taskCard(t, col.key)).join('') : `<div style="font-size:11.5px;color:var(--t3);text-align:center;padding:20px 8px;">Boş</div>`}
+                </div>
+              </div>
+            `;
+          }).join('')}
         </div>
-        ${acikGorevler.length ? acikGorevler.map(t => taskRow(t)).join('') : emptyState('fa-list-check', 'Açık görev yok', 'Yeni bir görev ekleyerek başlayın.')}
-
-        ${bitenGorevler.length ? `
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 10px;">
-            Tamamlanan (${bitenGorevler.length})
-          </div>
-          ${bitenGorevler.map(t => taskRow(t)).join('')}
-        ` : ''}
       </div>
     `;
   } catch (e) {
@@ -943,18 +955,40 @@ async function taskRenderList() {
   }
 }
 
-function taskRow(t) {
-  const overdue = t.dueDate && !t.done && new Date(t.dueDate) < new Date(new Date().toDateString());
-  return `<div class="cr-row" style="padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
-    <span style="display:flex;align-items:flex-start;gap:8px;">
-      <input type="checkbox" ${t.done ? 'checked' : ''} onchange="taskToggle('${t.id}', this.checked)" style="margin-top:3px;">
-      <span style="${t.done ? 'text-decoration:line-through;color:var(--t3);' : ''}">
-        ${t.title}
-        ${t.dueDate ? `<div style="font-size:10px;color:${overdue ? 'var(--danger)' : 'var(--t3)'};margin-top:2px;">${new Date(t.dueDate).toLocaleDateString('tr-TR')}${overdue ? ' — süresi geçti' : ''}</div>` : ''}
-      </span>
-    </span>
-    <span style="cursor:pointer;color:var(--t3);" onclick="taskDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
-  </div>`;
+function taskCard(t, colKey) {
+  const overdue = t.dueDate && colKey !== 'tamamlandi' && new Date(t.dueDate) < new Date(new Date().toDateString());
+  const colIdx = KANBAN_COLUMNS.findIndex(c => c.key === colKey);
+  const prevCol = KANBAN_COLUMNS[colIdx - 1];
+  const nextCol = KANBAN_COLUMNS[colIdx + 1];
+  return `
+    <div class="kanban-card" draggable="true"
+         ondragstart="event.dataTransfer.setData('text/plain','${t.id}')"
+         style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
+      <div style="font-size:12.5px;margin-bottom:4px;">${t.title}</div>
+      ${t.dueDate ? `<div style="font-size:10px;color:${overdue ? 'var(--danger)' : 'var(--t3)'};margin-bottom:6px;"><i class="fa-solid fa-calendar"></i> ${new Date(t.dueDate).toLocaleDateString('tr-TR')}${overdue ? ' — süresi geçti' : ''}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+        <span style="display:flex;gap:6px;">
+          ${prevCol ? `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="taskMoveStatus('${t.id}','${prevCol.key}')" title="${prevCol.label}'a taşı"><i class="fa-solid fa-arrow-left"></i></span>` : '<span style="width:12px;"></span>'}
+          ${nextCol ? `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="taskMoveStatus('${t.id}','${nextCol.key}')" title="${nextCol.label}'a taşı"><i class="fa-solid fa-arrow-right"></i></span>` : '<span style="width:12px;"></span>'}
+        </span>
+        <span style="cursor:pointer;color:var(--t3);" onclick="taskDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+      </div>
+    </div>
+  `;
+}
+
+function taskDropOnColumn(event, colKey) {
+  event.preventDefault();
+  const id = event.dataTransfer.getData('text/plain');
+  if (id) taskMoveStatus(id, colKey);
+}
+
+async function taskMoveStatus(id, status) {
+  await fetch('/api/tasks/' + id, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  taskRenderList();
 }
 
 async function taskAdd() {
@@ -971,16 +1005,9 @@ async function taskAdd() {
   taskRenderList();
 }
 
-async function taskToggle(id, done) {
-  await fetch('/api/tasks/' + id, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ done })
-  });
-  taskRenderList();
-}
-
 async function taskDelete(id) {
   await fetch('/api/tasks/' + id, { method: 'DELETE' });
+  toast('Görev silindi', 'fa-solid fa-trash');
   taskRenderList();
 }
 
