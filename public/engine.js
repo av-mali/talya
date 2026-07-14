@@ -937,10 +937,8 @@ if (window.__talyaReady) window.__talyaReady();
 // unutulan oturumların açık kalmamasını sağlar.
 // ══════════════════════════════════════════════════════
 (function () {
-  // ⚠️ TEST AMAÇLI GEÇİCİ DEĞERLER — test edip onayladıktan sonra
-  // gerçek değerlere (30 dk / 2 dk) geri döndürülecek.
-  const IDLE_LIMIT_MS = 30 * 1000;           // TEST: 30 saniye (gerçekte 30 * 60 * 1000)
-  const WARNING_BEFORE_MS = 15 * 1000;       // TEST: 15 saniye (gerçekte 2 * 60 * 1000)
+  const IDLE_LIMIT_MS = 30 * 60 * 1000;      // 30 dakika
+  const WARNING_BEFORE_MS = 2 * 60 * 1000;   // son 2 dakikada uyar
   let idleTimer = null;
   let warningTimer = null;
   let countdownInterval = null;
@@ -978,7 +976,7 @@ if (window.__talyaReady) window.__talyaReady();
       if (remaining <= 0) {
         clearInterval(countdownInterval);
         if (window.talyaSignOut) window.talyaSignOut();
-        else window.location.href = '/login';
+        else window.location.href = '/';
         return;
       }
       const mins = Math.floor(remaining / 60000);

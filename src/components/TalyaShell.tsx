@@ -40,7 +40,7 @@ export default function TalyaShell({
       // çağırır — NextAuth'un kendi çıplak onay ekranına gitmek yerine,
       // hiç ara ekran göstermeden temiz bir şekilde çıkış yapar.
       (window as any).talyaSignOut = () => {
-        signOut({ callbackUrl: "/login" });
+        signOut({ callbackUrl: "/" });
       };
 
       // Yönetici hesabıysa, üst menüye "Yönetici Paneli" bağlantısı ekle —
