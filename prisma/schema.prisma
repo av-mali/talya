@@ -53,6 +53,8 @@ model User {
   telegramChatId     String?   @unique
   telegramLinkCode   String?
   telegramLinkCodeExpiry DateTime?
+  telegramDailyTime  String?   // "08:00" gibi — her gün bu saatte otomatik gündem gönderilir
+  telegramLastSentDate String? // "2026-07-15" — aynı gün içinde iki kez göndermemek için
 }
 
 // Büro (Workspace) — birden fazla kullanıcının aynı müvekkil/dosya

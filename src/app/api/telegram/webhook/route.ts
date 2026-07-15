@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateGundemReport, generateResmiGazeteOzeti } from "@/lib/gundemReport";
 
+// Resmi Gazete özeti (web araması) uzun sürebiliyor — varsayılan Vercel
+// zaman aşımı bu süreyi kesip mesajın hiç gönderilmemesine yol açabiliyordu.
+// Bu değer, fonksiyona daha fazla süre tanır (Vercel Pro gerektirir).
+export const maxDuration = 60;
+
 const TELEGRAM_API = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
 
 async function sendMessage(chatId: string, text: string) {
@@ -60,16 +65,20 @@ export async function POST(req: Request) {
   const lower = text.toLowerCase();
   if (lower.includes("gündem") || lower.includes("gundem") || lower.includes("bugün") || lower === "/gundem") {
     await sendMessage(chatId, "⏳ Gündeminiz hazırlanıyor, birkaç saniye…");
-    const [report, gazeteOzeti] = await Promise.all([
-      generateGundemReport(user.id),
-      generateResmiGazeteOzeti(),
-    ]);
-    let fullReport = report;
-    if (gazeteOzeti) {
-      fullReport += `\n\n📰 *Resmi Gazete & Hukuk Gündemi*\n${gazeteOzeti}`;
+    try {
+      const [report, gazeteOzeti] = await Promise.all([
+        generateGundemReport(user.id),
+        generateResmiGazeteOzeti(),
+      ]);
+      let fullReport = report;
+      if (gazeteOzeti) {
+        fullReport += `\n\n📰 *Resmi Gazete & Hukuk Gündemi*\n${gazeteOzeti}`;
+      }
+      fullReport += `\n\n⚠️ _Resmi Gazete/gündem özeti AI tarafından web'den derlenmiştir, garantili/eksiksiz bir tarama değildir._`;
+      await sendMessage(chatId, fullReport);
+    } catch (e) {
+      await sendMessage(chatId, "❌ Gündem hazırlanırken bir hata oluştu. Lütfen birkaç dakika sonra tekrar deneyin.");
     }
-    fullReport += `\n\n⚠️ _Resmi Gazete/gündem özeti AI tarafından web'den derlenmiştir, garantili/eksiksiz bir tarama değildir._`;
-    await sendMessage(chatId, fullReport);
     return NextResponse.json({ ok: true });
   }
 

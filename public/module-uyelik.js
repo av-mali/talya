@@ -301,21 +301,31 @@ async function telegramOnOpen() {
   try {
     const res = await fetch('/api/profile/telegram-code');
     const data = await res.json();
-    telegramRender(data.connected);
+    telegramRender(data.connected, data.dailyTime);
   } catch (e) {
     box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
   }
 }
 
-function telegramRender(connected) {
+function telegramRender(connected, dailyTime) {
   const box = document.getElementById('telegram-box');
   if (connected) {
     box.innerHTML = `
       <div class="ic" style="margin-bottom:14px;">
         <div class="ic-t"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Bağlı</div>
-        <p>Telegram hesabınız bağlı. Bota "gündem" yazarak günlük özetinizi alabilirsiniz.</p>
+        <p>Telegram hesabınız bağlı. Bota "gündem" yazarak istediğiniz an özetinizi alabilirsiniz.</p>
       </div>
-      <button class="pop-cta-btn" style="width:100%;background:var(--danger);" onclick="telegramDisconnect()"><i class="fa-solid fa-link-slash"></i><span>Bağlantıyı Kaldır</span></button>
+
+      <div class="fg">
+        <div class="fl">Her Gün Otomatik Gönderim Saati <span class="opt">(opsiyonel)</span></div>
+        <div style="display:flex;gap:6px;">
+          <input type="time" id="telegram-daily-time" value="${dailyTime || ''}" style="flex:1;">
+          <button class="pop-cta-btn b" style="width:auto;padding:8px 14px;" onclick="telegramSaveDailyTime()">Kaydet</button>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:6px;">Belirlediğiniz saatte, siz yazmadan gündeminiz otomatik gönderilir. Boş bırakıp kaydederseniz otomatik gönderim kapanır.</div>
+      </div>
+
+      <button class="pop-cta-btn" style="width:100%;margin-top:14px;background:var(--danger);" onclick="telegramDisconnect()"><i class="fa-solid fa-link-slash"></i><span>Bağlantıyı Kaldır</span></button>
     `;
   } else {
     box.innerHTML = `
@@ -347,6 +357,19 @@ async function telegramGetCode() {
     `;
   } else {
     box.innerHTML = `<div style="color:var(--danger);font-size:12px;">${data.error || 'Kod alınamadı.'}</div>`;
+  }
+}
+
+async function telegramSaveDailyTime() {
+  const dailyTime = document.getElementById('telegram-daily-time').value;
+  const res = await fetch('/api/profile/telegram-code', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dailyTime })
+  });
+  if (res.ok) {
+    toast(dailyTime ? `Her gün ${dailyTime}'de otomatik gönderilecek` : 'Otomatik gönderim kapatıldı', 'fa-solid fa-check', true);
+  } else {
+    toast('Kaydedilemedi', 'fa-solid fa-triangle-exclamation');
   }
 }
 

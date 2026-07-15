@@ -131,6 +131,11 @@ export async function generateResmiGazeteOzeti(): Promise<string> {
     const today = new Date().toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
     const prompt = `Bugün ${today}. Türkiye'de bugünkü Resmi Gazete'de yayınlanan hukuken önemli düzenlemeleri (varsa) ve hukuk/yargı gündemindeki ciddi haberleri (önemli bir mahkeme kararı, kanun değişikliği tartışması vb.) kısaca, madde madde özetle. Türkçe yaz, en fazla 6 madde, her madde tek cümle. Emin olmadığın bir şeyi uydurma; bulamadıysan "Bugün için önemli bir gelişme bulunamadı" yaz.`;
 
+    // Web araması bazen uzun sürebiliyor — 25 saniyeden fazla sürerse
+    // vazgeçip geri kalan raporun gönderilmesine izin veriyoruz.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -140,8 +145,10 @@ export async function generateResmiGazeteOzeti(): Promise<string> {
           contents: [{ parts: [{ text: prompt }] }],
           tools: [{ google_search: {} }],
         }),
+        signal: controller.signal,
       }
     );
+    clearTimeout(timeout);
     const data = await res.json();
     const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") || "";
     return text.trim();
