@@ -83,8 +83,13 @@ export default function LandingPage() {
         .feature-hover:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,.07); border-color: var(--gold-rule); }
         .plan-hover { transition: transform .25s ease, box-shadow .25s ease; }
         .plan-hover:hover { transform: translateY(-8px); }
-        .glow-blob { position: absolute; width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, var(--gold-lo) 0%, transparent 70%); filter: blur(10px); animation: glowFloat 8s ease-in-out infinite; pointer-events: none; }
+        .glow-blob { position: absolute; border-radius: 50%; background: radial-gradient(circle, var(--gold-lo) 0%, transparent 70%); filter: blur(10px); pointer-events: none; }
+        .glow-blob.a { width: 480px; height: 480px; animation: glowFloat 8s ease-in-out infinite; }
+        .glow-blob.b { width: 320px; height: 320px; animation: glowFloat 11s ease-in-out infinite reverse; opacity: .7; }
+        .glow-blob.c { width: 220px; height: 220px; animation: glowFloat 6.5s ease-in-out infinite; opacity: .55; }
         @keyframes glowFloat { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(20px, -20px) scale(1.08); } }
+        .particle { position: absolute; border-radius: 50%; background: var(--gold); pointer-events: none; }
+        @keyframes particleDrift { 0% { transform: translateY(0) translateX(0); opacity: 0; } 10% { opacity: .55; } 90% { opacity: .4; } 100% { transform: translateY(-140px) translateX(var(--drift, 20px)); opacity: 0; } }
         .cta-pulse:hover { box-shadow: 0 0 0 6px var(--gold-lo); }
       `}</style>
       <div ref={rootRef} style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", background: "var(--bg)", boxSizing: "border-box" }}>
@@ -102,9 +107,37 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* HERO — soyut adalet terazisi çizimi + istatistikler */}
+        {/* HERO — soyut adalet terazisi çizimi + hareketli parıltı/parçacıklar */}
         <div style={{ position: "relative", padding: "70px 20px 20px", textAlign: "center", overflow: "hidden" }}>
-          <div className="glow-blob" style={{ top: -100, left: "50%", marginLeft: -240, zIndex: 0 }}></div>
+          <div className="glow-blob a" style={{ top: -100, left: "50%", marginLeft: -240, zIndex: 0 }}></div>
+          <div className="glow-blob b" style={{ top: 40, left: "20%", zIndex: 0 }}></div>
+          <div className="glow-blob c" style={{ top: 120, right: "15%", zIndex: 0 }}></div>
+
+          {/* Yavaşça yukarı süzülen, telif riski olmayan özel çizim parçacıklar */}
+          {Array.from({ length: 14 }).map((_, i) => {
+            const left = 5 + ((i * 37) % 90);
+            const size = 3 + (i % 4) * 2;
+            const duration = 6 + (i % 5) * 1.6;
+            const delay = (i % 7) * 0.9;
+            const drift = (i % 2 === 0 ? 1 : -1) * (20 + (i % 3) * 15);
+            return (
+              <div
+                key={i}
+                className="particle"
+                style={{
+                  left: `${left}%`,
+                  bottom: 0,
+                  width: size,
+                  height: size,
+                  zIndex: 0,
+                  opacity: 0,
+                  animation: `particleDrift ${duration}s ease-in-out ${delay}s infinite`,
+                  ["--drift" as any]: `${drift}px`,
+                }}
+              ></div>
+            );
+          })}
+
           <div className="hero-mark" aria-hidden="true">
             <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg">
               <g className="beam-arm">
