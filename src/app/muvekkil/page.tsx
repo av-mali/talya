@@ -31,6 +31,7 @@ export default function MuvekkilPage() {
   const [cases, setCases] = useState<CaseInfo[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [sendError, setSendError] = useState("");
 
   async function loadPortalData() {
     const res = await fetch("/api/portal/me");
@@ -57,14 +58,23 @@ export default function MuvekkilPage() {
 
   async function handleSendMessage() {
     if (!newMessage.trim()) return;
+    const content = newMessage.trim();
+    setSendError("");
     const res = await fetch("/api/portal/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: newMessage.trim() }),
+      body: JSON.stringify({ content }),
     });
     if (res.ok) {
+      // Ekranı bir sonraki isteği beklemeden ANINDA güncelle — arka planda
+      // gerçek veriyle senkronize etmeye de devam ediyoruz.
+      setMessages((prev) => [...prev, { id: "temp-" + Date.now(), content, isFromClient: true, createdAt: new Date().toISOString() }]);
       setNewMessage("");
       loadPortalData();
+    } else {
+      const data = await res.json();
+      setSendError(data.error || "Mesaj gönderilemedi.");
+      loadPortalData(); // gerçek durumu (belki zaten cevap bekleniyordu) yansıt
     }
   }
 
@@ -170,6 +180,7 @@ export default function MuvekkilPage() {
                   </div>
                 ) : (
                   <>
+                    {sendError && <div style={{ color: "var(--danger)", fontSize: 12, marginBottom: 8 }}>{sendError}</div>}
                     <textarea
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}

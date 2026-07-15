@@ -670,6 +670,29 @@ async function renderDashDeadlines() {
 }
 
 // ── BİLDİRİMLER (gerçek veri: yaklaşan duruşma/ödeme tarihleri) ──
+// Dışarıdan bir ses dosyası kullanmadan (telif/boyut derdi olmadan),
+// tarayıcının kendi ses motoruyla kısa, hoş bir "ding" sesi üretir.
+function playNotifSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+    [880, 1320].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = now + i * 0.09;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.12, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.4);
+    });
+  } catch (e) { /* tarayıcı desteklemiyorsa sessizce geç */ }
+}
+
 let NOTIFS = [];
 let seenMessageNotifIds = new Set();
 let notifPollStarted = false;
@@ -691,6 +714,7 @@ async function loadRealNotifications() {
         seenMessageNotifIds.add(n.id);
         if (!isFirstLoad) {
           toast(n.text, 'fa-solid fa-comment-dots', true);
+          playNotifSound();
         }
       }
     });
