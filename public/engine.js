@@ -670,18 +670,24 @@ async function renderDashDeadlines() {
 }
 
 // ── BİLDİRİMLER (gerçek veri: yaklaşan duruşma/ödeme tarihleri) ──
-// Dışarıdan bir ses dosyası kullanmadan (telif/boyut derdi olmadan),
-// tarayıcının kendi ses motoruyla kısa, hoş bir "ding" sesi üretir.
-// ÖNEMLİ: Tarayıcılar, kullanıcı sayfada hiç tıklamadan otomatik ses
-// çalınmasını engeller — bu yüzden tek bir AudioContext'i sayfadaki
-// İLK tıklama/tuşla "kilidini açıp" saklıyoruz, sonraki tüm sesler onu kullanır.
-let sharedAudioCtx = null;
+// Dışarıdan bir ses dosyası İNDİRMEDEN (telif/ağ derdi olmadan), kısa bir
+// "ding-dong" sesini doğrudan koda gömdük (base64). Web Audio API yerine
+// klasik <audio> etiketi kullanıyoruz — tarayıcıların otomatik ses
+// engelleme davranışında daha güvenilir çalışıyor. Sayfadaki İLK
+// tıklama/tuşla "kilidini açıyoruz" (tarayıcı kuralı gereği).
+const NOTIF_SOUND_B64 = 'data:audio/wav;base64,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';
+let sharedNotifAudio = null;
 function unlockAudioOnce() {
-  if (sharedAudioCtx) return;
+  if (sharedNotifAudio) return;
   try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    sharedAudioCtx = new AudioCtx();
-    if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+    sharedNotifAudio = new Audio(NOTIF_SOUND_B64);
+    sharedNotifAudio.volume = 0.5;
+    // Sessiz bir "dene çal" ile kilidi açıyoruz (bazı tarayıcılar ilk
+    // etkileşimde gerçekten çalınmasını istiyor).
+    sharedNotifAudio.play().then(() => {
+      sharedNotifAudio.pause();
+      sharedNotifAudio.currentTime = 0;
+    }).catch(() => {});
   } catch (e) { /* desteklenmiyor */ }
 }
 if (typeof document !== 'undefined') {
@@ -692,23 +698,14 @@ if (typeof document !== 'undefined') {
 
 function playNotifSound() {
   try {
-    const ctx = sharedAudioCtx;
-    if (!ctx) return; // henüz hiçbir kullanıcı etkileşimi olmadı, tarayıcı izin vermez
-    if (ctx.state === 'suspended') ctx.resume();
-    const now = ctx.currentTime;
-    [880, 1320].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const start = now + i * 0.09;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.12, start + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(start);
-      osc.stop(start + 0.4);
-    });
+    if (sharedNotifAudio) {
+      sharedNotifAudio.currentTime = 0;
+      sharedNotifAudio.play().catch(() => {});
+    } else {
+      // Kilidi hiç açılmadıysa (kullanıcı hiç tıklamadıysa) yine de dene —
+      // bazı taraylıcılarda çalışabilir.
+      new Audio(NOTIF_SOUND_B64).play().catch(() => {});
+    }
   } catch (e) { /* tarayıcı desteklemiyorsa sessizce geç */ }
 }
 
