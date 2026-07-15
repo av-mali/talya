@@ -672,10 +672,29 @@ async function renderDashDeadlines() {
 // ── BİLDİRİMLER (gerçek veri: yaklaşan duruşma/ödeme tarihleri) ──
 // Dışarıdan bir ses dosyası kullanmadan (telif/boyut derdi olmadan),
 // tarayıcının kendi ses motoruyla kısa, hoş bir "ding" sesi üretir.
-function playNotifSound() {
+// ÖNEMLİ: Tarayıcılar, kullanıcı sayfada hiç tıklamadan otomatik ses
+// çalınmasını engeller — bu yüzden tek bir AudioContext'i sayfadaki
+// İLK tıklama/tuşla "kilidini açıp" saklıyoruz, sonraki tüm sesler onu kullanır.
+let sharedAudioCtx = null;
+function unlockAudioOnce() {
+  if (sharedAudioCtx) return;
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    const ctx = new AudioCtx();
+    sharedAudioCtx = new AudioCtx();
+    if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+  } catch (e) { /* desteklenmiyor */ }
+}
+if (typeof document !== 'undefined') {
+  ['click', 'keydown', 'touchstart'].forEach(evt => {
+    document.addEventListener(evt, unlockAudioOnce, { once: true, passive: true });
+  });
+}
+
+function playNotifSound() {
+  try {
+    const ctx = sharedAudioCtx;
+    if (!ctx) return; // henüz hiçbir kullanıcı etkileşimi olmadı, tarayıcı izin vermez
+    if (ctx.state === 'suspended') ctx.resume();
     const now = ctx.currentTime;
     [880, 1320].forEach((freq, i) => {
       const osc = ctx.createOscillator();
