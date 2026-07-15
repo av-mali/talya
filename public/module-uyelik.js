@@ -467,8 +467,11 @@ function destekShowTicket(index) {
         </div>
       `).join('')}
     </div>
-    <div class="fg"><textarea id="destek-reply" rows="3" placeholder="Cevap yazın…"></textarea></div>
-    <button class="pop-cta-btn g" style="width:100%;" onclick="destekSendReply('${t.id}')"><i class="fa-solid fa-paper-plane"></i><span>Gönder</span></button>
+    <div class="fg">${t.status === 'cozuldu'
+      ? '<div style="font-size:12px;color:var(--t3);padding:10px;background:var(--bg2);border-radius:var(--r);text-align:center;">Bu talep çözüldü olarak işaretlenmiş — yeni mesaj gönderilemez.</div>'
+      : '<textarea id="destek-reply" rows="3" placeholder="Cevap yazın…"></textarea>'
+    }</div>
+    ${t.status !== 'cozuldu' ? `<button class="pop-cta-btn g" style="width:100%;" onclick="destekSendReply('${t.id}')"><i class="fa-solid fa-paper-plane"></i><span>Gönder</span></button>` : ''}
   `;
 }
 

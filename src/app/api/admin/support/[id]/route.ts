@@ -21,3 +21,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   return NextResponse.json({ ok: true, ticket });
 }
+
+// Anlamsız/yanlışlıkla açılmış bir talebi tamamen silmek için.
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || !(session.user as any).isAdmin) {
+    return NextResponse.json({ error: "Yetkiniz yok." }, { status: 403 });
+  }
+
+  await prisma.supportTicket.delete({ where: { id: params.id } });
+  return NextResponse.json({ ok: true });
+}

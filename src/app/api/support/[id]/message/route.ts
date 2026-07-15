@@ -10,6 +10,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const ticket = await prisma.supportTicket.findFirst({ where: { id: params.id, userId } });
   if (!ticket) return NextResponse.json({ error: "Talep bulunamadı." }, { status: 404 });
+  if (ticket.status === "cozuldu") {
+    return NextResponse.json({ error: "Bu talep çözüldü olarak işaretlenmiş, artık mesaj gönderilemez." }, { status: 400 });
+  }
 
   const { content } = await req.json();
   if (!content || !content.trim()) {
@@ -19,11 +22,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   await prisma.supportMessage.create({
     data: { ticketId: params.id, content: content.trim(), isAdmin: false },
   });
-  // Kullanıcı yeni mesaj yazınca, talebi otomatik "açık" durumuna geri al
-  // — yönetici "çözüldü" demişti ama kullanıcının hâlâ sorusu varmış demektir.
   await prisma.supportTicket.update({
     where: { id: params.id },
-    data: { updatedAt: new Date(), status: ticket.status === "cozuldu" ? "acik" : ticket.status },
+    data: { updatedAt: new Date() },
   });
 
   return NextResponse.json({ ok: true });

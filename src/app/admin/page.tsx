@@ -111,6 +111,13 @@ export default function AdminPage() {
     load();
   }
 
+  async function handleDeleteTicket(id: string) {
+    if (!confirm("Bu destek talebini kalıcı olarak silmek istediğinize emin misiniz?")) return;
+    await fetch(`/api/admin/support/${id}`, { method: "DELETE" });
+    setOpenTicketId(null);
+    load();
+  }
+
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
     if (status === "authenticated") load();
@@ -304,7 +311,6 @@ export default function AdminPage() {
                   {tickets.map((t) => (
                     <div
                       key={t.id}
-                      onClick={() => setOpenTicketId(t.id)}
                       style={{
                         padding: "10px 12px",
                         borderRadius: 8,
@@ -312,13 +318,23 @@ export default function AdminPage() {
                         cursor: "pointer",
                         background: openTicketId === t.id ? "var(--bg2)" : "transparent",
                         border: "1px solid var(--border)",
+                        position: "relative",
                       }}
                     >
-                      <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>{t.subject}</div>
-                      <div style={{ fontSize: 11, color: "var(--t3)" }}>{t.user.name || t.user.email}</div>
-                      <div style={{ fontSize: 10.5, marginTop: 4, color: t.status === "acik" ? "var(--warn)" : t.status === "inceleniyor" ? "var(--gold)" : "var(--success)", fontWeight: 600 }}>
-                        {t.status === "acik" ? "Açık" : t.status === "inceleniyor" ? "İnceleniyor" : "Çözüldü"}
+                      <div onClick={() => setOpenTicketId(t.id)}>
+                        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3, paddingRight: 20 }}>{t.subject}</div>
+                        <div style={{ fontSize: 11, color: "var(--t3)" }}>{t.user.name || t.user.email}</div>
+                        <div style={{ fontSize: 10.5, marginTop: 4, color: t.status === "acik" ? "var(--warn)" : t.status === "inceleniyor" ? "var(--gold)" : "var(--success)", fontWeight: 600 }}>
+                          {t.status === "acik" ? "Açık" : t.status === "inceleniyor" ? "İnceleniyor" : "Çözüldü"}
+                        </div>
                       </div>
+                      <span
+                        onClick={(e) => { e.stopPropagation(); handleDeleteTicket(t.id); }}
+                        title="Talebi sil"
+                        style={{ position: "absolute", top: 10, right: 10, color: "var(--t3)", cursor: "pointer", fontSize: 12 }}
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -330,15 +346,24 @@ export default function AdminPage() {
                       <div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                           <div style={{ fontSize: 15, fontWeight: 600 }}>{t.subject}</div>
-                          <select
-                            value={t.status}
-                            onChange={(e) => handleUpdateTicketStatus(t.id, e.target.value)}
-                            style={{ padding: "5px 8px", borderRadius: 6, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--t0)", fontSize: 12 }}
-                          >
-                            <option value="acik">Açık</option>
-                            <option value="inceleniyor">İnceleniyor</option>
-                            <option value="cozuldu">Çözüldü</option>
-                          </select>
+                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <select
+                              value={t.status}
+                              onChange={(e) => handleUpdateTicketStatus(t.id, e.target.value)}
+                              style={{ padding: "5px 8px", borderRadius: 6, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--t0)", fontSize: 12 }}
+                            >
+                              <option value="acik">Açık</option>
+                              <option value="inceleniyor">İnceleniyor</option>
+                              <option value="cozuldu">Çözüldü</option>
+                            </select>
+                            <button
+                              onClick={() => handleDeleteTicket(t.id)}
+                              title="Talebi sil"
+                              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border2)", background: "transparent", color: "var(--danger)", cursor: "pointer" }}
+                            >
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                         <div style={{ maxHeight: 260, overflowY: "auto", marginBottom: 12 }}>
                           {t.messages.map((m) => (
