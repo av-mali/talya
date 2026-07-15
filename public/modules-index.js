@@ -221,11 +221,6 @@ window.MODULES_INDEX = [
         "id": "anasayfaistatistik",
         "icon": "fa-chart-simple",
         "name": "Ana Sayfa İstatistikleri"
-      },
-      {
-        "id": "telegrambaglanti",
-        "icon": "fa-paper-plane",
-        "name": "Talya Asistan (Telegram)"
       }
     ]
   }

@@ -11,8 +11,7 @@ window.CURRENT_MODULE = {
     {"id": "profil", "icon": "fa-user-circle", "name": "Profil Bilgileri"},
     {"id": "guvenlik", "icon": "fa-shield-halved", "name": "Güvenlik & Şifre"},
     {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"},
-    {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa İstatistikleri"},
-    {"id": "telegrambaglanti", "icon": "fa-paper-plane", "name": "Talya Asistan (Telegram)"}
+    {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa İstatistikleri"}
   ],
   popups: {
     plan: {
@@ -84,14 +83,6 @@ window.CURRENT_MODULE = {
       btnClass: 'g', btnIco: 'fa-chart-simple', btnLbl: '', hideCta: true,
       body: `<div id="homestats-box"></div>`,
       onOpen: () => homeStatsOnOpen(),
-      prompt: () => ''
-    },
-    telegrambaglanti: {
-      badge: 'g', badgeText: 'Talya Asistan', titleHtml: 'Telegram <em class="g">Bağlantısı</em>',
-      desc: 'Telegram\'dan "gündem" yazarak günlük özetinizi alın.',
-      btnClass: 'g', btnIco: 'fa-paper-plane', btnLbl: '', hideCta: true,
-      body: `<div id="telegram-box"></div>`,
-      onOpen: () => telegramOnOpen(),
       prompt: () => ''
     }
   }
@@ -290,92 +281,4 @@ function homeStatsToggle() {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ selected })
   }).then(() => toast('Kaydedildi', 'fa-solid fa-check', true));
-}
-
-// ══════════════════════════════════════════════════════
-// TALYA ASİSTAN — Telegram bağlantısı
-// ══════════════════════════════════════════════════════
-async function telegramOnOpen() {
-  const box = document.getElementById('telegram-box');
-  box.innerHTML = skeletonLines(3);
-  try {
-    const res = await fetch('/api/profile/telegram-code');
-    const data = await res.json();
-    telegramRender(data.connected, data.dailyTime);
-  } catch (e) {
-    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
-  }
-}
-
-function telegramRender(connected, dailyTime) {
-  const box = document.getElementById('telegram-box');
-  if (connected) {
-    box.innerHTML = `
-      <div class="ic" style="margin-bottom:14px;">
-        <div class="ic-t"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Bağlı</div>
-        <p>Telegram hesabınız bağlı. Bota "gündem" yazarak istediğiniz an özetinizi alabilirsiniz.</p>
-      </div>
-
-      <div class="fg">
-        <div class="fl">Her Gün Otomatik Gönderim Saati <span class="opt">(opsiyonel)</span></div>
-        <div style="display:flex;gap:6px;">
-          <input type="time" id="telegram-daily-time" value="${dailyTime || ''}" style="flex:1;">
-          <button class="pop-cta-btn b" style="width:auto;padding:8px 14px;" onclick="telegramSaveDailyTime()">Kaydet</button>
-        </div>
-        <div style="font-size:11px;color:var(--t3);margin-top:6px;">Belirlediğiniz saatte, siz yazmadan gündeminiz otomatik gönderilir. Boş bırakıp kaydederseniz otomatik gönderim kapanır.</div>
-      </div>
-
-      <button class="pop-cta-btn" style="width:100%;margin-top:14px;background:var(--danger);" onclick="telegramDisconnect()"><i class="fa-solid fa-link-slash"></i><span>Bağlantıyı Kaldır</span></button>
-    `;
-  } else {
-    box.innerHTML = `
-      <div style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:14px;">
-        <strong>Talya Asistan</strong>, Telegram üzerinden günlük gündeminizi (duruşmalar, alacaklar, görevler, Resmi Gazete özeti) size gönderen bir bot.
-      </div>
-      <ol style="font-size:12.5px;color:var(--t2);line-height:1.8;padding-left:18px;margin-bottom:14px;">
-        <li>Telegram'da <strong>@TalyaAsistanBot</strong>'u bulup başlatın.</li>
-        <li>Aşağıdaki butona basıp bir kod alın.</li>
-        <li>Bota <code>/baglan KOD</code> yazın.</li>
-      </ol>
-      <button class="pop-cta-btn g" style="width:100%;" onclick="telegramGetCode()"><i class="fa-solid fa-key"></i><span>Bağlantı Kodu Al</span></button>
-      <div id="telegram-code-box" style="margin-top:12px;"></div>
-    `;
-  }
-}
-
-async function telegramGetCode() {
-  const res = await fetch('/api/profile/telegram-code', { method: 'POST' });
-  const data = await res.json();
-  const box = document.getElementById('telegram-code-box');
-  if (res.ok) {
-    box.innerHTML = `
-      <div style="text-align:center;padding:16px;background:var(--bg2);border-radius:var(--r);">
-        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Kodunuz (10 dakika geçerli)</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:26px;letter-spacing:.1em;color:var(--gold);font-weight:600;">${data.code}</div>
-        <div style="font-size:11px;color:var(--t3);margin-top:8px;">Bota şunu gönderin: <code>/baglan ${data.code}</code></div>
-      </div>
-    `;
-  } else {
-    box.innerHTML = `<div style="color:var(--danger);font-size:12px;">${data.error || 'Kod alınamadı.'}</div>`;
-  }
-}
-
-async function telegramSaveDailyTime() {
-  const dailyTime = document.getElementById('telegram-daily-time').value;
-  const res = await fetch('/api/profile/telegram-code', {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dailyTime })
-  });
-  if (res.ok) {
-    toast(dailyTime ? `Her gün ${dailyTime}'de otomatik gönderilecek` : 'Otomatik gönderim kapatıldı', 'fa-solid fa-check', true);
-  } else {
-    toast('Kaydedilemedi', 'fa-solid fa-triangle-exclamation');
-  }
-}
-
-async function telegramDisconnect() {
-  if (!confirm('Telegram bağlantınızı kaldırmak istediğinize emin misiniz?')) return;
-  await fetch('/api/profile/telegram-code', { method: 'DELETE' });
-  toast('Bağlantı kaldırıldı', 'fa-solid fa-check', true);
-  telegramOnOpen();
 }

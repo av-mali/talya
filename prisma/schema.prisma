@@ -49,12 +49,6 @@ model User {
   restrictToOwnItems Boolean @default(false) // açıksa: sadece kendine atanmış dosya/görevleri görür (birden fazla kullanıcılı bürolarda)
   assignedCases Case[] @relation("CaseAssignee")
   assignedTasks Task[] @relation("TaskAssignee")
-  // ── Talya Asistan (Telegram Botu) ──
-  telegramChatId     String?   @unique
-  telegramLinkCode   String?
-  telegramLinkCodeExpiry DateTime?
-  telegramDailyTime  String?   // "08:00" gibi — her gün bu saatte otomatik gündem gönderilir
-  telegramLastSentDate String? // "2026-07-15" — aynı gün içinde iki kez göndermemek için
 }
 
 // Büro (Workspace) — birden fazla kullanıcının aynı müvekkil/dosya
