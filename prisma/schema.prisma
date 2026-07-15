@@ -134,6 +134,7 @@ model Client {
   notes       String?   // genel not (dava konusu vb.)
   tcMersis    String?   // TC Kimlik No / Mersis No
   archived    Boolean   @default(false)
+  portalPasswordHash String? // müvekkil paneli girişi için (TC No + bu şifre)
   createdAt   DateTime  @default(now())
   // ── GÖÇ NOTU: workspaceId yeni sistem, userId eski sistem ──
   // Veri kaybı olmasın diye ikisini de bir arada tutuyoruz. Bir
@@ -145,6 +146,17 @@ model Client {
   userId      String?
   logs        ClientLog[]
   cases       Case[]
+  messages    ClientPortalMessage[]
+}
+
+// Müvekkil Paneli üzerinden müvekkil ile büro arasındaki yazışma
+model ClientPortalMessage {
+  id           String   @id @default(cuid())
+  content      String
+  isFromClient Boolean  @default(true) // müvekkil mi yazdı, büro mu
+  createdAt    DateTime @default(now())
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId     String
 }
 
 // "Ne zaman ne konuşmuşuz" — müvekkille genel görüşme / iletişim kaydı

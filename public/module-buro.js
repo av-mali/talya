@@ -387,6 +387,7 @@ function mvRenderClientView() {
       </div>
       <div id="mv-edit-form" style="display:none;margin-top:10px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);">
         <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-e-name" value="${c.name.replace(/"/g,'&quot;')}"></div>
+        <div class="fg"><div class="fl">TC Kimlik / Mersis No</div><input type="text" id="mv-e-tc" value="${(c.tcMersis||'').replace(/"/g,'&quot;')}"></div>
         <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-e-phone" value="${(c.phone||'').replace(/"/g,'&quot;')}"></div>
         <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-e-email" value="${(c.email||'').replace(/"/g,'&quot;')}"></div>
         <div class="fg"><div class="fl">Not</div><textarea id="mv-e-note" rows="2">${(c.notes||'')}</textarea></div>
@@ -410,12 +411,26 @@ function mvRenderClientView() {
         <button class="pop-cta-btn p" style="padding:6px 12px;" onclick="mvAddCase()"><span>Ekle</span></button>
       </div>
 
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-user-lock"></i> Müvekkil Paneli Erişimi</div>
+      <div id="mv-portal-box">
+        ${c.tcMersis ? `
+          <button class="pop-cta-btn b" style="width:100%;" onclick="mvOpenPortalAccess('${c.id}')"><i class="fa-solid fa-key"></i><span>${c.portalPasswordHash ? 'Şifreyi Sıfırla' : 'Müvekkil Erişimi Aç'}</span></button>
+          ${c.portalPasswordHash ? `<button class="pop-cta-btn" style="width:100%;margin-top:6px;background:var(--danger);" onclick="mvClosePortalAccess('${c.id}')"><span>Erişimi Kapat</span></button>` : ''}
+        ` : `<div style="font-size:11.5px;color:var(--t3);">Erişim açmak için önce yukarıdan TC Kimlik No girin.</div>`}
+      </div>
+
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 6px;"><i class="fa-solid fa-comment-dots"></i> Müvekkil Mesajları</div>
+      <div id="mv-portal-messages">${skeletonLines(2)}</div>
+      <textarea id="mv-portal-reply" rows="2" placeholder="Müvekkile cevap yazın…" style="margin-top:8px;"></textarea>
+      <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvSendPortalMessage('${c.id}')"><span>Gönder</span></button>
+
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 6px;"><i class="fa-solid fa-comments"></i> Genel Görüşme Geçmişi</div>
       <div id="mv-logs">${c.logs.length ? c.logs.map(l => `<div style="padding:6px 0;border-bottom:1px solid var(--border);"><div style="font-size:10px;color:var(--t3);">${new Date(l.createdAt).toLocaleString('tr-TR')}</div><div style="font-size:12.5px;">${l.content}</div></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz görüşme kaydı yok.</div>'}</div>
       <textarea id="mv-log-text" rows="2" placeholder="Ne konuşuldu, ne karar verildi…" style="margin-top:8px;"></textarea>
       <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvAddLog()"><span>Notu Kaydet</span></button>
     </div>
   `;
+  mvLoadPortalMessages(c.id);
 }
 
 async function mvAddCase() {
@@ -599,13 +614,14 @@ function mvEditToggle() {
 async function mvSaveEdit() {
   if (!mvSelectedId) return;
   const name = document.getElementById('mv-e-name').value.trim();
+  const tcMersis = document.getElementById('mv-e-tc').value.trim();
   const phone = document.getElementById('mv-e-phone').value;
   const email = document.getElementById('mv-e-email').value;
   const notes = document.getElementById('mv-e-note').value;
   if (!name) { toast('Müvekkil adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
   await fetch('/api/clients/' + mvSelectedId, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, phone, email, notes })
+    body: JSON.stringify({ name, tcMersis, phone, email, notes })
   });
   toast('Bilgiler güncellendi', 'fa-solid fa-check', true);
   mvSelect(mvSelectedId);
@@ -1893,4 +1909,65 @@ async function ekipSavePermissions(memberId) {
   } else {
     toast('Güncellenemedi', 'fa-solid fa-triangle-exclamation');
   }
+}
+
+// ══════════════════════════════════════════════════════
+// MÜVEKKİL PANELİ ERİŞİMİ VE MESAJLAŞMA
+// ══════════════════════════════════════════════════════
+async function mvOpenPortalAccess(clientId) {
+  if (!confirm('Yeni bir şifre üretilecek ve müvekkile göndermeniz gerekecek. Devam edilsin mi?')) return;
+  const res = await fetch('/api/clients/' + clientId + '/portal-access', { method: 'POST' });
+  const data = await res.json();
+  const box = document.getElementById('mv-portal-box');
+  if (!res.ok) {
+    toast(data.error || 'Açılamadı', 'fa-solid fa-triangle-exclamation');
+    return;
+  }
+  box.innerHTML = `
+    <div style="background:var(--gold-lo);border:1px solid var(--gold-rule);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--t3);margin-bottom:4px;">Müvekkile iletin — bir daha gösterilmeyecek</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:.08em;color:var(--gold);font-weight:600;">${data.password}</div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:6px;">TC No: ${data.tcMersis} · talyahukuk.com/muvekkil</div>
+    </div>
+    <button class="pop-cta-btn" style="width:100%;background:var(--danger);" onclick="mvClosePortalAccess('${clientId}')"><span>Erişimi Kapat</span></button>
+  `;
+  toast('Erişim açıldı', 'fa-solid fa-check', true);
+}
+
+async function mvClosePortalAccess(clientId) {
+  if (!confirm('Müvekkilin panel erişimini kapatmak istediğinize emin misiniz?')) return;
+  await fetch('/api/clients/' + clientId + '/portal-access', { method: 'DELETE' });
+  toast('Erişim kapatıldı', 'fa-solid fa-check', true);
+  mvSelect(clientId);
+}
+
+async function mvLoadPortalMessages(clientId) {
+  const box = document.getElementById('mv-portal-messages');
+  if (!box) return;
+  try {
+    const res = await fetch('/api/clients/' + clientId + '/portal-messages');
+    const data = await res.json();
+    const msgs = data.messages || [];
+    box.innerHTML = msgs.length ? msgs.map(m => `
+      <div style="margin-bottom:8px;padding:9px 12px;border-radius:var(--r);background:${m.isFromClient ? 'var(--bg2)' : 'var(--gold-lo)'};">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:2px;">${m.isFromClient ? 'Müvekkil' : 'Siz'} — ${new Date(m.createdAt).toLocaleString('tr-TR')}</div>
+        <div style="font-size:12.5px;white-space:pre-wrap;">${m.content.replace(/</g,'&lt;')}</div>
+      </div>
+    `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz mesaj yok.</div>';
+  } catch (e) {
+    box.innerHTML = '<div style="font-size:12px;color:var(--danger);">Yüklenemedi.</div>';
+  }
+}
+
+async function mvSendPortalMessage(clientId) {
+  const el = document.getElementById('mv-portal-reply');
+  const content = el.value.trim();
+  if (!content) { toast('Mesaj boş olamaz', 'fa-solid fa-triangle-exclamation'); return; }
+  await fetch('/api/clients/' + clientId + '/portal-messages', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content })
+  });
+  el.value = '';
+  toast('Mesaj gönderildi', 'fa-solid fa-check', true);
+  mvLoadPortalMessages(clientId);
 }
