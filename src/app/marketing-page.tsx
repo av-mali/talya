@@ -112,22 +112,21 @@ export default function LandingPage() {
           <div className="glow-blob b" style={{ top: 40, left: "20%", zIndex: 0 }}></div>
           <div className="glow-blob c" style={{ top: 120, right: "15%", zIndex: 0 }}></div>
 
-          <div className="hero-mark" aria-hidden="true">
-            <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg">
-              <g className="beam-arm">
-                <line className="beam-hi" x1="180" y1="190" x2="1020" y2="190" />
-                <line className="beam" x1="600" y1="60" x2="600" y2="190" />
-                <line className="beam" x1="180" y1="190" x2="180" y2="330" />
-                <line className="beam" x1="140" y1="330" x2="220" y2="330" />
-                <line className="beam" x1="1020" y1="190" x2="1020" y2="330" />
-                <line className="beam" x1="980" y1="330" x2="1060" y2="330" />
-                <path className="tick" d="M 155 240 Q 180 270 205 240" fill="none" />
-                <path className="tick" d="M 995 240 Q 1020 270 1045 240" fill="none" />
-              </g>
-              <line className="beam" x1="600" y1="60" x2="600" y2="600" />
-              <line className="beam-hi" x1="520" y1="600" x2="680" y2="600" />
-            </svg>
-          </div>
+          <i
+            className="fa-solid fa-scale-balanced"
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: 10,
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontSize: 320,
+              color: "var(--gold)",
+              opacity: 0.08,
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          ></i>
 
           <div style={{ position: "relative", zIndex: 1, maxWidth: 720, margin: "0 auto" }}>
             <div className="hero-badge"><i className="fa-solid fa-circle" style={{ fontSize: 6, animation: "breathe 2s infinite" }}></i> Türkiye'nin Yeni Nesil Hukuk AI Suite'i</div>
