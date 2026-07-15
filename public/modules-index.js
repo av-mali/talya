@@ -226,6 +226,11 @@ window.MODULES_INDEX = [
         "id": "telegrambaglanti",
         "icon": "fa-paper-plane",
         "name": "Talya Asistan (Telegram)"
+      },
+      {
+        "id": "destek",
+        "icon": "fa-headset",
+        "name": "Destek / Öneri"
       }
     ]
   }

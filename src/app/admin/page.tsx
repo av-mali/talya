@@ -32,6 +32,15 @@ type WorkspaceRow = {
   memberEmails: string[];
 };
 
+type SupportTicket = {
+  id: string;
+  subject: string;
+  status: string;
+  updatedAt: string;
+  user: { name: string | null; email: string };
+  messages: { id: string; content: string; isAdmin: boolean; createdAt: string }[];
+};
+
 type Stats = { userCount: number; messageCount: number };
 type Constants = { kidemTavani: number; faizOrani: number; kiraTufeOrani: number };
 
@@ -45,14 +54,18 @@ export default function AdminPage() {
   const [forbidden, setForbidden] = useState(false);
   const [constants, setConstants] = useState<Constants | null>(null);
   const [savingConstants, setSavingConstants] = useState(false);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [openTicketId, setOpenTicketId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   const load = useCallback(async () => {
-    const [uRes, sRes, cRes, pRes, wRes] = await Promise.all([
+    const [uRes, sRes, cRes, pRes, wRes, tRes] = await Promise.all([
       fetch("/api/admin/users"),
       fetch("/api/admin/stats"),
       fetch("/api/constants"),
       fetch("/api/admin/pending-users"),
       fetch("/api/admin/workspaces"),
+      fetch("/api/admin/support"),
     ]);
     if (uRes.status === 403 || sRes.status === 403) {
       setForbidden(true);
@@ -74,7 +87,29 @@ export default function AdminPage() {
       const wData = await wRes.json();
       setWorkspaces(wData.workspaces || []);
     }
+    if (tRes.ok) {
+      const tData = await tRes.json();
+      setTickets(tData.tickets || []);
+    }
   }, []);
+
+  async function handleUpdateTicketStatus(id: string, statusVal: string) {
+    await fetch(`/api/admin/support/${id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: statusVal }),
+    });
+    load();
+  }
+
+  async function handleSendTicketReply(id: string) {
+    if (!replyText.trim()) return;
+    await fetch(`/api/admin/support/${id}/message`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: replyText.trim() }),
+    });
+    setReplyText("");
+    load();
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -253,6 +288,86 @@ export default function AdminPage() {
                   </button>
                 </div>
               </form>
+            )}
+          </div>
+
+          {/* DESTEK TALEPLERİ */}
+          <div className="dash-card" style={{ marginTop: 24 }}>
+            <div className="dash-head">
+              <div className="dash-title"><i className="fa-solid fa-headset"></i> Destek Talepleri ({tickets.length})</div>
+            </div>
+            {tickets.length === 0 ? (
+              <div style={{ fontSize: 12.5, color: "var(--t3)" }}>Henüz bir talep yok.</div>
+            ) : (
+              <div style={{ display: "flex", gap: 16 }}>
+                <div style={{ flex: "0 0 280px", maxHeight: 420, overflowY: "auto" }}>
+                  {tickets.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => setOpenTicketId(t.id)}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: 8,
+                        marginBottom: 6,
+                        cursor: "pointer",
+                        background: openTicketId === t.id ? "var(--bg2)" : "transparent",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>{t.subject}</div>
+                      <div style={{ fontSize: 11, color: "var(--t3)" }}>{t.user.name || t.user.email}</div>
+                      <div style={{ fontSize: 10.5, marginTop: 4, color: t.status === "acik" ? "var(--warn)" : t.status === "inceleniyor" ? "var(--gold)" : "var(--success)", fontWeight: 600 }}>
+                        {t.status === "acik" ? "Açık" : t.status === "inceleniyor" ? "İnceleniyor" : "Çözüldü"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ flex: 1 }}>
+                  {(() => {
+                    const t = tickets.find((tt) => tt.id === openTicketId);
+                    if (!t) return <div style={{ fontSize: 12.5, color: "var(--t3)" }}>Soldan bir talep seçin.</div>;
+                    return (
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                          <div style={{ fontSize: 15, fontWeight: 600 }}>{t.subject}</div>
+                          <select
+                            value={t.status}
+                            onChange={(e) => handleUpdateTicketStatus(t.id, e.target.value)}
+                            style={{ padding: "5px 8px", borderRadius: 6, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--t0)", fontSize: 12 }}
+                          >
+                            <option value="acik">Açık</option>
+                            <option value="inceleniyor">İnceleniyor</option>
+                            <option value="cozuldu">Çözüldü</option>
+                          </select>
+                        </div>
+                        <div style={{ maxHeight: 260, overflowY: "auto", marginBottom: 12 }}>
+                          {t.messages.map((m) => (
+                            <div key={m.id} style={{ marginBottom: 10, padding: "10px 12px", borderRadius: 8, background: m.isAdmin ? "var(--gold-lo)" : "var(--bg2)" }}>
+                              <div style={{ fontSize: 10, color: "var(--t3)", marginBottom: 3 }}>
+                                {m.isAdmin ? "Siz (Yönetici)" : t.user.name || t.user.email} — {new Date(m.createdAt).toLocaleString("tr-TR")}
+                              </div>
+                              <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{m.content}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          rows={3}
+                          placeholder="Cevap yazın…"
+                          style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--t0)", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }}
+                        />
+                        <button
+                          onClick={() => handleSendTicketReply(t.id)}
+                          style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#fff", cursor: "pointer", fontSize: 13 }}
+                        >
+                          Gönder
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
             )}
           </div>
 
