@@ -671,18 +671,43 @@ async function renderDashDeadlines() {
 
 // ── BİLDİRİMLER (gerçek veri: yaklaşan duruşma/ödeme tarihleri) ──
 let NOTIFS = [];
+let seenMessageNotifIds = new Set();
+let notifPollStarted = false;
 
 async function loadRealNotifications() {
   try {
     const res = await fetch('/api/notifications');
     if (!res.ok) return;
     const data = await res.json();
-    NOTIFS = (data.notifications || []).map((n, i) => ({ ...n, id: n.id || i }));
+    const fresh = (data.notifications || []).map((n, i) => ({ ...n, id: n.id || i }));
+
+    // Yeni gelen müvekkil mesajı bildirimleri için gerçek bir popup göster
+    // (sadece zilde birikmesin, dikkat çeksin). İlk yüklemede (sayfa yeni
+    // açıldığında) hiçbirini "yeni" saymıyoruz — yoksa her girişte eski
+    // mesajlar için de popup çıkardı.
+    const isFirstLoad = seenMessageNotifIds.size === 0 && !notifPollStarted;
+    fresh.forEach(n => {
+      if (n.type === 'musteri_mesaj' && !seenMessageNotifIds.has(n.id)) {
+        seenMessageNotifIds.add(n.id);
+        if (!isFirstLoad) {
+          toast(n.text, 'fa-solid fa-comment-dots', true);
+        }
+      }
+    });
+    notifPollStarted = true;
+
+    NOTIFS = fresh;
     renderNotifs();
   } catch (e) { /* sessizce geç */ }
 }
 
-let notifPrefs = { sure: true, tebligat: true };
+// Yeni müvekkil mesajlarını yakalamak için düzenli aralıklarla kontrol et.
+if (typeof window !== 'undefined' && !window.__talyaNotifPollStarted) {
+  window.__talyaNotifPollStarted = true;
+  setInterval(loadRealNotifications, 60000);
+}
+
+let notifPrefs = { sure: true, tebligat: true, musteri_mesaj: true };
 let activeFilter = 'all';
 
 async function loadNotifPrefs() {
@@ -690,7 +715,10 @@ async function loadNotifPrefs() {
     const res = await fetch('/api/profile/notif-prefs');
     if (!res.ok) return;
     const data = await res.json();
-    if (data.prefs) { notifPrefs = data.prefs; renderNotifs(); }
+    // Eski kaydedilmiş tercihlerde "musteri_mesaj" anahtarı hiç yoksa
+    // (yeni eklendiği için), varsayılan olarak açık kalsın diye önce
+    // varsayılanları, sonra kullanıcının kaydettiklerini uyguluyoruz.
+    if (data.prefs) { notifPrefs = { sure: true, tebligat: true, musteri_mesaj: true, ...data.prefs }; renderNotifs(); }
   } catch (e) { /* varsayılan tercihlerle devam */ }
 }
 
@@ -744,6 +772,11 @@ function readNotif(id) {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id })
   }).catch(() => {});
+
+  // Müvekkil mesajı bildirimiyse, doğrudan o müvekkilin mesaj ekranına götür.
+  if (n && n.type === 'musteri_mesaj' && n.clientId) {
+    window.location.href = '/dashboard/buro?openClient=' + n.clientId;
+  }
 }
 
 function markAllRead() {

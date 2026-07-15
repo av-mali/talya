@@ -13,7 +13,7 @@ export async function GET() {
     include: {
       cases: {
         include: {
-          events: { orderBy: { dueDate: "asc" }, where: { dueDate: { gte: new Date() } }, take: 3 },
+          events: { orderBy: { dueDate: "desc" } },
           invoices: { orderBy: { createdAt: "desc" } },
         },
       },
@@ -30,7 +30,7 @@ export async function GET() {
       agreedFee: c.agreedFee,
       invoicedTotal,
       remaining: c.agreedFee ? Math.max(0, c.agreedFee - invoicedTotal) : null,
-      upcomingEvents: c.events.map((e) => ({ type: e.type, title: e.title, dueDate: e.dueDate })),
+      events: c.events.map((e) => ({ type: e.type, title: e.title, dueDate: e.dueDate })),
     };
   });
 

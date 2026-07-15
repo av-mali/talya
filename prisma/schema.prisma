@@ -154,6 +154,7 @@ model ClientPortalMessage {
   id           String   @id @default(cuid())
   content      String
   isFromClient Boolean  @default(true) // müvekkil mi yazdı, büro mu
+  isRead       Boolean  @default(false) // büro bu mesajı gördü mü (sadece müvekkil mesajları için anlamlı)
   createdAt    DateTime @default(now())
   client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId     String

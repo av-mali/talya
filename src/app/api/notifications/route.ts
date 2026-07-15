@@ -30,7 +30,7 @@ export async function GET() {
     return Math.round((dueMidnight.getTime() - nowMidnight.getTime()) / 86400000);
   }
 
-  const [events, tasks, readRows] = await Promise.all([
+  const [events, tasks, readRows, clientMessages] = await Promise.all([
     ws ? prisma.clientEvent.findMany({
       where: {
         case: {
@@ -53,6 +53,11 @@ export async function GET() {
       orderBy: { dueDate: "asc" },
     }) : Promise.resolve([]),
     prisma.notificationRead.findMany({ where: { userId }, select: { notifId: true } }),
+    ws ? prisma.clientPortalMessage.findMany({
+      where: { isFromClient: true, isRead: false, client: { workspaceId: ws.workspaceId } },
+      include: { client: true },
+      orderBy: { createdAt: "desc" },
+    }) : Promise.resolve([]),
   ]);
 
   const readIds = new Set(readRows.map((r) => r.notifId));
@@ -100,7 +105,20 @@ export async function GET() {
     };
   });
 
-  const notifs = [...eventNotifs, ...taskNotifs].sort(
+  const messageNotifs = clientMessages.map((m) => ({
+    id: "msg-" + m.id,
+    type: "musteri_mesaj",
+    ico: "fa-comment-dots",
+    level: "info",
+    label: "Müvekkil Mesajı",
+    text: `${m.client.name}: ${m.content.slice(0, 60)}${m.content.length > 60 ? "…" : ""}`,
+    time: new Date(m.createdAt).toLocaleDateString("tr-TR"),
+    dueDate: m.createdAt,
+    clientId: m.clientId,
+    read: false,
+  }));
+
+  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs].sort(
     (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   );
 

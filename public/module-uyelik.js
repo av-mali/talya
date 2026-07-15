@@ -199,7 +199,7 @@ async function bildirimOnOpen() {
   try {
     const res = await fetch('/api/profile/notif-prefs');
     const data = await res.json();
-    const prefs = data.prefs || { sure: true, tebligat: true };
+    const prefs = data.prefs || { sure: true, tebligat: true, musteri_mesaj: true };
     box.innerHTML = `
       <div class="cl">
         <div class="cl-head"><i class="fa-solid fa-bell"></i> Bildirim Türleri</div>
@@ -210,6 +210,10 @@ async function bildirimOnOpen() {
         <div class="cl-item" style="cursor:pointer;" onclick="bildirimToggle('tebligat', this)">
           <div class="cl-dot">${prefs.tebligat ? '<i class="fa-solid fa-check"></i>' : ''}</div>
           <span>Ödeme hatırlatmaları</span>
+        </div>
+        <div class="cl-item" style="cursor:pointer;" onclick="bildirimToggle('musteri_mesaj', this)">
+          <div class="cl-dot">${prefs.musteri_mesaj !== false ? '<i class="fa-solid fa-check"></i>' : ''}</div>
+          <span>Müvekkil mesajları</span>
         </div>
       </div>
       <div style="font-size:11px;color:var(--t3);margin-top:10px;">Değişiklik anında kaydedilir.</div>

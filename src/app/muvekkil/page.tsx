@@ -9,7 +9,7 @@ type CaseInfo = {
   agreedFee: number | null;
   invoicedTotal: number;
   remaining: number | null;
-  upcomingEvents: { type: string; title: string; dueDate: string }[];
+  events: { type: string; title: string; dueDate: string }[];
 };
 
 type Message = { id: string; content: string; isFromClient: boolean; createdAt: string };
@@ -117,24 +117,28 @@ export default function MuvekkilPage() {
                       </span>
                     </div>
 
-                    {c.upcomingEvents.length > 0 && (
+                    {c.events.length > 0 && (
                       <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 10.5, color: "var(--t3)", marginBottom: 4 }}>Yaklaşan Tarihler</div>
-                        {c.upcomingEvents.map((e, i) => (
-                          <div key={i} style={{ fontSize: 12.5, color: "var(--t1)", marginBottom: 2 }}>
-                            {EVENT_LABELS[e.type] || e.type}: {new Date(e.dueDate).toLocaleDateString("tr-TR")} — {e.title}
-                          </div>
-                        ))}
+                        <div style={{ fontSize: 10.5, color: "var(--t3)", marginBottom: 4 }}>Tarihler</div>
+                        {c.events.map((e, i) => {
+                          const isPast = new Date(e.dueDate) < new Date();
+                          return (
+                            <div key={i} style={{ fontSize: 12.5, color: isPast ? "var(--t3)" : "var(--t1)", marginBottom: 2 }}>
+                              {EVENT_LABELS[e.type] || e.type}: {new Date(e.dueDate).toLocaleDateString("tr-TR")} — {e.title}{isPast ? " (geçti)" : ""}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
                     {c.agreedFee != null && (
                       <div style={{ fontSize: 12.5, color: "var(--t2)", borderTop: "1px solid var(--border)", paddingTop: 10 }}>
-                        Anlaşılan Ücret: <strong>{fmtTL(c.agreedFee)}</strong>
+                        <div>Anlaşılan Ücret: <strong>{fmtTL(c.agreedFee)}</strong></div>
+                        <div>Ödenen: <strong style={{ color: "var(--success)" }}>{fmtTL(c.invoicedTotal)}</strong></div>
                         {c.remaining != null && c.remaining > 0 && (
-                          <span style={{ color: "var(--warn)" }}> — Bekleyen: {fmtTL(c.remaining)}</span>
+                          <div style={{ color: "var(--warn)" }}>Bekleyen: {fmtTL(c.remaining)}</div>
                         )}
-                        {c.remaining === 0 && <span style={{ color: "var(--success)" }}> — Ödeme tamamlandı</span>}
+                        {c.remaining === 0 && <div style={{ color: "var(--success)" }}>Ödeme tamamlandı ✓</div>}
                       </div>
                     )}
                   </div>

@@ -1949,14 +1949,24 @@ async function mvLoadPortalMessages(clientId) {
     const data = await res.json();
     const msgs = data.messages || [];
     box.innerHTML = msgs.length ? msgs.map(m => `
-      <div style="margin-bottom:8px;padding:9px 12px;border-radius:var(--r);background:${m.isFromClient ? 'var(--bg2)' : 'var(--gold-lo)'};">
-        <div style="font-size:10px;color:var(--t3);margin-bottom:2px;">${m.isFromClient ? 'Müvekkil' : 'Siz'} — ${new Date(m.createdAt).toLocaleString('tr-TR')}</div>
+      <div style="margin-bottom:8px;padding:9px 12px;border-radius:var(--r);background:${m.isFromClient ? 'var(--bg2)' : 'var(--gold-lo)'};position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:2px;">${m.isFromClient ? 'Müvekkil' : 'Siz'} — ${new Date(m.createdAt).toLocaleString('tr-TR')}</div>
+          <span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="mvDeletePortalMessage('${clientId}','${m.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+        </div>
         <div style="font-size:12.5px;white-space:pre-wrap;">${m.content.replace(/</g,'&lt;')}</div>
       </div>
     `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz mesaj yok.</div>';
   } catch (e) {
     box.innerHTML = '<div style="font-size:12px;color:var(--danger);">Yüklenemedi.</div>';
   }
+}
+
+async function mvDeletePortalMessage(clientId, messageId) {
+  if (!confirm('Bu mesajı silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/clients/' + clientId + '/portal-messages?messageId=' + messageId, { method: 'DELETE' });
+  toast('Mesaj silindi', 'fa-solid fa-trash');
+  mvLoadPortalMessages(clientId);
 }
 
 async function mvSendPortalMessage(clientId) {
@@ -1971,3 +1981,13 @@ async function mvSendPortalMessage(clientId) {
   toast('Mesaj gönderildi', 'fa-solid fa-check', true);
   mvLoadPortalMessages(clientId);
 }
+
+// Bildirim zilinden "müvekkil mesajı" bildirimine tıklanınca buraya
+// ?openClient=ID ile geliniyor — sayfa yüklenince o müvekkili otomatik aç.
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const openClientId = params.get('openClient');
+  if (openClientId) {
+    setTimeout(() => { if (typeof mvSelect === 'function') mvSelect(openClientId); }, 400);
+  }
+})();
