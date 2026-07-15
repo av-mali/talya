@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
-import { requireWorkspace } from "@/lib/workspace";
+import { requireWorkspace, shouldRestrictToOwnItems } from "@/lib/workspace";
 
 // Önümüzdeki 14 gün içindeki (ve geçmiş, henüz görülmemiş) duruşma/ödeme
 // tarihlerini VE süresi yaklaşan görevleri bildirim olarak döndürür —
@@ -13,6 +13,7 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const userId = (session.user as any).id as string;
   const ws = await requireWorkspace();
+  const restricted = ws ? await shouldRestrictToOwnItems(ws.userId) : false;
 
   const now = new Date();
   // Bildirim zili artık sadece ACİL (2 gün ve altı) kayıtları gösterir —
@@ -31,12 +32,23 @@ export async function GET() {
 
   const [events, tasks, readRows] = await Promise.all([
     ws ? prisma.clientEvent.findMany({
-      where: { case: { client: { workspaceId: ws.workspaceId } }, dueDate: { lte: in2days } },
+      where: {
+        case: {
+          client: { workspaceId: ws.workspaceId },
+          ...(restricted ? { assignedToId: ws.userId } : {}),
+        },
+        dueDate: { lte: in2days },
+      },
       include: { case: { include: { client: true } } },
       orderBy: { dueDate: "asc" },
     }) : Promise.resolve([]),
     ws ? prisma.task.findMany({
-      where: { workspaceId: ws.workspaceId, done: false, dueDate: { not: null, lte: in2days } },
+      where: {
+        workspaceId: ws.workspaceId,
+        done: false,
+        dueDate: { not: null, lte: in2days },
+        ...(restricted ? { assignedToId: ws.userId } : {}),
+      },
       orderBy: { dueDate: "asc" },
     }) : Promise.resolve([]),
     prisma.notificationRead.findMany({ where: { userId }, select: { notifId: true } }),

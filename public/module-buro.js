@@ -122,6 +122,10 @@ window.CURRENT_MODULE = {
       body: `
         <div class="fg"><input type="text" id="task-title" placeholder="Yeni görev…" onkeydown="if(event.key==='Enter')taskAdd()"></div>
         <div class="fg"><input type="date" id="task-date"></div>
+        <div class="fg" id="task-assignee-wrap" style="display:none;">
+          <div class="fl">Kime Atansın <span class="opt">(opsiyonel)</span></div>
+          <select id="task-assignee"></select>
+        </div>
         <button class="pop-cta-btn b" style="width:100%;" onclick="taskAdd()"><i class="fa-solid fa-plus"></i><span>Görev Ekle</span></button>
       `,
       onOpen: () => taskOnOpen(),
@@ -224,6 +228,27 @@ function detailPlaceholder(text) {
 // MÜVEKKİL YÖNETİMİ
 // ══════════════════════════════════════════════════════
 let mvSelectedId = null;
+
+// Büro üyelerini önbelleğe alır — "Sorumlu Avukat"/"Kime Atandı" gibi
+// atama seçicilerinde ve "birden fazla kullanıcı var mı" kontrolünde
+// tekrar tekrar istek atmamak için tüm Büro Yönetimi araçlarında paylaşılır.
+let workspaceMembersCache = null;
+async function getWorkspaceMembers() {
+  if (workspaceMembersCache) return workspaceMembersCache;
+  try {
+    const res = await fetch('/api/workspace');
+    const data = await res.json();
+    workspaceMembersCache = (data.workspace && data.workspace.members) || [];
+  } catch (e) {
+    workspaceMembersCache = [];
+  }
+  return workspaceMembersCache;
+}
+function assigneeOptionsHtml(members, selectedId) {
+  return `<option value="">— Atanmamış —</option>` + members.map(m =>
+    `<option value="${m.id}" ${m.id === selectedId ? 'selected' : ''}>${m.name || m.email}</option>`
+  ).join('');
+}
 let mvCaseCache = null;
 let mvLastQuery = '';
 let mvClientCache = null;
@@ -409,7 +434,10 @@ async function mvOpenCase(caseId) {
   mvOpenCaseId = caseId;
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
-  const res = await fetch('/api/cases/' + caseId);
+  const [res, members] = await Promise.all([
+    fetch('/api/cases/' + caseId),
+    getWorkspaceMembers(),
+  ]);
   const data = await res.json();
   if (!data.case) { mvRenderClientView(); return; }
   const cs = data.case;
@@ -437,6 +465,15 @@ async function mvOpenCase(caseId) {
           <button class="pop-cta-btn" style="padding:5px 10px;background:var(--danger);" onclick="mvDeleteCase('${cs.id}')"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
+
+      ${members.length > 1 ? `
+        <div style="margin-top:10px;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:3px;"><i class="fa-solid fa-user-tie"></i> Sorumlu Avukat</div>
+          <select onchange="mvSetCaseAssignee('${cs.id}', this.value)" style="width:100%;font-size:12px;">
+            ${assigneeOptionsHtml(members, cs.assignedToId)}
+          </select>
+        </div>
+      ` : ''}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Tarihler</div>
       <div id="mv-events">${cs.events.length ? cs.events.map(ev => {
@@ -530,6 +567,14 @@ async function mvSetCaseStatus(caseId, status) {
     body: JSON.stringify({ status })
   });
   toast('Dosya durumu güncellendi', 'fa-solid fa-check', true);
+}
+
+async function mvSetCaseAssignee(caseId, assignedToId) {
+  await fetch('/api/cases/' + caseId, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assignedToId: assignedToId || null })
+  });
+  toast('Sorumlu avukat güncellendi', 'fa-solid fa-check', true);
 }
 
 async function mvDeleteCase(caseId) {
@@ -970,6 +1015,16 @@ const KANBAN_COLUMNS = [
 async function taskOnOpen() {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
+
+  const members = await getWorkspaceMembers();
+  const wrap = document.getElementById('task-assignee-wrap');
+  if (members.length > 1 && wrap) {
+    wrap.style.display = '';
+    document.getElementById('task-assignee').innerHTML = assigneeOptionsHtml(members, null);
+  } else if (wrap) {
+    wrap.style.display = 'none';
+  }
+
   await taskRenderList();
 }
 
@@ -1018,6 +1073,7 @@ function taskCard(t, colKey) {
          ondragstart="event.dataTransfer.setData('text/plain','${t.id}')"
          style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
       <div style="font-size:12.5px;margin-bottom:4px;">${t.title}</div>
+      ${t.assignedTo ? `<div style="font-size:10px;color:var(--t3);margin-bottom:4px;"><i class="fa-solid fa-user"></i> ${t.assignedTo.name || t.assignedTo.email}</div>` : ''}
       ${t.dueDate ? `<div style="font-size:10px;color:${overdue ? 'var(--danger)' : 'var(--t3)'};margin-bottom:6px;"><i class="fa-solid fa-calendar"></i> ${new Date(t.dueDate).toLocaleDateString('tr-TR')}${overdue ? ' — süresi geçti' : ''}</div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
         <span style="display:flex;gap:6px;">
@@ -1047,10 +1103,12 @@ async function taskMoveStatus(id, status) {
 async function taskAdd() {
   const title = document.getElementById('task-title').value.trim();
   const dueDate = document.getElementById('task-date').value;
+  const assigneeEl = document.getElementById('task-assignee');
+  const assignedToId = assigneeEl && assigneeEl.closest('#task-assignee-wrap').style.display !== 'none' ? assigneeEl.value : null;
   if (!title) { toast('Görev başlığı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
   await fetch('/api/tasks', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, dueDate: dueDate || null })
+    body: JSON.stringify({ title, dueDate: dueDate || null, assignedToId })
   });
   document.getElementById('task-title').value = '';
   document.getElementById('task-date').value = '';
@@ -1776,6 +1834,11 @@ function ekipShowPermissions(memberId) {
       <span style="font-size:12.5px;"><strong>AI Kullanımı</strong> (sohbet, Dosya Analizi, Dilekçe Sihirbazı vb. — kapatılırsa hiçbiri kullanılamaz)</span>
     </label>
 
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px;cursor:pointer;">
+      <input type="checkbox" id="ekip-perm-restrict" ${member.restrictToOwnItems ? 'checked' : ''}>
+      <span style="font-size:12.5px;"><strong>Sadece Kendine Atanmış Görünsün</strong> (açılırsa, bu üye sadece kendine atanan dosya/görevleri görür — büronun tamamını değil)</span>
+    </label>
+
     ${modules.map(mod => `
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:10px 0 4px;">${mod.label}</div>
       ${mod.items.map(item => `
@@ -1793,12 +1856,13 @@ function ekipShowPermissions(memberId) {
 
 async function ekipSavePermissions(memberId) {
   const aiEnabled = document.getElementById('ekip-perm-ai').checked;
+  const restrictToOwnItems = document.getElementById('ekip-perm-restrict').checked;
   const checkboxes = document.querySelectorAll('.ekip-perm-tool');
   const blockedTools = Array.from(checkboxes).filter(cb => !cb.checked).map(cb => cb.value);
 
   const res = await fetch(`/api/workspace/members/${memberId}/permissions`, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ blockedTools, aiEnabled })
+    body: JSON.stringify({ blockedTools, aiEnabled, restrictToOwnItems })
   });
   if (res.ok) {
     toast('Yetkiler güncellendi', 'fa-solid fa-check', true);

@@ -21,13 +21,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const ok = await requireOwnedClient(params.id);
   if (!ok) return NextResponse.json({ error: "Yetkisiz veya müvekkil bulunamadı." }, { status: 401 });
 
-  const { title } = await req.json();
+  const { title, assignedToId } = await req.json();
   if (!title || !title.trim()) {
     return NextResponse.json({ error: "Dosya adı gerekli." }, { status: 400 });
   }
 
   const newCase = await prisma.case.create({
-    data: { title: title.trim(), clientId: params.id },
+    data: { title: title.trim(), clientId: params.id, assignedToId: assignedToId || null },
   });
   return NextResponse.json({ case: newCase });
 }

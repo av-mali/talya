@@ -23,6 +23,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     data.done = !!body.done;
     data.status = body.done ? "tamamlandi" : "yapilacak";
   }
+  if (body.assignedToId !== undefined) {
+    data.assignedToId = body.assignedToId || null;
+  }
 
   const task = await prisma.task.update({ where: { id: params.id }, data });
   return NextResponse.json({ task });

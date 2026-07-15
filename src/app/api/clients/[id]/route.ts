@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireWorkspace } from "@/lib/workspace";
+import { requireWorkspace, shouldRestrictToOwnItems } from "@/lib/workspace";
 
 // Müvekkil detayı: bilgiler + görüşme geçmişi + faturalar + duruşma/ödeme tarihleri
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const restricted = await shouldRestrictToOwnItems(ws.userId);
 
   const client = await prisma.client.findFirst({
     where: { id: params.id, workspaceId: ws.workspaceId },
     include: {
       logs: { orderBy: { createdAt: "desc" } },
       cases: {
+        where: restricted ? { assignedToId: ws.userId } : {},
         orderBy: { createdAt: "desc" },
         include: {
+          assignedTo: { select: { id: true, name: true, email: true } },
           events: { orderBy: { dueDate: "asc" } },
           invoices: { orderBy: { createdAt: "desc" } },
           timeEntries: { orderBy: { date: "desc" } },

@@ -60,3 +60,21 @@ export async function hasAiAccess(userId: string): Promise<boolean> {
   if (user.workspaceRole === "admin") return true;
   return user.aiEnabled !== false;
 }
+
+// Bu kullanıcı, sadece KENDİNE ATANMIŞ dosya/görevleri mi görmeli?
+// Yönetici hesapları bu kısıtlamadan her zaman muaftır (her şeyi görür).
+export async function shouldRestrictToOwnItems(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { workspaceRole: true, restrictToOwnItems: true },
+  });
+  if (!user) return false;
+  if (user.workspaceRole === "admin") return false;
+  return !!user.restrictToOwnItems;
+}
+
+// Bir büronun kaç üyesi var? Atama/kısıtlama arayüzlerini sadece
+// birden fazla kullanıcılı bürolarda göstermek için kullanılır.
+export async function getWorkspaceMemberCount(workspaceId: string): Promise<number> {
+  return prisma.user.count({ where: { workspaceId } });
+}

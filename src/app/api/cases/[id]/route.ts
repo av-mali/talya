@@ -10,6 +10,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     where: { id: params.id },
     include: {
       client: true,
+      assignedTo: { select: { id: true, name: true, email: true } },
       events: { orderBy: { dueDate: "asc" } },
       invoices: { orderBy: { createdAt: "desc" } },
       timeEntries: { orderBy: { date: "desc" } },
@@ -22,7 +23,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const ok = await requireOwnedCase(params.id);
   if (!ok) return NextResponse.json({ error: "Yetkisiz veya dosya bulunamadı." }, { status: 401 });
 
-  const { title, status, agreedFee, paymentDueDate } = await req.json();
+  const { title, status, agreedFee, paymentDueDate, assignedToId } = await req.json();
   const data: any = {};
   if (title !== undefined) data.title = title;
   if (status !== undefined) data.status = status;
@@ -31,6 +32,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
   if (paymentDueDate !== undefined) {
     data.paymentDueDate = paymentDueDate ? new Date(paymentDueDate) : null;
+  }
+  if (assignedToId !== undefined) {
+    data.assignedToId = assignedToId || null;
   }
 
   const updated = await prisma.case.update({

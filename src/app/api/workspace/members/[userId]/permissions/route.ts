@@ -17,15 +17,16 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
     return NextResponse.json({ error: "Bu kişi büronuzda değil." }, { status: 404 });
   }
 
-  const { blockedTools, aiEnabled } = await req.json();
+  const { blockedTools, aiEnabled, restrictToOwnItems } = await req.json();
 
   const updated = await prisma.user.update({
     where: { id: params.userId },
     data: {
       blockedTools: Array.isArray(blockedTools) ? blockedTools : [],
       aiEnabled: aiEnabled !== false,
+      restrictToOwnItems: !!restrictToOwnItems,
     },
   });
 
-  return NextResponse.json({ ok: true, blockedTools: updated.blockedTools, aiEnabled: updated.aiEnabled });
+  return NextResponse.json({ ok: true, blockedTools: updated.blockedTools, aiEnabled: updated.aiEnabled, restrictToOwnItems: updated.restrictToOwnItems });
 }

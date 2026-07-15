@@ -1,22 +1,33 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
-import { requireWorkspace } from "@/lib/workspace";
+import { requireWorkspace, shouldRestrictToOwnItems } from "@/lib/workspace";
 
 // Takvim VE ana sayfadaki "Yaklaşan Süreler" için: büronun tüm
 // müvekkillerindeki duruşma/ödeme tarihleri + büronun tarihi olan görevleri.
 export async function GET() {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  const restricted = await shouldRestrictToOwnItems(ws.userId);
 
   const [events, tasks] = await Promise.all([
     prisma.clientEvent.findMany({
-      where: { case: { client: { workspaceId: ws.workspaceId } } },
+      where: {
+        case: {
+          client: { workspaceId: ws.workspaceId },
+          ...(restricted ? { assignedToId: ws.userId } : {}),
+        },
+      },
       include: { case: { include: { client: true } } },
       orderBy: { dueDate: "asc" },
     }),
     prisma.task.findMany({
-      where: { workspaceId: ws.workspaceId, done: false, dueDate: { not: null } },
+      where: {
+        workspaceId: ws.workspaceId,
+        done: false,
+        dueDate: { not: null },
+        ...(restricted ? { assignedToId: ws.userId } : {}),
+      },
       orderBy: { dueDate: "asc" },
     }),
   ]);

@@ -46,6 +46,9 @@ model User {
   // blockedTools: kapatılmış araç id'lerinin listesi (ör. ["gelirgider","notlar"])
   blockedTools Json?
   aiEnabled    Boolean  @default(true)
+  restrictToOwnItems Boolean @default(false) // açıksa: sadece kendine atanmış dosya/görevleri görür (birden fazla kullanıcılı bürolarda)
+  assignedCases Case[] @relation("CaseAssignee")
+  assignedTasks Task[] @relation("TaskAssignee")
 }
 
 // Büro (Workspace) — birden fazla kullanıcının aynı müvekkil/dosya
@@ -156,6 +159,8 @@ model Case {
   createdAt  DateTime  @default(now())
   client     Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId   String
+  assignedTo   User?   @relation("CaseAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId String? // sorumlu avukat (birden fazla kullanıcılı bürolarda)
   events     ClientEvent[]
   invoices   Invoice[]
   timeEntries TimeEntry[]
@@ -205,6 +210,8 @@ model Task {
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
+  assignedTo   User?   @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedToId String? // görev kime atandı (birden fazla kullanıcılı bürolarda)
   workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String?
 }

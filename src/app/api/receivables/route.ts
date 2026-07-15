@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireWorkspace } from "@/lib/workspace";
+import { requireWorkspace, shouldRestrictToOwnItems, hasToolAccess } from "@/lib/workspace";
 
 // Anlaşılan ücreti girilmiş dosyalarda, henüz faturalanmamış (bekleyen)
 // bakiyeyi hesaplar. Gelir-Gider ekranındaki "Bekleyen Alacaklar" kutusu
@@ -8,9 +8,17 @@ import { requireWorkspace } from "@/lib/workspace";
 export async function GET() {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  if (!(await hasToolAccess(ws.userId, "gelirgider"))) {
+    return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
+  }
+  const restricted = await shouldRestrictToOwnItems(ws.userId);
 
   const cases = await prisma.case.findMany({
-    where: { client: { workspaceId: ws.workspaceId }, agreedFee: { not: null } },
+    where: {
+      client: { workspaceId: ws.workspaceId },
+      agreedFee: { not: null },
+      ...(restricted ? { assignedToId: ws.userId } : {}),
+    },
     include: { client: true, invoices: true },
   });
 
