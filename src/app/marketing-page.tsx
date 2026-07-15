@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 const FEATURES = [
   { icon: "fa-file-lines", title: "Belge & Analiz", desc: "Dosya analizi, dilekçe sihirbazı, mevzuat arama — gerçek zamanlı AI desteğiyle." },
@@ -6,6 +9,7 @@ const FEATURES = [
   { icon: "fa-puzzle-piece", title: "UYAP Entegrasyonu", desc: "Duruşma ve tebligat tarihlerini otomatik senkronize edin." },
   { icon: "fa-calculator", title: "Hesaplama Araçları", desc: "Kıdem, ihbar, faiz, kira artışı — güncel oranlarla anında hesap." },
   { icon: "fa-people-group", title: "Ekip Yönetimi", desc: "Büronuzu büyütün, üyelere özel yetkiler tanımlayın." },
+  { icon: "fa-paper-plane", title: "Talya Asistan", desc: "Telegram'dan \"gündem\" yazarak duruşma, alacak ve görevlerinizi anında öğrenin." },
   { icon: "fa-shield-halved", title: "Gizlilik Odaklı", desc: "Yüklediğiniz hiçbir belge saklanmaz — anlık işlenir, silinir." },
 ];
 
@@ -49,10 +53,41 @@ const PLANS = [
 ];
 
 export default function LandingPage() {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const els = rootRef.current?.querySelectorAll(".reveal");
+    if (!els || !els.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       <link rel="stylesheet" href="/talya-original.css" />
-      <div style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", background: "var(--bg)", boxSizing: "border-box" }}>
+      <style>{`
+        .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .feature-hover { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+        .feature-hover:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,.07); border-color: var(--gold-rule); }
+        .plan-hover { transition: transform .25s ease, box-shadow .25s ease; }
+        .plan-hover:hover { transform: translateY(-8px); }
+        .glow-blob { position: absolute; width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, var(--gold-lo) 0%, transparent 70%); filter: blur(10px); animation: glowFloat 8s ease-in-out infinite; pointer-events: none; }
+        @keyframes glowFloat { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(20px, -20px) scale(1.08); } }
+        .cta-pulse:hover { box-shadow: 0 0 0 6px var(--gold-lo); }
+      `}</style>
+      <div ref={rootRef} style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", background: "var(--bg)", boxSizing: "border-box" }}>
         {/* ÜST MENÜ */}
         <div className="home-nav">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -69,6 +104,7 @@ export default function LandingPage() {
 
         {/* HERO — soyut adalet terazisi çizimi + istatistikler */}
         <div style={{ position: "relative", padding: "70px 20px 20px", textAlign: "center", overflow: "hidden" }}>
+          <div className="glow-blob" style={{ top: -100, left: "50%", marginLeft: -240, zIndex: 0 }}></div>
           <div className="hero-mark" aria-hidden="true">
             <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg">
               <g className="beam-arm">
@@ -96,7 +132,7 @@ export default function LandingPage() {
               Talya, gerçek AI desteğiyle avukatların günlük işini hızlandırır.
             </div>
             <div style={{ marginTop: 24, display: "flex", gap: 10, justifyContent: "center" }}>
-              <Link href="/register" className="nav-pill gold" style={{ textDecoration: "none", padding: "10px 22px", fontSize: 13 }}>
+              <Link href="/register" className="nav-pill gold cta-pulse" style={{ textDecoration: "none", padding: "10px 22px", fontSize: 13 }}>
                 7 Gün Ücretsiz Dene
               </Link>
               <a href="#fiyatlar" className="nav-pill" style={{ textDecoration: "none", padding: "10px 22px", fontSize: 13 }}>
@@ -124,14 +160,16 @@ export default function LandingPage() {
         {/* ÖZELLİKLER */}
         <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 20px 20px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-            {FEATURES.map((f) => (
+            {FEATURES.map((f, i) => (
               <div
                 key={f.title}
+                className="reveal feature-hover"
                 style={{
                   background: "var(--card)",
                   border: "1px solid var(--border)",
                   borderRadius: 14,
                   padding: 22,
+                  transitionDelay: `${i * 60}ms`,
                 }}
               >
                 <div style={{ width: 42, height: 42, borderRadius: 11, background: "linear-gradient(135deg, var(--gold-lo), var(--gold-mid))", border: "1px solid var(--gold-rule)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
@@ -152,8 +190,8 @@ export default function LandingPage() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap", justifyContent: "center" }}>
-            {STEPS.map((s) => (
-              <div key={s.num} style={{ flex: "1 1 220px", maxWidth: 260, textAlign: "center" }}>
+            {STEPS.map((s, i) => (
+              <div key={s.num} className="reveal" style={{ flex: "1 1 220px", maxWidth: 260, textAlign: "center", transitionDelay: `${i * 100}ms` }}>
                 <div
                   style={{
                     width: 56,
@@ -189,9 +227,10 @@ export default function LandingPage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 20, alignItems: "stretch" }}>
-            {PLANS.map((p) => (
+            {PLANS.map((p, i) => (
               <div
                 key={p.name}
+                className="reveal plan-hover"
                 style={{
                   background: p.highlight ? "linear-gradient(160deg, var(--card), var(--gold-lo))" : "var(--card)",
                   border: p.highlight ? "2px solid var(--gold)" : "1px solid var(--border)",
@@ -201,6 +240,7 @@ export default function LandingPage() {
                   display: "flex",
                   flexDirection: "column",
                   boxShadow: p.highlight ? "0 20px 50px rgba(184,146,42,.16)" : "0 4px 16px rgba(0,0,0,.03)",
+                  transitionDelay: `${i * 100}ms`,
                 }}
               >
                 {p.highlight && (
