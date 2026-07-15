@@ -322,7 +322,7 @@ function telegramRender(connected, dailyTime) {
           <input type="time" id="telegram-daily-time" value="${dailyTime || ''}" style="flex:1;">
           <button class="pop-cta-btn b" style="width:auto;padding:8px 14px;" onclick="telegramSaveDailyTime()">Kaydet</button>
         </div>
-        <div style="font-size:11px;color:var(--t3);margin-top:6px;">Belirlediğiniz saatte, siz yazmadan gündeminiz otomatik gönderilir. Boş bırakıp kaydederseniz otomatik gönderim kapanır.</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:6px;">Şimdilik tüm otomatik mesajlar günün tek bir sabit saatinde gönderiliyor (barındırma planı sınırı) — kişiye özel saat desteği yakında aktif olacak. Boş bırakıp kaydederseniz otomatik gönderim kapanır.</div>
       </div>
 
       <button class="pop-cta-btn" style="width:100%;margin-top:14px;background:var(--danger);" onclick="telegramDisconnect()"><i class="fa-solid fa-link-slash"></i><span>Bağlantıyı Kaldır</span></button>

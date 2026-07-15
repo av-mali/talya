@@ -14,10 +14,11 @@ async function sendMessage(chatId: string, text: string) {
   });
 }
 
-// Vercel Cron bu adrese düzenli aralıklarla (vercel.json'da tanımlı,
-// her 15 dakikada bir) istek atar. Kullanıcının seçtiği saat, şu anki
-// saate (15 dakikalık pencere içinde) denk geliyorsa ve bugün henüz
-// gönderilmediyse otomatik gündem mesajı yollar.
+// Vercel Cron bu adrese düzenli aralıklarla istek atar. NOT: Vercel'in
+// ücretsiz (Hobby) planında zamanlanmış görevler günde SADECE 1 KEZ
+// çalışabiliyor — bu yüzden şimdilik, saat seçmiş olan herkese günün bu
+// tek çalışma anında gönderiyoruz (kişiye özel saat eşleşmesi, Pro plana
+// geçilince tekrar aktif edilecek).
 export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -25,7 +26,6 @@ export async function GET(req: Request) {
   }
 
   const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const todayStr = now.toISOString().slice(0, 10); // "2026-07-15"
 
   const candidates = await prisma.user.findMany({
@@ -34,16 +34,12 @@ export async function GET(req: Request) {
       telegramDailyTime: { not: null },
       NOT: { telegramLastSentDate: todayStr },
     },
-    select: { id: true, telegramChatId: true, telegramDailyTime: true },
+    select: { id: true, telegramChatId: true },
   });
 
   let sentCount = 0;
   for (const u of candidates) {
-    if (!u.telegramDailyTime || !u.telegramChatId) continue;
-    const [h, m] = u.telegramDailyTime.split(":").map(Number);
-    const targetMinutes = h * 60 + m;
-    // 15 dakikalık pencere içinde mi? (cron her 15 dakikada bir çalışıyor)
-    if (Math.abs(currentMinutes - targetMinutes) > 7) continue;
+    if (!u.telegramChatId) continue;
 
     try {
       const [report, gazeteOzeti] = await Promise.all([
