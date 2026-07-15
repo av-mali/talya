@@ -25,7 +25,7 @@ export default function Dashboard() {
     return (
       <>
         <link rel="stylesheet" href="/talya-original.css" />
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
+        <div style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
           <div style={{ fontSize: 13, color: "var(--t3)" }}>Yükleniyor…</div>
         </div>
       </>
@@ -68,7 +68,7 @@ function OnboardingScreen({ onDone }: { onDone: () => void }) {
   return (
     <>
       <link rel="stylesheet" href="/talya-original.css" />
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: 20 }}>
+      <div style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: 20, boxSizing: "border-box" }}>
         <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 14, padding: 36, width: "min(420px, 92vw)", textAlign: "center" }}>
           <div className="serif" style={{ fontSize: 24, marginBottom: 10 }}>
             Talya'ya <em style={{ color: "var(--gold)" }}>Hoş Geldiniz</em>

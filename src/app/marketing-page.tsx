@@ -91,7 +91,7 @@ export default function LandingPage() {
         .particle { display: none; }
         .cta-pulse:hover { box-shadow: 0 0 0 6px var(--gold-lo); }
       `}</style>
-      <div ref={rootRef} style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", background: "var(--bg)", boxSizing: "border-box" }}>
+      <div ref={rootRef} style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", overflowX: "hidden", background: "var(--bg)", boxSizing: "border-box" }}>
         {/* ÜST MENÜ */}
         <div className="home-nav">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

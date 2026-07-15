@@ -306,8 +306,8 @@ export default function AdminPage() {
             {tickets.length === 0 ? (
               <div style={{ fontSize: 12.5, color: "var(--t3)" }}>Henüz bir talep yok.</div>
             ) : (
-              <div style={{ display: "flex", gap: 16 }}>
-                <div style={{ flex: "0 0 280px", maxHeight: 420, overflowY: "auto" }}>
+              <div className="ticket-layout" style={{ display: "flex", gap: 16 }}>
+                <div className="ticket-list-col" style={{ flex: "0 0 280px", maxHeight: 420, overflowY: "auto" }}>
                   {tickets.map((t) => (
                     <div
                       key={t.id}

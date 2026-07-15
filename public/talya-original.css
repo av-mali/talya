@@ -482,6 +482,10 @@ textarea{resize:none;line-height:1.6;}
 
   /* Genel form alanları küçük ekranda daralmasın */
   .fg input[type=text],.fg input[type=date],.fg select,.fg textarea{font-size:14px;}
+
+  /* Admin panelinde Destek Talepleri: liste + detay yan yana yerine alt alta */
+  .ticket-layout{flex-direction:column;}
+  .ticket-list-col{flex:1 1 auto !important;max-height:220px !important;}
 }
 @media(max-width:480px){
   .modules-grid{grid-template-columns:1fr;}
