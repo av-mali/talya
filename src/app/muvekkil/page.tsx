@@ -163,19 +163,28 @@ export default function MuvekkilPage() {
                     ))
                   )}
                 </div>
-                <textarea
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  rows={3}
-                  placeholder="Bürova bir mesaj/soru yazın…"
-                  style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--t0)", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#fff", cursor: "pointer", fontSize: 13 }}
-                >
-                  Gönder
-                </button>
+                {messages.length > 0 && messages[messages.length - 1].isFromClient ? (
+                  <div style={{ fontSize: 12.5, color: "var(--t3)", textAlign: "center", padding: "10px", background: "var(--bg2)", borderRadius: 8 }}>
+                    <i className="fa-solid fa-clock" style={{ marginRight: 6 }}></i>
+                    Mesajınız iletildi — büronun yanıtını bekliyorsunuz.
+                  </div>
+                ) : (
+                  <>
+                    <textarea
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      rows={3}
+                      placeholder="Bürova bir mesaj/soru yazın…"
+                      style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid var(--border2)", background: "var(--bg)", color: "var(--t0)", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }}
+                    />
+                    <button
+                      onClick={handleSendMessage}
+                      style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "var(--gold)", color: "#fff", cursor: "pointer", fontSize: 13 }}
+                    >
+                      Gönder
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}

@@ -20,6 +20,19 @@ export async function POST(req: Request) {
   const clientId = verifyPortalToken(token);
   if (!clientId) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
+  // Kötüye kullanımı (art arda mesaj bombardımanı) önlemek için: büro
+  // henüz cevap vermediyse müvekkil yeni bir mesaj gönderemez.
+  const lastMessage = await prisma.clientPortalMessage.findFirst({
+    where: { clientId },
+    orderBy: { createdAt: "desc" },
+  });
+  if (lastMessage && lastMessage.isFromClient) {
+    return NextResponse.json(
+      { error: "Bürodan cevap gelmeden yeni mesaj gönderemezsiniz. Lütfen yanıtı bekleyin." },
+      { status: 400 }
+    );
+  }
+
   const { content } = await req.json();
   if (!content || !content.trim()) {
     return NextResponse.json({ error: "Mesaj boş olamaz." }, { status: 400 });
