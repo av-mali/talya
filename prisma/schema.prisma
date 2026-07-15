@@ -21,6 +21,7 @@ model User {
   baro         String?
   sicilNo      String?
   approved     Boolean   @default(true)
+  suspended    Boolean   @default(false) // yönetici tarafından geçici olarak girişi engellenmiş mi (ör. ödeme yapılmadı)
   isAdmin      Boolean   @default(false)
   notifPrefs   Json?
   kvkkChecklist Json?

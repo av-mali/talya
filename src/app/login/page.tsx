@@ -37,6 +37,8 @@ function LoginForm() {
     if (res?.error) {
       if (res.error === "PENDING_APPROVAL") {
         setError("Hesabınız henüz onaylanmadı. Yönetici onayından sonra giriş yapabilirsiniz.");
+      } else if (res.error === "SUSPENDED") {
+        setError("Hesabınız geçici olarak durdurulmuş. Bilgi için büro yöneticinizle iletişime geçin.");
       } else {
         setError("E-posta veya şifre hatalı.");
       }

@@ -21,6 +21,7 @@ export async function GET() {
       email: true,
       name: true,
       isAdmin: true,
+      suspended: true,
       createdAt: true,
       _count: { select: { messages: true } },
     },

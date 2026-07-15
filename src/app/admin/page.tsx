@@ -9,6 +9,7 @@ type AdminUser = {
   email: string;
   name: string | null;
   isAdmin: boolean;
+  suspended: boolean;
   createdAt: string;
   _count: { messages: number };
 };
@@ -132,6 +133,19 @@ export default function AdminPage() {
     else {
       const data = await res.json();
       alert(data.error || "Silinemedi.");
+    }
+  }
+
+  async function handleToggleSuspend(id: string, suspended: boolean) {
+    const res = await fetch(`/api/admin/users/${id}/suspend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ suspended }),
+    });
+    if (res.ok) load();
+    else {
+      const data = await res.json();
+      alert(data.error || "Güncellenemedi.");
     }
   }
 
@@ -368,15 +382,26 @@ export default function AdminPage() {
                         <td style={styles.td}>
                           {u.isAdmin ? (
                             <span style={styles.adminBadge}>Yönetici</span>
+                          ) : u.suspended ? (
+                            <span style={{ color: "var(--danger)", fontWeight: 600 }}>Askıda</span>
                           ) : (
                             <span style={{ color: "var(--t3)" }}>Müşteri</span>
                           )}
                         </td>
                         <td style={styles.td}>
                           {!u.isAdmin && (
-                            <button style={styles.deleteBtn} onClick={() => handleDelete(u.id, u.email)}>
-                              <i className="fa-solid fa-trash"></i>
-                            </button>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button
+                                style={{ ...styles.deleteBtn, color: u.suspended ? "var(--success)" : "var(--warn)" }}
+                                onClick={() => handleToggleSuspend(u.id, !u.suspended)}
+                                title={u.suspended ? "Girişi tekrar aç" : "Girişi geçici olarak durdur"}
+                              >
+                                <i className={`fa-solid ${u.suspended ? "fa-lock-open" : "fa-lock"}`}></i>
+                              </button>
+                              <button style={styles.deleteBtn} onClick={() => handleDelete(u.id, u.email)}>
+                                <i className="fa-solid fa-trash"></i>
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>

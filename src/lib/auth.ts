@@ -35,6 +35,9 @@ export const authOptions: NextAuthOptions = {
         if (!user.approved) {
           throw new Error("PENDING_APPROVAL");
         }
+        if (user.suspended) {
+          throw new Error("SUSPENDED");
+        }
 
         return { id: user.id, email: user.email, name: user.name || "", isAdmin: user.isAdmin };
       },
