@@ -9,7 +9,7 @@ const FEATURES = [
   { icon: "fa-puzzle-piece", title: "UYAP Entegrasyonu", desc: "Duruşma ve tebligat tarihlerini otomatik senkronize edin." },
   { icon: "fa-calculator", title: "Hesaplama Araçları", desc: "Kıdem, ihbar, faiz, kira artışı — güncel oranlarla anında hesap." },
   { icon: "fa-people-group", title: "Ekip Yönetimi", desc: "Büronuzu büyütün, üyelere özel yetkiler tanımlayın." },
-  { icon: "fa-paper-plane", title: "Talya Asistan", desc: "Telegram'dan \"gündem\" yazarak duruşma, alacak ve görevlerinizi anında öğrenin." },
+  { icon: "fa-paper-plane", title: "Talya Asistan", desc: "Akıllı asistanınızla her sabah günlük özetinizi alın." },
   { icon: "fa-shield-halved", title: "Gizlilik Odaklı", desc: "Yüklediğiniz hiçbir belge saklanmaz — anlık işlenir, silinir." },
 ];
 
@@ -112,21 +112,7 @@ export default function LandingPage() {
           <div className="glow-blob b" style={{ top: 40, left: "20%", zIndex: 0 }}></div>
           <div className="glow-blob c" style={{ top: 120, right: "15%", zIndex: 0 }}></div>
 
-          <i
-            className="fa-solid fa-scale-balanced"
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              top: 10,
-              left: "50%",
-              transform: "translateX(-50%)",
-              fontSize: 320,
-              color: "var(--gold)",
-              opacity: 0.08,
-              zIndex: 0,
-              pointerEvents: "none",
-            }}
-          ></i>
+
 
           <div style={{ position: "relative", zIndex: 1, maxWidth: 720, margin: "0 auto" }}>
             <div className="hero-badge"><i className="fa-solid fa-circle" style={{ fontSize: 6, animation: "breathe 2s infinite" }}></i> Türkiye'nin Yeni Nesil Hukuk AI Suite'i</div>
