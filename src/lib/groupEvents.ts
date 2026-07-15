@@ -9,7 +9,7 @@ type RawEvent = {
   type: string;
   title: string;
   dueDate: Date;
-  case: { title: string; client: { name: string } };
+  case: { title: string; client: { name: string }; assignedTo?: { name: string | null; email: string } | null };
 };
 
 export type GroupedEvent = {
@@ -21,6 +21,7 @@ export type GroupedEvent = {
   dueDate: Date;
   clientNames: string[];
   clientNamesDisplay: string;
+  assigneeName: string | null;
 };
 
 export function groupEventsByCaseAndDate(events: RawEvent[]): GroupedEvent[] {
@@ -39,6 +40,7 @@ export function groupEventsByCaseAndDate(events: RawEvent[]): GroupedEvent[] {
         dueDate: e.dueDate,
         clientNames: [],
         clientNamesDisplay: "",
+        assigneeName: e.case.assignedTo ? (e.case.assignedTo.name || e.case.assignedTo.email) : null,
       });
     }
     const g = map.get(key)!;

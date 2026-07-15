@@ -1757,7 +1757,7 @@ function ekipRender(ws, myRole) {
     </div>
     ${ws.members.map(m => `
       <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">
-        <span>${m.name || m.email} <span style="font-size:10px;color:var(--t3);">${m.workspaceRole === 'admin' ? '(Yönetici)' : '(Üye)'}</span></span>
+        <span style="cursor:pointer;" onclick='ekipShowMemberCases(${JSON.stringify(m.id)}, ${JSON.stringify(m.name || m.email)})'>${m.name || m.email} <span style="font-size:10px;color:var(--t3);">${m.workspaceRole === 'admin' ? '(Yönetici)' : '(Üye)'}</span></span>
         <span style="display:flex;gap:10px;align-items:center;">
           ${isAdmin && m.workspaceRole !== 'admin' ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick='ekipShowPermissions(${JSON.stringify(m.id)})'>Yetkiler</span>` : ''}
           ${isAdmin && m.workspaceRole !== 'admin' ? `<span style="cursor:pointer;color:var(--danger);font-size:11px;" onclick="ekipRemoveMember('${m.id}')">Çıkar</span>` : ''}
@@ -1816,6 +1816,29 @@ let ekipMembersCache = [];
 
 function ekipGetPane() {
   return document.getElementById('detailPane');
+}
+
+async function ekipShowMemberCases(memberId, memberName) {
+  const panel = ekipGetPane();
+  panel.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(3)}</div>`;
+  try {
+    const res = await fetch('/api/cases?assignedToId=' + memberId);
+    const data = await res.json();
+    const cases = data.cases || [];
+    panel.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
+        <div style="font-size:14px;font-family:'Instrument Serif',serif;margin-bottom:14px;">${memberName} — Atanan Dosyalar (${cases.length})</div>
+        ${cases.length ? cases.map(c => `
+          <div class="cr-row" style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${c.clientId}')">
+            <span>${c.client.name} — ${c.title}</span>
+            <span style="font-size:11px;color:${c.status==='acik'?'var(--success)':'var(--t3)'};">${c.status==='acik'?'Açık':'Kapalı'}</span>
+          </div>
+        `).join('') : emptyState('fa-folder-open', 'Atanmış dosya yok', memberName + ' adına henüz bir dosya atanmamış.')}
+      </div>
+    `;
+  } catch (e) {
+    panel.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
 }
 
 function ekipShowPermissions(memberId) {

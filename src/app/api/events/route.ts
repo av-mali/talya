@@ -18,7 +18,7 @@ export async function GET() {
           ...(restricted ? { assignedToId: ws.userId } : {}),
         },
       },
-      include: { case: { include: { client: true } } },
+      include: { case: { include: { client: true, assignedTo: { select: { name: true, email: true } } } } },
       orderBy: { dueDate: "asc" },
     }),
     prisma.task.findMany({
@@ -28,6 +28,7 @@ export async function GET() {
         dueDate: { not: null },
         ...(restricted ? { assignedToId: ws.userId } : {}),
       },
+      include: { assignedTo: { select: { name: true, email: true } } },
       orderBy: { dueDate: "asc" },
     }),
   ]);
@@ -41,7 +42,7 @@ export async function GET() {
     title: g.title,
     dueDate: g.dueDate,
     clientId: null,
-    clientName: `${g.clientNamesDisplay} — ${g.caseTitle}`,
+    clientName: `${g.clientNamesDisplay} — ${g.caseTitle}${g.assigneeName ? ` — (${g.assigneeName})` : ''}`,
   }));
 
   const taskItems = tasks.map((t) => ({
@@ -50,7 +51,7 @@ export async function GET() {
     title: t.title,
     dueDate: t.dueDate!,
     clientId: null,
-    clientName: "Görev",
+    clientName: t.assignedTo ? `Görev — (${t.assignedTo.name || t.assignedTo.email})` : "Görev",
   }));
 
   const out = [...eventItems, ...taskItems].sort(
