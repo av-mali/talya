@@ -52,6 +52,22 @@ const PLANS = [
   },
 ];
 
+// Hero arka planındaki "sinir ağı" çiziminin düğüm konumları ve
+// aralarındaki bağlantılar — tamamen özel/uydurma koordinatlar, gerçek
+// bir veri değil, sadece görsel amaçlı.
+const NEURO_NODES: [number, number][] = [
+  [80, 60], [220, 40], [140, 160], [40, 220], [260, 200],
+  [380, 90], [420, 220], [340, 300], [520, 40], [560, 180],
+  [640, 300], [700, 80], [780, 200], [860, 60], [900, 260],
+  [980, 120], [1040, 260], [1120, 60], [1150, 200], [1000, 340],
+];
+const NEURO_EDGES: [number, number][] = [
+  [0, 1], [0, 2], [1, 5], [2, 3], [2, 4], [4, 5], [4, 7],
+  [5, 6], [5, 8], [6, 7], [6, 9], [8, 9], [8, 11], [9, 10],
+  [9, 12], [10, 12], [11, 13], [12, 13], [12, 14], [13, 15],
+  [14, 16], [15, 16], [15, 17], [16, 19], [17, 18], [18, 15],
+];
+
 export default function LandingPage() {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -88,8 +104,11 @@ export default function LandingPage() {
         .glow-blob.b { width: 320px; height: 320px; animation: glowFloat 11s ease-in-out infinite reverse; opacity: .7; }
         .glow-blob.c { width: 220px; height: 220px; animation: glowFloat 6.5s ease-in-out infinite; opacity: .55; }
         @keyframes glowFloat { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(20px, -20px) scale(1.08); } }
-        .particle { position: absolute; border-radius: 50%; background: var(--gold); pointer-events: none; }
-        @keyframes particleDrift { 0% { transform: translateY(0) translateX(0); opacity: 0; } 10% { opacity: .55; } 90% { opacity: .4; } 100% { transform: translateY(-140px) translateX(var(--drift, 20px)); opacity: 0; } }
+        .particle { display: none; }
+        .neuro-node { fill: var(--gold); animation: nodePulse 3s ease-in-out infinite; }
+        @keyframes nodePulse { 0%, 100% { opacity: .35; r: 2.6; } 50% { opacity: .9; r: 4; } }
+        .neuro-line { stroke: var(--gold); stroke-width: 1; opacity: .16; }
+        .neuro-pulse { fill: var(--gold); filter: drop-shadow(0 0 3px var(--gold)); }
         .cta-pulse:hover { box-shadow: 0 0 0 6px var(--gold-lo); }
       `}</style>
       <div ref={rootRef} style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", background: "var(--bg)", boxSizing: "border-box" }}>
@@ -113,30 +132,41 @@ export default function LandingPage() {
           <div className="glow-blob b" style={{ top: 40, left: "20%", zIndex: 0 }}></div>
           <div className="glow-blob c" style={{ top: 120, right: "15%", zIndex: 0 }}></div>
 
-          {/* Yavaşça yukarı süzülen, telif riski olmayan özel çizim parçacıklar */}
-          {Array.from({ length: 14 }).map((_, i) => {
-            const left = 5 + ((i * 37) % 90);
-            const size = 3 + (i % 4) * 2;
-            const duration = 6 + (i % 5) * 1.6;
-            const delay = (i % 7) * 0.9;
-            const drift = (i % 2 === 0 ? 1 : -1) * (20 + (i % 3) * 15);
-            return (
-              <div
-                key={i}
-                className="particle"
-                style={{
-                  left: `${left}%`,
-                  bottom: 0,
-                  width: size,
-                  height: size,
-                  zIndex: 0,
-                  opacity: 0,
-                  animation: `particleDrift ${duration}s ease-in-out ${delay}s infinite`,
-                  ["--drift" as any]: `${drift}px`,
-                }}
-              ></div>
-            );
-          })}
+          {/* Yapay zeka hissi veren, tamamen özel çizim bir "sinir ağı" —
+              düğümler nabız gibi parlıyor, aralarında ışık noktaları akıyor. */}
+          <svg
+            viewBox="0 0 1200 420"
+            aria-hidden="true"
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 380, zIndex: 0, opacity: 0.9 }}
+          >
+            {NEURO_EDGES.map(([a, b], i) => {
+              const n1 = NEURO_NODES[a];
+              const n2 = NEURO_NODES[b];
+              return (
+                <line key={`e${i}`} className="neuro-line" x1={n1[0]} y1={n1[1]} x2={n2[0]} y2={n2[1]} />
+              );
+            })}
+            {NEURO_EDGES.map(([a, b], i) => {
+              const n1 = NEURO_NODES[a];
+              const n2 = NEURO_NODES[b];
+              const dur = 2.4 + (i % 5) * 0.6;
+              const delay = (i % 7) * 0.4;
+              return (
+                <circle key={`p${i}`} r="2" className="neuro-pulse">
+                  <animateMotion
+                    dur={`${dur}s`}
+                    begin={`${delay}s`}
+                    repeatCount="indefinite"
+                    path={`M${n1[0]},${n1[1]} L${n2[0]},${n2[1]}`}
+                  />
+                  <animate attributeName="opacity" values="0;1;1;0" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite" />
+                </circle>
+              );
+            })}
+            {NEURO_NODES.map(([x, y], i) => (
+              <circle key={`n${i}`} cx={x} cy={y} r="3" className="neuro-node" style={{ animationDelay: `${(i % 6) * 0.4}s` }} />
+            ))}
+          </svg>
 
           <div className="hero-mark" aria-hidden="true">
             <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg">
