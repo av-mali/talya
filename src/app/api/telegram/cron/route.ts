@@ -32,7 +32,13 @@ export async function GET(req: Request) {
     where: {
       telegramChatId: { not: null },
       telegramDailyTime: { not: null },
-      NOT: { telegramLastSentDate: todayStr },
+      // "Bugün gönderildi" DEĞİLSE aday say — ama SQL'de "sütun != değer"
+      // ifadesi sütun NULL (hiç gönderilmemiş) olduğunda YANLIŞLIKLA hiçbir
+      // satırı seçmiyor. Bu yüzden NULL durumunu ayrıca, açıkça ekliyoruz.
+      OR: [
+        { telegramLastSentDate: null },
+        { telegramLastSentDate: { not: todayStr } },
+      ],
     },
     select: { id: true, telegramChatId: true },
   });
