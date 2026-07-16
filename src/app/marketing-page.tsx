@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 const FEATURES = [
   { icon: "fa-file-lines", title: "Belge & Analiz", desc: "Dosya analizi, dilekçe sihirbazı, mevzuat arama — gerçek zamanlı AI desteğiyle." },
   { icon: "fa-briefcase", title: "Büro Yönetimi", desc: "Müvekkil, dosya, gelir-gider, görev panosu — hepsi tek yerde." },
+  { icon: "fa-user-group", title: "Müvekkil Paneli", desc: "Müvekkilleriniz kendi dosya durumunu görsün, size doğrudan mesaj göndersin." },
   { icon: "fa-puzzle-piece", title: "UYAP Entegrasyonu", desc: "Duruşma ve tebligat tarihlerini otomatik senkronize edin." },
   { icon: "fa-calculator", title: "Hesaplama Araçları", desc: "Kıdem, ihbar, faiz, kira artışı — güncel oranlarla anında hesap." },
   { icon: "fa-people-group", title: "Ekip Yönetimi", desc: "Büronuzu büyütün, üyelere özel yetkiler tanımlayın." },
@@ -284,13 +285,21 @@ export default function LandingPage() {
 
         {/* ALT BİLGİ */}
         <div style={{ borderTop: "1px solid var(--border)", padding: "28px 20px 60px", textAlign: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14 }}>
             <div className="home-logo-mark" style={{ width: 24, height: 24, fontSize: 12 }}>T</div>
             <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 14, color: "var(--t2)" }}>Talya Hukuk</span>
           </div>
-          <Link href="/gizlilik" style={{ fontSize: 12, color: "var(--t3)", textDecoration: "none" }}>
-            Gizlilik Taahhüdü
-          </Link>
+          <div style={{ display: "flex", gap: 18, justifyContent: "center", flexWrap: "wrap" }}>
+            <Link href="/gizlilik" style={{ fontSize: 12, color: "var(--t3)", textDecoration: "none" }}>
+              Gizlilik Taahhüdü
+            </Link>
+            <Link href="/aydinlatma-metni" style={{ fontSize: 12, color: "var(--t3)", textDecoration: "none" }}>
+              KVKK Aydınlatma Metni
+            </Link>
+            <Link href="/mesafeli-satis" style={{ fontSize: 12, color: "var(--t3)", textDecoration: "none" }}>
+              Mesafeli Satış Sözleşmesi
+            </Link>
+          </div>
         </div>
       </div>
     </>

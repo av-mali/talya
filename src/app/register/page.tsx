@@ -124,6 +124,13 @@ function RegisterForm() {
         <div style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.5 }}>
           Kaydınız, yönetici onayından sonra aktif olur.
         </div>
+        <div style={{ fontSize: 10.5, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
+          Hesap oluşturarak{" "}
+          <a href="/mesafeli-satis" target="_blank" style={{ color: "var(--gold)" }}>Mesafeli Satış Sözleşmesi'ni</a>{" "}
+          ve{" "}
+          <a href="/aydinlatma-metni" target="_blank" style={{ color: "var(--gold)" }}>KVKK Aydınlatma Metni'ni</a>{" "}
+          okuduğunuzu ve kabul ettiğinizi onaylarsınız.
+        </div>
         <div style={styles.foot}>
           Zaten hesabın var mı? <Link href={loginHref} style={{ color: "var(--gold)" }}>Giriş yap</Link>
         </div>
