@@ -266,21 +266,30 @@ export function buildDavetMektubu(
   return `[[C]]**ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR**
 
 **__DAVETTE BULUNAN__**\t
+
 Arabulucu\t\t: Arb. **${v(a.name)}**
 TELFON\t\t: ${v(a.phone)}
 E-Mail\t\t\t: ${v(a.email)}
 Adres\t\t\t: ${v(a.arabulucuAdres)}
 
 **__DAVET EDİLEN__**      \t\t
+
 Adı / Soyadı\t\t: **${v(davetEdilenAd)}**
 Vekili\t\t\t: ${davetEdilenVekil ? `**Av. ${davetEdilenVekil}**` : ""}
 Baro / Sicil \t\t: ${v(davetEdilenBaroSicil, "")}
 Telefon\t\t: ${v(davetEdilenTelefon)}
+
 **__GÜN VE SAAT__**\t\t: ${v(gunSaat)}
+
 **__TOPLANTI YERİ__**\t\t: ${v(toplantiYeri)}
+
+
 **__AÇIKLAMALAR VE BİLGİLENDİRMELER: __**
+
 Sayın **${v(davetEdilenAd)}**${davetEdilenVekil ? ` ve vekili Sayın **Av. ${davetEdilenVekil}**` : ""},
+
 ${digerTarafCumle} tarafından **${v(a.arabuluculukBurosu)}**'na yapılan başvuru üzerine UYAP Arabulucu Portal tarafından görevlendirilmiş Türkiye Cumhuriyeti Adalet Bakanlığı'ndaki resmi sicile kayıtlı ${v(a.arabulucuSicilNo)} sicil numaralı arabulucuyum.
+
 **${v(digerTarafAd)}** ile aranızdaki ${v(uyusmazlikOzeti)} uyuşmazlığının, barışçıl olarak arabuluculuk yoluyla çözümlenmesine olanak sağlamak üzere, sizi tüm tarafların katılımıyla gerçekleşmeyi dilediğimiz arabuluculuk ilk oturumuna davet ediyorum.
 ${DAVET_MEKTUBU_BILGILENDIRME}
 Saygılarımla… ${today}`;
