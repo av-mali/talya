@@ -43,6 +43,24 @@ const SYSTEM_HINTS: Record<string, string> = {
   "mahkeme": "mahkeme/kurum adı varsa (yoksa null)"
 }
 Emin olmadığın alanları uydurma — null bırak. Belgede müvekkil kimin tarafı olduğu net değilse, dilekçeyi/belgeyi hazırlayan tarafı müvekkil olarak varsay.`,
+  "mediation-extract": `Sana bir arabuluculuk başvuru evrakı veriliyor. Bu belgeden aşağıdaki bilgileri çıkar ve SADECE geçerli bir JSON nesnesi olarak döndür — başka hiçbir açıklama, markdown işareti eklemeden, sadece ham JSON:
+{
+  "dosyaNo": "varsa dosya/başvuru numarası (yoksa null)",
+  "basvurucuAd": "başvurucunun adı soyadı (varsa TC no ile birlikte, yoksa null)",
+  "basvurucuAdres": "başvurucunun adresi (yoksa null)",
+  "basvurucuVekilAd": "başvurucu vekili varsa adı (yoksa null)",
+  "basvurucuBaroSicil": "başvurucu vekilinin baro/sicil no varsa (yoksa null)",
+  "basvurucuTelefon": "başvurucunun telefonu (yoksa null)",
+  "karsiTarafAd": "karşı tarafın adı/unvanı (yoksa null)",
+  "karsiTarafAdres": "karşı tarafın adresi (yoksa null)",
+  "karsiTarafVergiMersis": "karşı taraf tüzel kişiyse vergi/mersis no (yoksa null)",
+  "karsiTarafYetkiliAd": "karşı taraf tüzel kişiyse şirket yetkilisinin adı (yoksa null)",
+  "karsiTarafVekilAd": "karşı taraf vekili varsa adı (yoksa null)",
+  "karsiTarafTelefon": "karşı tarafın telefonu (yoksa null)",
+  "uyusmazlikKonusu": "uyuşmazlık konusunun kısa özeti, maddeler halinde olabilir (yoksa null)",
+  "basvuruTarihi": "başvuru tarihi varsa GG.AA.YYYY formatında (yoksa null)"
+}
+Emin olmadığın alanları uydurma — null bırak.`,
 };
 
 function getExt(filename: string) {
@@ -112,9 +130,10 @@ export async function POST(req: Request) {
     const wantUdf = form.get("wantUdf") === "1";
 
     // Bu spesifik aracı (mode) kullanma yetkisi de ayrıca kapatılmış olabilir.
-    // "crm-extract" ayrı bir görünür araç değil, Müvekkil Ekle'nin bir
-    // parçası — yetki kontrolünü de o araca göre yapıyoruz.
-    const toolKeyForAccess = mode === "crm-extract" ? "muvekkilekle" : mode;
+    // "crm-extract" ve "mediation-extract" ayrı görünür araçlar değil,
+    // ilgili ana aracın bir parçası — yetki kontrolünü ona göre yapıyoruz.
+    const toolKeyForAccess =
+      mode === "crm-extract" ? "muvekkilekle" : mode === "mediation-extract" ? "arabuluculuk" : mode;
     if (!(await hasToolAccess(userId, toolKeyForAccess))) {
       return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
     }
@@ -183,7 +202,7 @@ export async function POST(req: Request) {
     // çıktısı (yukarıda zaten üretildi) temiz kalır, resmi belgeye karışmaz.
     // "crm-extract" modu ham JSON döndürür — uyarı metni eklenirse JSON bozulur.
     const displayAnalysis =
-      mode === "crm-extract"
+      mode === "crm-extract" || mode === "mediation-extract"
         ? analysis
         : analysis +
           "\n\n---\n⚠️ Bu metindeki içtihat/mevzuat atıfları yapay zeka tarafından oluşturulmuştur. Kullanmadan önce mutlaka resmi kaynaktan doğrulayın.";

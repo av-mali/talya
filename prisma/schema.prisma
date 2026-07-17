@@ -57,6 +57,11 @@ model User {
   telegramLinkCodeExpiry DateTime?
   telegramDailyTime  String?   // "08:00" gibi — her gün bu saatte otomatik gündem gönderilir
   telegramLastSentDate String? // "2026-07-15" — aynı gün içinde iki kez göndermemek için
+  // ── Arabuluculuk profili (bir kez ayarlanır, her belgede tekrar yazılmaz) ──
+  arabuluculukBurosu String?
+  arabulucuSicilNo   String?
+  arabulucuUets      String?
+  mediationCases     MediationCase[]
 }
 
 // Büro (Workspace) — birden fazla kullanıcının aynı müvekkil/dosya
@@ -309,6 +314,32 @@ model SupportMessage {
   createdAt DateTime @default(now())
   ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   ticketId  String
+}
+
+// Arabuluculuk Dosyası — Davet Mektubu, İlk Oturum ve Son Tutanak
+// belgelerinin üretiminde kullanılan, bir kez doldurulup tekrar tekrar
+// kullanılan dosya bilgileri.
+model MediationCase {
+  id                    String   @id @default(cuid())
+  dosyaNo               String?
+  basvurucuAd           String?
+  basvurucuAdres        String?
+  basvurucuVekilAd      String?
+  basvurucuBaroSicil    String?
+  basvurucuTelefon      String?
+  karsiTarafAd          String?
+  karsiTarafAdres       String?
+  karsiTarafVergiMersis String?
+  karsiTarafYetkiliAd   String?  // şirket yetkilisi (varsa)
+  karsiTarafVekilAd     String?  // karşı taraf vekili (varsa)
+  karsiTarafTelefon     String?
+  uyusmazlikKonusu      String?  @db.Text
+  basvuruTarihi         String?  // "12.03.2026" formatında serbest metin
+  gorevlendirmeTarihi   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
 }
 
 // Sözleşme Takip — bitiş/yenileme tarihi yaklaşan sözleşmeleri takip eder.

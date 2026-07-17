@@ -19,6 +19,7 @@ window.CURRENT_MODULE = {
     {"id": "mevzuat", "icon": "fa-book-open-reader", "name": "Mevzuat Arama"},
     {"id": "sablon", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"},
     {"id": "kutuphanem", "icon": "fa-bookmark", "name": "Kütüphanem"},
+    {"id": "arabuluculuk", "icon": "fa-handshake", "name": "Arabuluculuk"},
     {"id": "durusma", "icon": "fa-timeline", "name": "Duruşma Hazırlık"}
   ],
   popups: {
@@ -89,6 +90,42 @@ window.CURRENT_MODULE = {
       btnClass: 'g', btnIco: 'fa-bookmark', btnLbl: '', hideCta: true, hideChatInput: true,
       body: `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sağ panelde kayıtlarınız listelenir. Bir sonuca tıklayarak tam metni görebilirsiniz.</div>`,
       onOpen: () => libraryOnOpen(),
+      prompt: () => ''
+    },
+    arabuluculuk: {
+      badge: 'g', badgeText: 'Arabuluculuk Belgeleri', titleHtml: '<em class="g">Arabuluculuk</em>',
+      desc: 'Davet mektubu, ilk oturum ve son tutanağı otomatik oluşturun.',
+      btnClass: 'g', btnIco: 'fa-handshake', btnLbl: '', hideCta: true, hideChatInput: true,
+      body: `
+        <div class="ic" style="margin-bottom:14px;">
+          <div class="ic-t"><i class="fa-solid fa-wand-magic-sparkles"></i> Yeni Dosya — Başvuru Evrakından Doldur</div>
+          <p>Başvuru evrakını yükleyin, AI taraf bilgilerini bulup formu doldursun. Kaydetmeden önce kontrol edin.</p>
+          <input type="file" id="ar-autofile" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt,.udf" style="margin-top:8px;width:100%;">
+          <button class="pop-cta-btn g" style="width:100%;margin-top:8px;" onclick="arAutoFillFromFile()"><i class="fa-solid fa-file-import"></i><span>Belgeden Doldur</span></button>
+          <div id="ar-autofill-status" style="font-size:11px;color:var(--t3);margin-top:6px;"></div>
+        </div>
+
+        <div class="fg"><div class="fl">Dosya Numarası</div><input type="text" id="ar-dosyano" placeholder="2026/1329"></div>
+        <div class="fg"><div class="fl">Başvurucu Adı</div><input type="text" id="ar-bas-ad" placeholder="Ad Soyad - TC..."></div>
+        <div class="fg"><div class="fl">Başvurucu Adresi</div><input type="text" id="ar-bas-adres"></div>
+        <div class="fg"><div class="fl">Başvurucu Vekili <span class="opt">(varsa)</span></div><input type="text" id="ar-bas-vekil" placeholder="Av. ..."></div>
+        <div class="fg"><div class="fl">Vekil Baro/Sicil</div><input type="text" id="ar-bas-barosicil"></div>
+        <div class="fg"><div class="fl">Başvurucu Telefon</div><input type="text" id="ar-bas-tel"></div>
+
+        <div class="fg"><div class="fl">Karşı Taraf Adı</div><input type="text" id="ar-kar-ad"></div>
+        <div class="fg"><div class="fl">Karşı Taraf Adresi</div><input type="text" id="ar-kar-adres"></div>
+        <div class="fg"><div class="fl">Vergi/Mersis No <span class="opt">(tüzel kişi ise)</span></div><input type="text" id="ar-kar-vergi"></div>
+        <div class="fg"><div class="fl">Şirket Yetkilisi <span class="opt">(varsa)</span></div><input type="text" id="ar-kar-yetkili"></div>
+        <div class="fg"><div class="fl">Karşı Taraf Vekili <span class="opt">(varsa)</span></div><input type="text" id="ar-kar-vekil" placeholder="Av. ..."></div>
+        <div class="fg"><div class="fl">Karşı Taraf Telefon</div><input type="text" id="ar-kar-tel"></div>
+
+        <div class="fg"><div class="fl">Uyuşmazlık Konusu</div><textarea id="ar-uyusmazlik" rows="3" placeholder="Kısa açıklama, madde madde olabilir…"></textarea></div>
+        <div class="fg"><div class="fl">Başvuru Tarihi</div><input type="text" id="ar-basvuru-tarih" placeholder="12.03.2026"></div>
+        <div class="fg"><div class="fl">Görevlendirme Tarihi</div><input type="text" id="ar-gorev-tarih" placeholder="12.03.2026"></div>
+
+        <button class="pop-cta-btn g" style="width:100%;" onclick="arSaveCase()"><i class="fa-solid fa-floppy-disk"></i><span>Dosyayı Kaydet</span></button>
+      `,
+      onOpen: () => arOnOpen(),
       prompt: () => ''
     },
     durusma: {
@@ -611,4 +648,262 @@ async function libraryDeleteItem(id) {
   await fetch('/api/library/' + id, { method: 'DELETE' });
   toast('Kayıt silindi', 'fa-solid fa-trash');
   libraryOnOpen();
+}
+
+// ══════════════════════════════════════════════════════
+// ARABULUCULUK — Davet Mektubu / İlk Oturum / Son Tutanak
+// ══════════════════════════════════════════════════════
+let arCasesCache = [];
+let arSelectedCaseId = null;
+
+function arGetPane() {
+  const empty = document.getElementById('chatEmpty');
+  if (empty) empty.style.display = 'none';
+  return document.getElementById('chatMsgs');
+}
+
+async function arOnOpen() {
+  arGetPane().innerHTML = skeletonLines(3);
+  await arLoadCases();
+}
+
+async function arLoadCases() {
+  try {
+    const res = await fetch('/api/mediation/cases');
+    const data = await res.json();
+    arCasesCache = data.cases || [];
+    arRenderCaseList();
+  } catch (e) {
+    arGetPane().innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function arRenderCaseList() {
+  const pane = arGetPane();
+  pane.innerHTML = `
+    <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Kayıtlı Dosyalar (${arCasesCache.length})</div>
+      ${arCasesCache.length ? arCasesCache.map((c, i) => `
+        <div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick="arSelectCase(${i})">
+          <span class="ico"><i class="fa-solid fa-folder"></i></span>
+          <span style="flex:1;">${c.dosyaNo || 'Dosya No yok'} — ${c.basvurucuAd || '?'} / ${c.karsiTarafAd || '?'}</span>
+        </div>
+      `).join('') : emptyState('fa-handshake', 'Henüz dosya yok', 'Soldaki formdan bir başvuru evrakı yükleyip veya elle doldurup ilk dosyanızı oluşturun.')}
+    </div>
+  `;
+}
+
+async function arSelectCase(index) {
+  const c = arCasesCache[index];
+  if (!c) return;
+  arSelectedCaseId = c.id;
+  const pane = arGetPane();
+  pane.innerHTML = `
+    <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="arRenderCaseList()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.dosyaNo || 'Dosya No yok'}</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${c.basvurucuAd || '?'} — ${c.karsiTarafAd || '?'}</div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <button class="pop-cta-btn b" onclick="arShowGenForm('davet')"><i class="fa-solid fa-envelope"></i><span>Davet Mektubu Oluştur</span></button>
+        <button class="pop-cta-btn b" onclick="arShowGenForm('ilkoturum')"><i class="fa-solid fa-people-arrows"></i><span>İlk Oturum Tutanağı Oluştur</span></button>
+        <button class="pop-cta-btn b" onclick="arShowGenForm('sontutanak')"><i class="fa-solid fa-file-signature"></i><span>Son Tutanak Oluştur</span></button>
+      </div>
+
+      <div id="ar-gen-form"></div>
+      <div id="ar-gen-result" style="margin-top:14px;"></div>
+
+      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:12px;">
+        <span style="cursor:pointer;color:var(--danger);font-size:11.5px;" onclick="arDeleteCase('${c.id}')"><i class="fa-solid fa-trash"></i> Bu dosyayı sil</span>
+      </div>
+    </div>
+  `;
+}
+
+function arShowGenForm(docType) {
+  const formEl = document.getElementById('ar-gen-form');
+  document.getElementById('ar-gen-result').innerHTML = '';
+
+  if (docType === 'davet') {
+    formEl.innerHTML = `
+      <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Davet Mektubu</div></div>
+      <div class="fg"><div class="fl">Davet Edilecek Taraf</div>
+        <select id="ar-davet-taraf">
+          <option value="karsi">Karşı Taraf</option>
+          <option value="basvurucu">Başvurucu</option>
+        </select>
+      </div>
+      <div class="fg"><div class="fl">Gün ve Saat</div><input type="text" id="ar-davet-gunsaat" placeholder="05.09.2026 Saat 14.00"></div>
+      <div class="fg"><div class="fl">Toplantı Yeri</div><input type="text" id="ar-davet-yer" placeholder="Telekonferans / Büro adresi"></div>
+      <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('davet')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
+    `;
+  } else if (docType === 'ilkoturum') {
+    formEl.innerHTML = `
+      <div class="ic" style="margin-bottom:10px;"><div class="ic-t">İlk Oturum Tutanağı</div></div>
+      <div class="fg"><div class="fl">Toplantı Tarihi</div><input type="text" id="ar-ilk-tarih" placeholder="28.03.2026"></div>
+      <div class="fg"><div class="fl">Toplantı Saati</div><input type="text" id="ar-ilk-saat" placeholder="16.00"></div>
+      <div class="fg"><div class="fl">Kısa Notlar</div><textarea id="ar-ilk-notlar" rows="4" placeholder="Kiminle ne zaman görüşüldü, toplantı nasıl (yüz yüze/telekonferans) kararlaştırıldı, oturumda neler konuşuldu…"></textarea></div>
+      <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('ilkoturum')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
+    `;
+  } else if (docType === 'sontutanak') {
+    formEl.innerHTML = `
+      <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Son Tutanak</div></div>
+      <div class="fg"><div class="fl">Sonuç</div>
+        <select id="ar-son-sonuc">
+          <option value="anlasma">Anlaşma</option>
+          <option value="anlasamama">Anlaşamama</option>
+        </select>
+      </div>
+      <div class="fg"><div class="fl">Kısa Notlar</div><textarea id="ar-son-notlar" rows="4" placeholder="Anlaşma şartları ya da anlaşamama sebebi, görüşmede neler konuşuldu…"></textarea></div>
+      <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('sontutanak')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
+    `;
+  }
+}
+
+async function arGenerate(docType) {
+  if (!arSelectedCaseId) return;
+  const resultEl = document.getElementById('ar-gen-result');
+  resultEl.innerHTML = `<div style="font-size:12px;color:var(--t3);"><i class="fa-solid fa-spinner fa-spin"></i> Belge hazırlanıyor…</div>`;
+
+  const body = { docType };
+  if (docType === 'davet') {
+    body.davetEdilenTaraf = document.getElementById('ar-davet-taraf').value;
+    body.gunSaat = document.getElementById('ar-davet-gunsaat').value;
+    body.toplantiYeri = document.getElementById('ar-davet-yer').value;
+  } else if (docType === 'ilkoturum') {
+    body.toplantiTarihi = document.getElementById('ar-ilk-tarih').value;
+    body.toplantiSaati = document.getElementById('ar-ilk-saat').value;
+    body.notlar = document.getElementById('ar-ilk-notlar').value;
+  } else if (docType === 'sontutanak') {
+    body.sonuc = document.getElementById('ar-son-sonuc').value;
+    body.notlar = document.getElementById('ar-son-notlar').value;
+  }
+
+  try {
+    const res = await fetch('/api/mediation/cases/' + arSelectedCaseId + '/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      resultEl.innerHTML = `<div style="font-size:12px;color:var(--danger);">${data.error || 'Belge üretilemedi.'}</div>`;
+      return;
+    }
+    const filename = docType + '_' + (arSelectedCaseId || 'belge') + '.udf';
+    resultEl.innerHTML = `
+      <div style="background:var(--bg2);border-radius:var(--r);padding:14px;">
+        <div style="font-size:12px;color:var(--success);margin-bottom:8px;"><i class="fa-solid fa-circle-check"></i> Belge hazır.</div>
+        <button class="pop-cta-btn b" style="width:100%;" onclick='arDownloadUdf(${JSON.stringify(data.udfBase64)}, ${JSON.stringify(filename)})'><i class="fa-solid fa-download"></i><span>UDF İndir</span></button>
+        <details style="margin-top:10px;">
+          <summary style="cursor:pointer;font-size:11px;color:var(--t3);">Metni önizle</summary>
+          <div style="white-space:pre-wrap;font-size:11.5px;color:var(--t2);margin-top:8px;max-height:300px;overflow-y:auto;">${data.text.replace(/</g,'&lt;')}</div>
+        </details>
+      </div>
+    `;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="font-size:12px;color:var(--danger);">Bağlantı hatası.</div>`;
+  }
+}
+
+function arDownloadUdf(base64, filename) {
+  const byteChars = atob(base64);
+  const byteNumbers = new Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+  const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function arAutoFillFromFile() {
+  const fileInput = document.getElementById('ar-autofile');
+  const statusEl = document.getElementById('ar-autofill-status');
+  const file = fileInput.files[0];
+  if (!file) { toast('Önce bir belge seçin', 'fa-solid fa-triangle-exclamation'); return; }
+
+  statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Belge okunuyor…';
+
+  const form = new FormData();
+  form.append('files', file);
+  form.append('instruction', 'Bu başvuru evrakından taraf bilgilerini çıkar.');
+  form.append('mode', 'mediation-extract');
+  form.append('wantUdf', '0');
+
+  try {
+    const res = await fetch('/api/tools/analyze', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) {
+      statusEl.innerHTML = `<span style="color:var(--danger);">${data.error || 'Okunamadı.'}</span>`;
+      return;
+    }
+    let p;
+    try {
+      const clean = data.analysis.replace(/```json|```/g, '').trim();
+      p = JSON.parse(clean);
+    } catch (e) {
+      statusEl.innerHTML = `<span style="color:var(--danger);">AI'dan gelen veri okunamadı — elle doldurun.</span>`;
+      return;
+    }
+
+    const setIf = (id, val) => { if (val) document.getElementById(id).value = val; };
+    setIf('ar-dosyano', p.dosyaNo);
+    setIf('ar-bas-ad', p.basvurucuAd);
+    setIf('ar-bas-adres', p.basvurucuAdres);
+    setIf('ar-bas-vekil', p.basvurucuVekilAd);
+    setIf('ar-bas-barosicil', p.basvurucuBaroSicil);
+    setIf('ar-bas-tel', p.basvurucuTelefon);
+    setIf('ar-kar-ad', p.karsiTarafAd);
+    setIf('ar-kar-adres', p.karsiTarafAdres);
+    setIf('ar-kar-vergi', p.karsiTarafVergiMersis);
+    setIf('ar-kar-yetkili', p.karsiTarafYetkiliAd);
+    setIf('ar-kar-vekil', p.karsiTarafVekilAd);
+    setIf('ar-kar-tel', p.karsiTarafTelefon);
+    setIf('ar-uyusmazlik', p.uyusmazlikKonusu);
+    setIf('ar-basvuru-tarih', p.basvuruTarihi);
+
+    statusEl.innerHTML = '<span style="color:var(--success);"><i class="fa-solid fa-check"></i> Form dolduruldu — kaydetmeden önce kontrol edin.</span>';
+  } catch (e) {
+    statusEl.innerHTML = `<span style="color:var(--danger);">Bağlantı hatası.</span>`;
+  }
+}
+
+async function arSaveCase() {
+  const body = {
+    dosyaNo: document.getElementById('ar-dosyano').value,
+    basvurucuAd: document.getElementById('ar-bas-ad').value,
+    basvurucuAdres: document.getElementById('ar-bas-adres').value,
+    basvurucuVekilAd: document.getElementById('ar-bas-vekil').value,
+    basvurucuBaroSicil: document.getElementById('ar-bas-barosicil').value,
+    basvurucuTelefon: document.getElementById('ar-bas-tel').value,
+    karsiTarafAd: document.getElementById('ar-kar-ad').value,
+    karsiTarafAdres: document.getElementById('ar-kar-adres').value,
+    karsiTarafVergiMersis: document.getElementById('ar-kar-vergi').value,
+    karsiTarafYetkiliAd: document.getElementById('ar-kar-yetkili').value,
+    karsiTarafVekilAd: document.getElementById('ar-kar-vekil').value,
+    karsiTarafTelefon: document.getElementById('ar-kar-tel').value,
+    uyusmazlikKonusu: document.getElementById('ar-uyusmazlik').value,
+    basvuruTarihi: document.getElementById('ar-basvuru-tarih').value,
+    gorevlendirmeTarihi: document.getElementById('ar-gorev-tarih').value,
+  };
+  if (!body.basvurucuAd) { toast('Başvurucu adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+
+  const res = await fetch('/api/mediation/cases', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    toast('Dosya kaydedildi', 'fa-solid fa-check', true);
+    await arLoadCases();
+  } else {
+    toast('Kaydedilemedi', 'fa-solid fa-triangle-exclamation');
+  }
+}
+
+async function arDeleteCase(id) {
+  if (!confirm('Bu dosyayı silmek istediğinize emin misiniz?')) return;
+  await fetch('/api/mediation/cases/' + id, { method: 'DELETE' });
+  toast('Dosya silindi', 'fa-solid fa-trash');
+  arLoadCases();
 }

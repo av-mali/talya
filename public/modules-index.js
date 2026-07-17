@@ -37,6 +37,11 @@ window.MODULES_INDEX = [
         "name": "Kütüphanem"
       },
       {
+        "id": "arabuluculuk",
+        "icon": "fa-handshake",
+        "name": "Arabuluculuk"
+      },
+      {
         "id": "durusma",
         "icon": "fa-timeline",
         "name": "Duruşma Hazırlık"
