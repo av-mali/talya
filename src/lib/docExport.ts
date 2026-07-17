@@ -46,7 +46,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
 
     return new Paragraph({
       children,
-      alignment: centered ? AlignmentType.CENTER : undefined,
+      alignment: centered ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
       spacing: { after: 0, before: 0 },
     });
   });

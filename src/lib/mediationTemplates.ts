@@ -242,8 +242,9 @@ Arabuluculuk görüşmelerine, gerçek kişilerin kimlik belgesi, şirket yetkil
 Katılımınızı bekler, arabuluculuk sürecinin barışçıl bir çözümle sonuçlanmasını dilerim.`;
 
 // Davet mektubu genelde TEK bir tarafa gönderilir (davet edilen kişi
-// seçilerek) — bu yüzden burada tek bir "davetEdilen" alınır, o kişi
-// başvurucu ya da karşı taraflardan biri (index ile) olabilir.
+// seçilerek). "diğerTarafAd/diğerTarafVekil" = mektubu ALMAYAN, süreci
+// BAŞLATAN taraf (genelde başvurucu) — mektupta "X ve vekili Y tarafından
+// ... yapılan başvuru üzerine..." cümlesinde bahsedilir.
 export function buildDavetMektubu(
   c: MediationCaseData,
   a: ArabulucuProfile,
@@ -254,26 +255,33 @@ export function buildDavetMektubu(
   gunSaat: string,
   toplantiYeri: string,
   uyusmazlikOzeti: string,
-  today: string
+  today: string,
+  digerTarafAd: string,
+  digerTarafVekil: string
 ): string {
-  return `**ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR**
-**DAVETTE BULUNAN**	
-Arabulucu\t\t: Arb. ${v(a.name)}
+  const digerTarafCumle = digerTarafVekil
+    ? `**${v(digerTarafAd)}** ve vekili Sayın **Av. ${digerTarafVekil}**`
+    : `**${v(digerTarafAd)}**`;
+
+  return `[[C]]**ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR**
+
+**__DAVETTE BULUNAN__**\t
+Arabulucu\t\t: Arb. **${v(a.name)}**
 TELFON\t\t: ${v(a.phone)}
 E-Mail\t\t\t: ${v(a.email)}
 Adres\t\t\t: ${v(a.arabulucuAdres)}
 
-**DAVET EDİLEN**      \t\t
-Adı / Soyadı\t\t: ${v(davetEdilenAd)}
-Vekili\t\t\t: ${v(davetEdilenVekil, "")}
+**__DAVET EDİLEN__**      \t\t
+Adı / Soyadı\t\t: **${v(davetEdilenAd)}**
+Vekili\t\t\t: ${davetEdilenVekil ? `**Av. ${davetEdilenVekil}**` : ""}
 Baro / Sicil \t\t: ${v(davetEdilenBaroSicil, "")}
 Telefon\t\t: ${v(davetEdilenTelefon)}
-GÜN VE SAAT\t\t: ${v(gunSaat)}
-TOPLANTI YERİ\t\t: ${v(toplantiYeri)}
-AÇIKLAMALAR VE BİLGİLENDİRMELER: 
-Sayın ${v(davetEdilenAd)}${davetEdilenVekil ? " ve vekili Sayın " + davetEdilenVekil : ""},
-Tarafınızca ${v(a.arabuluculukBurosu)}'na yapılan başvuru üzerine UYAP Arabulucu Portal tarafından görevlendirilmiş Türkiye Cumhuriyeti Adalet Bakanlığı'ndaki resmi sicile kayıtlı ${v(a.arabulucuSicilNo)} sicil numaralı arabulucuyum.
-${v(uyusmazlikOzeti)} uyuşmazlığının, barışçıl olarak arabuluculuk yoluyla çözümlenmesine olanak sağlamak üzere, sizi tüm tarafların katılımıyla gerçekleşmeyi dilediğimiz arabuluculuk ilk oturumuna davet ediyorum.
+**__GÜN VE SAAT__**\t\t: ${v(gunSaat)}
+**__TOPLANTI YERİ__**\t\t: ${v(toplantiYeri)}
+**__AÇIKLAMALAR VE BİLGİLENDİRMELER: __**
+Sayın **${v(davetEdilenAd)}**${davetEdilenVekil ? ` ve vekili Sayın **Av. ${davetEdilenVekil}**` : ""},
+${digerTarafCumle} tarafından **${v(a.arabuluculukBurosu)}**'na yapılan başvuru üzerine UYAP Arabulucu Portal tarafından görevlendirilmiş Türkiye Cumhuriyeti Adalet Bakanlığı'ndaki resmi sicile kayıtlı ${v(a.arabulucuSicilNo)} sicil numaralı arabulucuyum.
+**${v(digerTarafAd)}** ile aranızdaki ${v(uyusmazlikOzeti)} uyuşmazlığının, barışçıl olarak arabuluculuk yoluyla çözümlenmesine olanak sağlamak üzere, sizi tüm tarafların katılımıyla gerçekleşmeyi dilediğimiz arabuluculuk ilk oturumuna davet ediyorum.
 ${DAVET_MEKTUBU_BILGILENDIRME}
 Saygılarımla… ${today}`;
 }

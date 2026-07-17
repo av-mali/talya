@@ -92,11 +92,16 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (docType === "davet") {
       const { davetEdilenSecim, gunSaat, toplantiYeri } = body;
       let ad = "", vekil = "", baroSicil = "", telefon = "";
+      let digerTarafAd = "", digerTarafVekil = "";
       if (davetEdilenSecim === "basvurucu") {
         ad = mediationCase.basvurucuAd || "";
         vekil = mediationCase.basvurucuVekilAd || "";
         baroSicil = mediationCase.basvurucuBaroSicil || "";
         telefon = mediationCase.basvurucuTelefon || "";
+        // Başvurucu davet ediliyorsa, "diğer taraf" karşı taraf(lar) olur.
+        const first = mediationCase.karsiTaraflar[0];
+        digerTarafAd = (mediationCase.karsiTaraflar || []).map((p) => p.ad).filter(Boolean).join(", ") || "";
+        digerTarafVekil = first?.vekilAd || "";
       } else {
         const idx = parseInt(String(davetEdilenSecim).replace("karsi-", ""), 10);
         const p = mediationCase.karsiTaraflar[idx];
@@ -104,6 +109,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         ad = p.ad || "";
         vekil = p.vekilAd || "";
         telefon = p.telefon || "";
+        // Karşı taraf davet ediliyorsa, "diğer taraf" başvurucu olur.
+        digerTarafAd = mediationCase.basvurucuAd || "";
+        digerTarafVekil = mediationCase.basvurucuVekilAd || "";
       }
 
       const today = new Date().toLocaleDateString("tr-TR");
@@ -119,7 +127,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         gunSaat || "",
         toplantiYeri || "",
         uyusmazlikOzeti,
-        today
+        today,
+        digerTarafAd,
+        digerTarafVekil
       );
 
       const docxBuffer = await generateDocx(finalText);
