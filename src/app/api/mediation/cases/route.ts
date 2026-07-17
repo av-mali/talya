@@ -14,6 +14,7 @@ export async function GET() {
 
   const cases = await prisma.mediationCase.findMany({
     where: { userId },
+    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
     orderBy: { updatedAt: "desc" },
   });
   return NextResponse.json({ cases });
@@ -28,6 +29,8 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
+  const karsiTaraflar = Array.isArray(body.karsiTaraflar) ? body.karsiTaraflar : [];
+
   const mediationCase = await prisma.mediationCase.create({
     data: {
       userId,
@@ -37,16 +40,22 @@ export async function POST(req: Request) {
       basvurucuVekilAd: body.basvurucuVekilAd || null,
       basvurucuBaroSicil: body.basvurucuBaroSicil || null,
       basvurucuTelefon: body.basvurucuTelefon || null,
-      karsiTarafAd: body.karsiTarafAd || null,
-      karsiTarafAdres: body.karsiTarafAdres || null,
-      karsiTarafVergiMersis: body.karsiTarafVergiMersis || null,
-      karsiTarafYetkiliAd: body.karsiTarafYetkiliAd || null,
-      karsiTarafVekilAd: body.karsiTarafVekilAd || null,
-      karsiTarafTelefon: body.karsiTarafTelefon || null,
       uyusmazlikKonusu: body.uyusmazlikKonusu || null,
       basvuruTarihi: body.basvuruTarihi || null,
       gorevlendirmeTarihi: body.gorevlendirmeTarihi || null,
+      karsiTaraflar: {
+        create: karsiTaraflar.map((p: any, i: number) => ({
+          ad: p.ad || null,
+          adres: p.adres || null,
+          vergiMersis: p.vergiMersis || null,
+          yetkiliAd: p.yetkiliAd || null,
+          vekilAd: p.vekilAd || null,
+          telefon: p.telefon || null,
+          sira: i,
+        })),
+      },
     },
+    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
   });
   return NextResponse.json({ case: mediationCase });
 }

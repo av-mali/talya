@@ -112,12 +112,9 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">Vekil Baro/Sicil</div><input type="text" id="ar-bas-barosicil"></div>
         <div class="fg"><div class="fl">Başvurucu Telefon</div><input type="text" id="ar-bas-tel"></div>
 
-        <div class="fg"><div class="fl">Karşı Taraf Adı</div><input type="text" id="ar-kar-ad"></div>
-        <div class="fg"><div class="fl">Karşı Taraf Adresi</div><input type="text" id="ar-kar-adres"></div>
-        <div class="fg"><div class="fl">Vergi/Mersis No <span class="opt">(tüzel kişi ise)</span></div><input type="text" id="ar-kar-vergi"></div>
-        <div class="fg"><div class="fl">Şirket Yetkilisi <span class="opt">(varsa)</span></div><input type="text" id="ar-kar-yetkili"></div>
-        <div class="fg"><div class="fl">Karşı Taraf Vekili <span class="opt">(varsa)</span></div><input type="text" id="ar-kar-vekil" placeholder="Av. ..."></div>
-        <div class="fg"><div class="fl">Karşı Taraf Telefon</div><input type="text" id="ar-kar-tel"></div>
+        <div class="fg"><div class="fl">Karşı Taraf(lar) <span class="opt">(birden fazla eklenebilir)</span></div></div>
+        <div id="ar-karsi-list"></div>
+        <button class="pop-cta-btn b" style="width:100%;margin-bottom:14px;" onclick="arAddKarsiRow()" type="button"><i class="fa-solid fa-plus"></i><span>Karşı Taraf Ekle</span></button>
 
         <div class="fg"><div class="fl">Uyuşmazlık Konusu</div><textarea id="ar-uyusmazlik" rows="3" placeholder="Kısa açıklama, madde madde olabilir…"></textarea></div>
         <div class="fg"><div class="fl">Başvuru Tarihi</div><input type="text" id="ar-basvuru-tarih" placeholder="12.03.2026"></div>
@@ -655,6 +652,38 @@ async function libraryDeleteItem(id) {
 // ══════════════════════════════════════════════════════
 let arCasesCache = [];
 let arSelectedCaseId = null;
+let arKarsiTarafRows = []; // form üzerindeki karşı taraf satırlarının verisi
+
+function arRenderKarsiRows() {
+  const box = document.getElementById('ar-karsi-list');
+  if (!box) return;
+  box.innerHTML = arKarsiTarafRows.map((row, i) => `
+    <div style="background:var(--bg2);border-radius:var(--r);padding:10px;margin-bottom:8px;position:relative;">
+      ${arKarsiTarafRows.length > 1 ? `<span style="position:absolute;top:8px;right:8px;cursor:pointer;color:var(--t3);" onclick="arRemoveKarsiRow(${i})"><i class="fa-solid fa-xmark"></i></span>` : ''}
+      <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Karşı Taraf ${arKarsiTarafRows.length > 1 ? (i + 1) : ''}</div>
+      <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Adı / Unvanı" value="${(row.ad||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].ad=this.value"></div>
+      <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Adres" value="${(row.adres||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].adres=this.value"></div>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <input type="text" placeholder="Vergi/Mersis No" value="${(row.vergiMersis||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].vergiMersis=this.value" style="flex:1;">
+        <input type="text" placeholder="Şirket Yetkilisi" value="${(row.yetkiliAd||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].yetkiliAd=this.value" style="flex:1;">
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" placeholder="Vekili (varsa)" value="${(row.vekilAd||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].vekilAd=this.value" style="flex:1;">
+        <input type="text" placeholder="Telefon" value="${(row.telefon||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].telefon=this.value" style="flex:1;">
+      </div>
+    </div>
+  `).join('');
+}
+
+function arAddKarsiRow() {
+  arKarsiTarafRows.push({ ad: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', telefon: '' });
+  arRenderKarsiRows();
+}
+
+function arRemoveKarsiRow(index) {
+  arKarsiTarafRows.splice(index, 1);
+  arRenderKarsiRows();
+}
 
 function arGetPane() {
   const empty = document.getElementById('chatEmpty');
@@ -663,6 +692,8 @@ function arGetPane() {
 }
 
 async function arOnOpen() {
+  arKarsiTarafRows = [{ ad: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', telefon: '' }];
+  arRenderKarsiRows();
   arGetPane().innerHTML = skeletonLines(3);
   await arLoadCases();
 }
@@ -697,12 +728,13 @@ async function arSelectCase(index) {
   const c = arCasesCache[index];
   if (!c) return;
   arSelectedCaseId = c.id;
+  const karsiOzet = (c.karsiTaraflar || []).map(p => p.ad).filter(Boolean).join(', ') || '?';
   const pane = arGetPane();
   pane.innerHTML = `
     <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="arRenderCaseList()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.dosyaNo || 'Dosya No yok'}</div>
-      <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${c.basvurucuAd || '?'} — ${c.karsiTarafAd || '?'}</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${c.basvurucuAd || '?'} — ${karsiOzet}</div>
 
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
         <button class="pop-cta-btn b" onclick="arShowGenForm('davet')"><i class="fa-solid fa-envelope"></i><span>Davet Mektubu Oluştur</span></button>
@@ -723,15 +755,15 @@ async function arSelectCase(index) {
 function arShowGenForm(docType) {
   const formEl = document.getElementById('ar-gen-form');
   document.getElementById('ar-gen-result').innerHTML = '';
+  const c = arCasesCache.find(cc => cc.id === arSelectedCaseId);
 
   if (docType === 'davet') {
+    const options = [`<option value="basvurucu">Başvurucu — ${(c?.basvurucuAd)||''}</option>`]
+      .concat((c?.karsiTaraflar || []).map((p, i) => `<option value="karsi-${i}">${(c.karsiTaraflar.length > 1 ? 'Karşı Taraf ' + (i+1) + ' — ' : 'Karşı Taraf — ')}${p.ad||''}</option>`));
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Davet Mektubu</div></div>
       <div class="fg"><div class="fl">Davet Edilecek Taraf</div>
-        <select id="ar-davet-taraf">
-          <option value="karsi">Karşı Taraf</option>
-          <option value="basvurucu">Başvurucu</option>
-        </select>
+        <select id="ar-davet-taraf">${options.join('')}</select>
       </div>
       <div class="fg"><div class="fl">Gün ve Saat</div><input type="text" id="ar-davet-gunsaat" placeholder="05.09.2026 Saat 14.00"></div>
       <div class="fg"><div class="fl">Toplantı Yeri</div><input type="text" id="ar-davet-yer" placeholder="Telekonferans / Büro adresi"></div>
@@ -767,7 +799,7 @@ async function arGenerate(docType) {
 
   const body = { docType };
   if (docType === 'davet') {
-    body.davetEdilenTaraf = document.getElementById('ar-davet-taraf').value;
+    body.davetEdilenSecim = document.getElementById('ar-davet-taraf').value;
     body.gunSaat = document.getElementById('ar-davet-gunsaat').value;
     body.toplantiYeri = document.getElementById('ar-davet-yer').value;
   } else if (docType === 'ilkoturum') {
@@ -854,16 +886,19 @@ async function arAutoFillFromFile() {
     setIf('ar-bas-vekil', p.basvurucuVekilAd);
     setIf('ar-bas-barosicil', p.basvurucuBaroSicil);
     setIf('ar-bas-tel', p.basvurucuTelefon);
-    setIf('ar-kar-ad', p.karsiTarafAd);
-    setIf('ar-kar-adres', p.karsiTarafAdres);
-    setIf('ar-kar-vergi', p.karsiTarafVergiMersis);
-    setIf('ar-kar-yetkili', p.karsiTarafYetkiliAd);
-    setIf('ar-kar-vekil', p.karsiTarafVekilAd);
-    setIf('ar-kar-tel', p.karsiTarafTelefon);
     setIf('ar-uyusmazlik', p.uyusmazlikKonusu);
     setIf('ar-basvuru-tarih', p.basvuruTarihi);
 
-    statusEl.innerHTML = '<span style="color:var(--success);"><i class="fa-solid fa-check"></i> Form dolduruldu — kaydetmeden önce kontrol edin.</span>';
+    if (Array.isArray(p.karsiTaraflar) && p.karsiTaraflar.length) {
+      arKarsiTarafRows = p.karsiTaraflar.map(k => ({
+        ad: k.ad || '', adres: k.adres || '', vergiMersis: k.vergiMersis || '',
+        yetkiliAd: k.yetkiliAd || '', vekilAd: k.vekilAd || '', telefon: k.telefon || '',
+      }));
+      arRenderKarsiRows();
+      statusEl.innerHTML = `<span style="color:var(--success);"><i class="fa-solid fa-check"></i> Form dolduruldu (${p.karsiTaraflar.length} karşı taraf bulundu) — kaydetmeden önce kontrol edin.</span>`;
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--success);"><i class="fa-solid fa-check"></i> Form dolduruldu — kaydetmeden önce kontrol edin.</span>';
+    }
   } catch (e) {
     statusEl.innerHTML = `<span style="color:var(--danger);">Bağlantı hatası.</span>`;
   }
@@ -877,17 +912,13 @@ async function arSaveCase() {
     basvurucuVekilAd: document.getElementById('ar-bas-vekil').value,
     basvurucuBaroSicil: document.getElementById('ar-bas-barosicil').value,
     basvurucuTelefon: document.getElementById('ar-bas-tel').value,
-    karsiTarafAd: document.getElementById('ar-kar-ad').value,
-    karsiTarafAdres: document.getElementById('ar-kar-adres').value,
-    karsiTarafVergiMersis: document.getElementById('ar-kar-vergi').value,
-    karsiTarafYetkiliAd: document.getElementById('ar-kar-yetkili').value,
-    karsiTarafVekilAd: document.getElementById('ar-kar-vekil').value,
-    karsiTarafTelefon: document.getElementById('ar-kar-tel').value,
+    karsiTaraflar: arKarsiTarafRows.filter(r => r.ad && r.ad.trim()),
     uyusmazlikKonusu: document.getElementById('ar-uyusmazlik').value,
     basvuruTarihi: document.getElementById('ar-basvuru-tarih').value,
     gorevlendirmeTarihi: document.getElementById('ar-gorev-tarih').value,
   };
   if (!body.basvurucuAd) { toast('Başvurucu adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+  if (!body.karsiTaraflar.length) { toast('En az bir karşı taraf girmelisiniz', 'fa-solid fa-triangle-exclamation'); return; }
 
   const res = await fetch('/api/mediation/cases', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },

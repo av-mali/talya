@@ -3,6 +3,20 @@
 // alınmıştır. Bu metinler AI'a hiç yazdırılmaz (halüsinasyon/hata riski
 // olmasın diye) — sadece değişken alanlar (taraf bilgileri, tarihler) ve
 // kısa anlatı paragrafları AI ile doldurulur, geri kalanı burada.
+//
+// NOT: Karşı taraf sayısı BİRDEN FAZLA olabilir (gerçek başvuru
+// formlarında sık görülen bir durum) — bu yüzden karşı taraflar bir
+// dizi (array) olarak tutulur ve her biri için ayrı bir "KARŞI TARAF"
+// bloğu üretilir.
+
+export type MediationParty = {
+  ad?: string | null;
+  adres?: string | null;
+  vergiMersis?: string | null;
+  yetkiliAd?: string | null;
+  vekilAd?: string | null;
+  telefon?: string | null;
+};
 
 export type MediationCaseData = {
   dosyaNo?: string | null;
@@ -11,15 +25,10 @@ export type MediationCaseData = {
   basvurucuVekilAd?: string | null;
   basvurucuBaroSicil?: string | null;
   basvurucuTelefon?: string | null;
-  karsiTarafAd?: string | null;
-  karsiTarafAdres?: string | null;
-  karsiTarafVergiMersis?: string | null;
-  karsiTarafYetkiliAd?: string | null;
-  karsiTarafVekilAd?: string | null;
-  karsiTarafTelefon?: string | null;
   uyusmazlikKonusu?: string | null;
   basvuruTarihi?: string | null;
   gorevlendirmeTarihi?: string | null;
+  karsiTaraflar?: MediationParty[];
 };
 
 export type ArabulucuProfile = {
@@ -35,14 +44,35 @@ function v(val?: string | null, fallback = "……………") {
   return val && val.trim() ? val.trim() : fallback;
 }
 
+function partiesList(c: MediationCaseData): MediationParty[] {
+  return c.karsiTaraflar && c.karsiTaraflar.length ? c.karsiTaraflar : [{}];
+}
+
+// Bir karşı taraf bloğu (birden fazlaysa numaralanır: "KARŞI TARAF 1" vb.)
+function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): string {
+  const label = total > 1 ? `KARŞI TARAF ${index + 1}` : "KARŞI TARAF";
+  return `${label}\t\t\t
+
+\tAdı ve Soyadı\t: ${v(p.ad)}
+\tAdres\t: ${v(p.adres)}
+\tVergi/Mersis/Detsis No\t: ${v(p.vergiMersis, "")}
+\tŞirket Yetkilisi\t: ${v(p.yetkiliAd, "")}
+\tVekili\t: ${v(p.vekilAd, "")}
+\tTelefon\t: ${v(p.telefon)}
+`;
+}
+
 // Üç belgede de ortak olan başlık bloğu (Arabuluculuk Bürosu, Arabulucu,
-// Başvurucu, Karşı Taraf, Uyuşmazlık Konusu, tarihler).
+// Başvurucu, Karşı Taraf(lar), Uyuşmazlık Konusu, tarihler).
 export function buildHeaderBlock(
   c: MediationCaseData,
   a: ArabulucuProfile,
   arabulucuLabel: string, // "ARABULUCU" veya "ARABULUCUNUN"
   extraLine?: string // ör. "Arabuluculuk Sonucu\t\t\t: ANLAŞMA"
 ): string {
+  const parties = partiesList(c);
+  const karsiTarafBlocks = parties.map((p, i) => buildKarsiTarafBlock(p, i, parties.length)).join("\n");
+
   return `ARABULUCULUK BÜROSU\t\t\t\t  
  
 \tArabuluculuk Bürosu\t: ${v(a.arabuluculukBurosu)}
@@ -64,14 +94,7 @@ BAŞVURUCU\t\t\t
 \tBaro / Sicil Numarası\t: ${v(c.basvurucuBaroSicil, "")}
 \tTelefon\t: ${v(c.basvurucuTelefon)}
 
-KARŞI TARAF\t\t\t
-
-\tAdı ve Soyadı\t: ${v(c.karsiTarafAd)}
-\tAdres\t: ${v(c.karsiTarafAdres)}
-\tVergi/Mersis/Detsis No\t: ${v(c.karsiTarafVergiMersis, "")}
-\tŞirket Yetkilisi\t: ${v(c.karsiTarafYetkiliAd, "")}
-\tTelefon\t: ${v(c.karsiTarafTelefon)}
-
+${karsiTarafBlocks}
 ARABULUCULUK KONUSU UYUŞMAZLIK
  
 ${v(c.uyusmazlikKonusu)}
@@ -83,22 +106,30 @@ Tutanağının Düzenlendiği Tarih\t\t: ${v(c.gorevlendirmeTarihi)}${extraLine 
 }
 
 // İmza bloğu — Başvurucu tarafında vekil varsa vekil adı + "Başvurucu
-// Vekili", yoksa başvurucunun kendisi; karşı tarafta da aynı mantık
-// (şirket yetkilisi / vekil / kendisi).
+// Vekili", yoksa başvurucunun kendisi; her karşı taraf için de aynı
+// mantıkla (vekil / şirket yetkilisi / kendisi) ayrı bir imza sütunu.
 export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): string {
   const basvurucuSign = c.basvurucuVekilAd
     ? { name: c.basvurucuVekilAd, role: "Başvurucu Vekili" }
     : { name: v(c.basvurucuAd), role: "Başvurucu" };
 
-  const karsiSign = c.karsiTarafVekilAd
-    ? { name: c.karsiTarafVekilAd, role: "Karşı Taraf Vekili" }
-    : c.karsiTarafYetkiliAd
-    ? { name: c.karsiTarafYetkiliAd, role: "Karşı Taraf (Şirket Yetkilisi)" }
-    : { name: v(c.karsiTarafAd), role: "Karşı Taraf" };
+  const parties = partiesList(c);
+  const karsiSigns = parties.map((p, i) => {
+    const suffix = parties.length > 1 ? ` ${i + 1}` : "";
+    if (p.vekilAd) return { name: p.vekilAd, role: `Karşı Taraf${suffix} Vekili` };
+    if (p.yetkiliAd) return { name: p.yetkiliAd, role: `Karşı Taraf${suffix} (Şirket Yetkilisi)` };
+    return { name: v(p.ad), role: `Karşı Taraf${suffix}` };
+  });
 
-  return `        ${basvurucuSign.name}\t\t${karsiSign.name}\tArb. ${v(a.name)}
-       ${basvurucuSign.role}                         ${karsiSign.role}                        (Sicil No: ${v(a.arabulucuSicilNo)})
-      ¸\t                      ¸                  \t     ¸
+  const allSigns = [basvurucuSign, ...karsiSigns, { name: `Arb. ${v(a.name)}`, role: `(Sicil No: ${v(a.arabulucuSicilNo)})` }];
+
+  const nameLine = allSigns.map((s) => s.name).join("\t\t");
+  const roleLine = allSigns.map((s) => s.role).join("\t\t");
+  const markLine = allSigns.map(() => "¸").join("\t\t");
+
+  return `        ${nameLine}
+       ${roleLine}
+      ${markLine}
  
 
    
@@ -146,6 +177,9 @@ Yukarıda belirtilen tarihte yapılacak ilk toplantıya taraflardan birinin geç
 Arabuluculuk görüşmelerine, gerçek kişilerin kimlik belgesi, şirket yetkililerinin kimlik belgesi ve imza sirküleri, avukatların kimlik belgesi ve arabuluculuk görüşmelerine katılma konusunda özel yetki bulunan vekâletname ile toplantıya katılması gerekmektedir. Arabuluculuk görüşmelerinde, idarenin taraf olduğu uyuşmazlıklarda idareyi, üst yönetici tarafından belirlenen iki üye ile hukuk birimi amiri veya onun belirleyeceği bir avukat ya da hukuk müşavirinden oluşan komisyon temsil eder (HUAK m. 15/8). Komisyon kendisini vekil ile temsil ettiremez (HUAK Yönetmeliği m. 18/1).
 Katılımınızı bekler, arabuluculuk sürecinin barışçıl bir çözümle sonuçlanmasını dilerim.`;
 
+// Davet mektubu genelde TEK bir tarafa gönderilir (davet edilen kişi
+// seçilerek) — bu yüzden burada tek bir "davetEdilen" alınır, o kişi
+// başvurucu ya da karşı taraflardan biri (index ile) olabilir.
 export function buildDavetMektubu(
   c: MediationCaseData,
   a: ArabulucuProfile,

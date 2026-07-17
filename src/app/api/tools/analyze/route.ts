@@ -43,24 +43,28 @@ const SYSTEM_HINTS: Record<string, string> = {
   "mahkeme": "mahkeme/kurum adı varsa (yoksa null)"
 }
 Emin olmadığın alanları uydurma — null bırak. Belgede müvekkil kimin tarafı olduğu net değilse, dilekçeyi/belgeyi hazırlayan tarafı müvekkil olarak varsay.`,
-  "mediation-extract": `Sana bir arabuluculuk başvuru evrakı veriliyor. Bu belgeden aşağıdaki bilgileri çıkar ve SADECE geçerli bir JSON nesnesi olarak döndür — başka hiçbir açıklama, markdown işareti eklemeden, sadece ham JSON:
+  "mediation-extract": `Sana bir arabuluculuk başvuru evrakı veriliyor. Bu belgede BİRDEN FAZLA karşı taraf/diğer taraf olabilir (ör. "DİĞER TARAF BİLGİLERİ" başlığı birden fazla kez tekrar edebilir) — hepsini bul, hiçbirini atlama. Belgeden aşağıdaki bilgileri çıkar ve SADECE geçerli bir JSON nesnesi olarak döndür — başka hiçbir açıklama, markdown işareti eklemeden, sadece ham JSON:
 {
   "dosyaNo": "varsa dosya/başvuru numarası (yoksa null)",
-  "basvurucuAd": "başvurucunun adı soyadı (varsa TC no ile birlikte, yoksa null)",
+  "basvurucuAd": "başvurucunun/başvuru sahibinin adı soyadı (varsa TC no ile birlikte, yoksa null)",
   "basvurucuAdres": "başvurucunun adresi (yoksa null)",
   "basvurucuVekilAd": "başvurucu vekili varsa adı (yoksa null)",
   "basvurucuBaroSicil": "başvurucu vekilinin baro/sicil no varsa (yoksa null)",
   "basvurucuTelefon": "başvurucunun telefonu (yoksa null)",
-  "karsiTarafAd": "karşı tarafın adı/unvanı (yoksa null)",
-  "karsiTarafAdres": "karşı tarafın adresi (yoksa null)",
-  "karsiTarafVergiMersis": "karşı taraf tüzel kişiyse vergi/mersis no (yoksa null)",
-  "karsiTarafYetkiliAd": "karşı taraf tüzel kişiyse şirket yetkilisinin adı (yoksa null)",
-  "karsiTarafVekilAd": "karşı taraf vekili varsa adı (yoksa null)",
-  "karsiTarafTelefon": "karşı tarafın telefonu (yoksa null)",
+  "karsiTaraflar": [
+    {
+      "ad": "bu karşı tarafın adı/unvanı",
+      "adres": "adresi (yoksa null)",
+      "vergiMersis": "tüzel kişiyse vergi/mersis no (yoksa null)",
+      "yetkiliAd": "tüzel kişiyse şirket yetkilisinin adı (yoksa null)",
+      "vekilAd": "vekili varsa adı (yoksa null)",
+      "telefon": "telefonu (yoksa null)"
+    }
+  ],
   "uyusmazlikKonusu": "uyuşmazlık konusunun kısa özeti, maddeler halinde olabilir (yoksa null)",
   "basvuruTarihi": "başvuru tarihi varsa GG.AA.YYYY formatında (yoksa null)"
 }
-Emin olmadığın alanları uydurma — null bırak.`,
+"karsiTaraflar" dizisine belgede geçen HER "diğer taraf / karşı taraf" için AYRI bir nesne ekle — bir kişi sadece isim biliniyor bile olsa (adres/telefon boşsa) yine de listeye ekle, atlama. Emin olmadığın alanları uydurma — null bırak.`,
 };
 
 function getExt(filename: string) {

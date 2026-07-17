@@ -12,7 +12,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const userId = (session.user as any).id as string;
 
-  const found = await requireOwnedMediationCase(params.id, userId);
+  const found = await prisma.mediationCase.findFirst({
+    where: { id: params.id, userId },
+    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
+  });
   if (!found) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });
   return NextResponse.json({ case: found });
 }
@@ -29,15 +32,34 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const data: any = {};
   const fields = [
     "dosyaNo", "basvurucuAd", "basvurucuAdres", "basvurucuVekilAd", "basvurucuBaroSicil",
-    "basvurucuTelefon", "karsiTarafAd", "karsiTarafAdres", "karsiTarafVergiMersis",
-    "karsiTarafYetkiliAd", "karsiTarafVekilAd", "karsiTarafTelefon", "uyusmazlikKonusu",
-    "basvuruTarihi", "gorevlendirmeTarihi",
+    "basvurucuTelefon", "uyusmazlikKonusu", "basvuruTarihi", "gorevlendirmeTarihi",
   ];
   for (const f of fields) {
     if (body[f] !== undefined) data[f] = body[f] || null;
   }
 
-  const updated = await prisma.mediationCase.update({ where: { id: params.id }, data });
+  // Karşı taraf listesi gönderildiyse, eskilerini silip yenilerini yaz
+  // (basit ve güvenilir bir "tamamını değiştir" yaklaşımı).
+  if (Array.isArray(body.karsiTaraflar)) {
+    await prisma.mediationParty.deleteMany({ where: { caseId: params.id } });
+    data.karsiTaraflar = {
+      create: body.karsiTaraflar.map((p: any, i: number) => ({
+        ad: p.ad || null,
+        adres: p.adres || null,
+        vergiMersis: p.vergiMersis || null,
+        yetkiliAd: p.yetkiliAd || null,
+        vekilAd: p.vekilAd || null,
+        telefon: p.telefon || null,
+        sira: i,
+      })),
+    };
+  }
+
+  const updated = await prisma.mediationCase.update({
+    where: { id: params.id },
+    data,
+    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
+  });
   return NextResponse.json({ case: updated });
 }
 

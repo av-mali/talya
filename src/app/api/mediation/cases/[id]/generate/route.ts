@@ -34,6 +34,12 @@ async function generateNarrative(prompt: string): Promise<string> {
   return text.trim();
 }
 
+function partiesSummary(mediationCase: any): string {
+  return (mediationCase.karsiTaraflar || [])
+    .map((p: any) => p.ad + (p.vekilAd ? " vekili " + p.vekilAd : p.yetkiliAd ? " yetkilisi " + p.yetkiliAd : ""))
+    .join("; ");
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
@@ -45,7 +51,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "AI kullanım yetkiniz yok." }, { status: 403 });
   }
 
-  const mediationCase = await prisma.mediationCase.findFirst({ where: { id: params.id, userId } });
+  const mediationCase = await prisma.mediationCase.findFirst({
+    where: { id: params.id, userId },
+    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
+  });
   if (!mediationCase) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });
 
   const profile = await prisma.user.findUnique({
@@ -61,13 +70,22 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     let finalText = "";
 
     if (docType === "davet") {
-      const { davetEdilenTaraf, gunSaat, toplantiYeri } = body;
-      // davetEdilenTaraf: "basvurucu" | "karsi" — davet edilen taraf seçimi
-      const isKarsi = davetEdilenTaraf === "karsi";
-      const ad = isKarsi ? mediationCase.karsiTarafAd : mediationCase.basvurucuAd;
-      const vekil = isKarsi ? mediationCase.karsiTarafVekilAd : mediationCase.basvurucuVekilAd;
-      const baroSicil = isKarsi ? "" : mediationCase.basvurucuBaroSicil || "";
-      const telefon = isKarsi ? mediationCase.karsiTarafTelefon : mediationCase.basvurucuTelefon;
+      // davetEdilenSecim: "basvurucu" ya da "karsi-0", "karsi-1" gibi (karşı taraf sırası)
+      const { davetEdilenSecim, gunSaat, toplantiYeri } = body;
+      let ad = "", vekil = "", baroSicil = "", telefon = "";
+      if (davetEdilenSecim === "basvurucu") {
+        ad = mediationCase.basvurucuAd || "";
+        vekil = mediationCase.basvurucuVekilAd || "";
+        baroSicil = mediationCase.basvurucuBaroSicil || "";
+        telefon = mediationCase.basvurucuTelefon || "";
+      } else {
+        const idx = parseInt(String(davetEdilenSecim).replace("karsi-", ""), 10);
+        const p = mediationCase.karsiTaraflar[idx];
+        if (!p) return NextResponse.json({ error: "Davet edilecek taraf bulunamadı." }, { status: 400 });
+        ad = p.ad || "";
+        vekil = p.vekilAd || "";
+        telefon = p.telefon || "";
+      }
 
       const today = new Date().toLocaleDateString("tr-TR");
       const uyusmazlikOzeti = (mediationCase.uyusmazlikKonusu || "").split("\n")[0] || "aranızdaki uyuşmazlığın";
@@ -75,10 +93,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       finalText = buildDavetMektubu(
         mediationCase,
         profile,
-        ad || "",
-        vekil || "",
+        ad,
+        vekil,
         baroSicil,
-        telefon || "",
+        telefon,
         gunSaat || "",
         toplantiYeri || "",
         uyusmazlikOzeti,
@@ -96,10 +114,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
 "[Tarih] günü saat [saat]'da [taraflar]'ın toplantı oturumunda oldukları görüldü ve müzakere süreci başladı."
 
-Şimdi SANA VERİLEN şu bilgilere göre, BU AYNI ÜSLUPTA, benzer uzunlukta 2 paragraf yaz (sadece bu 2 paragrafı yaz, başka açıklama ekleme, başlık ekleme):
+Şimdi SANA VERİLEN şu bilgilere göre, BU AYNI ÜSLUPTA, benzer uzunlukta 2 paragraf yaz (sadece bu 2 paragrafı yaz, başka açıklama ekleme, başlık ekleme). Karşı taraf sayısı birden fazlaysa HEPSİYLE yapılan görüşmeden bahset:
 
 Başvurucu: ${mediationCase.basvurucuAd}${mediationCase.basvurucuVekilAd ? " vekili " + mediationCase.basvurucuVekilAd : ""}
-Karşı Taraf: ${mediationCase.karsiTarafAd}${mediationCase.karsiTarafVekilAd ? " vekili " + mediationCase.karsiTarafVekilAd : mediationCase.karsiTarafYetkiliAd ? " yetkilisi " + mediationCase.karsiTarafYetkiliAd : ""}
+Karşı Taraf(lar): ${partiesSummary(mediationCase)}
 Toplantı Tarihi ve Saati: ${toplantiTarihi || "belirtilmedi"} ${toplantiSaati || ""}
 Kullanıcının kısa notları (gerçekleşen görüşmeler, kararlaştırılanlar): ${notlar}
 
@@ -142,10 +160,10 @@ Kullanıcının notu: ${notlar}`;
 
 "[Tarih] günü taraflarla görüşmeler yapılmış, [karşı taraf] ile yapılan görüşmede... taraflar aşağıda belirtilen şartlar altında anlaşmaya varmıştır." ardından anlaşma şartlarının madde madde/paragraf paragraf yazılması, ardından: "Taraflar, üzerinde anlaşılan hususlar hakkında dava açılamayacağını anladıklarını ve bu durumu kabul ettiklerini beyan ederek son tutanağın bu şekilde düzenlenmesini talep etmişlerdir. ... arabuluculuk süreci ANLAŞMA ile sonuçlandırılmıştır."
 
-Şimdi şu bilgilerden AYNI ÜSLUPTA anlatı paragraf(lar)ı yaz (sadece anlatıyı yaz, başlık/açıklama ekleme):
+Şimdi şu bilgilerden AYNI ÜSLUPTA anlatı paragraf(lar)ı yaz (sadece anlatıyı yaz, başlık/açıklama ekleme). Karşı taraf sayısı birden fazlaysa hepsinin anlaşmaya katılıp katılmadığını netleştir:
 
 Başvurucu: ${mediationCase.basvurucuAd}${mediationCase.basvurucuVekilAd ? " vekili " + mediationCase.basvurucuVekilAd : ""}
-Karşı Taraf: ${mediationCase.karsiTarafAd}${mediationCase.karsiTarafVekilAd ? " vekili " + mediationCase.karsiTarafVekilAd : mediationCase.karsiTarafYetkiliAd ? " yetkilisi " + mediationCase.karsiTarafYetkiliAd : ""}
+Karşı Taraf(lar): ${partiesSummary(mediationCase)}
 Kullanıcının notu (anlaşma şartları, süreç): ${notlar}
 
 Emin olmadığın hiçbir ismi/tutarı/tarihi uydurma — sadece verilenleri kullan.`
@@ -153,10 +171,10 @@ Emin olmadığın hiçbir ismi/tutarı/tarihi uydurma — sadece verilenleri kul
 
 "Başvurucu [ad] vekili [vekil] ... karşı taraf vekiline başvuruya konu olayı tekrar anlatarak ... talep ettiklerini iletti. [Karşı taraf] ... arabuluculuk sürecinde anlaşmanın mümkün olmadığını beyan etti. ... Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde \"ANLAŞAMAMA\" olarak sonuçlandırılmıştır."
 
-Şimdi şu bilgilerden AYNI ÜSLUPTA anlatı paragraf(lar)ı yaz (sadece anlatıyı yaz, başlık/açıklama ekleme):
+Şimdi şu bilgilerden AYNI ÜSLUPTA anlatı paragraf(lar)ı yaz (sadece anlatıyı yaz, başlık/açıklama ekleme). Karşı taraf sayısı birden fazlaysa hepsinden bahset:
 
 Başvurucu: ${mediationCase.basvurucuAd}${mediationCase.basvurucuVekilAd ? " vekili " + mediationCase.basvurucuVekilAd : ""}
-Karşı Taraf: ${mediationCase.karsiTarafAd}${mediationCase.karsiTarafVekilAd ? " vekili " + mediationCase.karsiTarafVekilAd : mediationCase.karsiTarafYetkiliAd ? " yetkilisi " + mediationCase.karsiTarafYetkiliAd : ""}
+Karşı Taraf(lar): ${partiesSummary(mediationCase)}
 Kullanıcının notu (görüşmede ne oldu, neden anlaşılamadı): ${notlar}
 
 Emin olmadığın hiçbir ismi/tarihi uydurma — sadece verilenleri kullan.`;
@@ -168,7 +186,7 @@ Emin olmadığın hiçbir ismi/tarihi uydurma — sadece verilenleri kullan.`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine);
       const title = `..... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA \nDAVA ŞARTI ARABULUCULUK \n"${sonucLabel}" SON TUTANAĞI\n\n`;
       const today = new Date().toLocaleDateString("tr-TR");
-      const pageWord = isAnlasma ? "iki" : "iki";
+      const pageWord = "iki";
       const closingLine = isAnlasma
         ? `\tİşbu arabuluculuk anlaşma son tutanağı ${pageWord} sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${today}`
         : `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı ${pageWord} sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${today}`;
