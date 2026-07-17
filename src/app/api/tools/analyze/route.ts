@@ -46,14 +46,14 @@ Emin olmadığın alanları uydurma — null bırak. Belgede müvekkil kimin tar
   "mediation-extract": `Sana bir arabuluculuk başvuru evrakı veriliyor. Bu belgede BİRDEN FAZLA karşı taraf/diğer taraf olabilir (ör. "DİĞER TARAF BİLGİLERİ" başlığı birden fazla kez tekrar edebilir) — hepsini bul, hiçbirini atlama. Belgeden aşağıdaki bilgileri çıkar ve SADECE geçerli bir JSON nesnesi olarak döndür — başka hiçbir açıklama, markdown işareti eklemeden, sadece ham JSON:
 {
   "dosyaNo": "varsa dosya/başvuru numarası (yoksa null)",
-  "basvurucuAd": "başvurucunun/başvuru sahibinin adı soyadı (varsa TC no ile birlikte, yoksa null)",
+  "basvurucuAd": "başvurucunun/başvuru sahibinin SADECE adı soyadı — TC kimlik numarasını KESİNLİKLE bu alana ekleme, isim ne ise sadece o (yoksa null)",
   "basvurucuAdres": "başvurucunun adresi (yoksa null)",
   "basvurucuVekilAd": "başvurucu vekili varsa adı (yoksa null)",
   "basvurucuBaroSicil": "başvurucu vekilinin baro/sicil no varsa (yoksa null)",
   "basvurucuTelefon": "başvurucunun telefonu (yoksa null)",
   "karsiTaraflar": [
     {
-      "ad": "bu karşı tarafın adı/unvanı",
+      "ad": "bu karşı tarafın SADECE adı/unvanı — TC kimlik numarasını KESİNLİKLE bu alana ekleme",
       "adres": "adresi (yoksa null)",
       "vergiMersis": "tüzel kişiyse vergi/mersis no (yoksa null)",
       "yetkiliAd": "tüzel kişiyse şirket yetkilisinin adı (yoksa null)",

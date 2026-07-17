@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasToolAccess, hasAiAccess } from "@/lib/workspace";
 import { generateUdf } from "@/lib/udf";
+import { generateDocx } from "@/lib/docExport";
 import {
   buildHeaderBlock,
   buildSignatureBlock,
@@ -14,10 +15,17 @@ import {
 
 export const maxDuration = 60;
 
-// Kısa kullanıcı notlarından, örnek belgelerin diline uygun bir anlatı
-// paragrafı üretir. SADECE anlatıyı üretir — başlık bloğu ve sabit yasal
-// metinler burada AI'a hiç gösterilmez/yazdırılmaz (halüsinasyon riski
-// olmasın diye), onlar template'lerden aynen gelir.
+// ÖNEMLİ: Bu talimatlarda ASLA "[tarih]", "[saat]" gibi köşeli parantezli
+// yer tutucu ÖRNEKLER kullanmıyoruz — daha önce AI bunları harfiyen
+// kopyalamıştı. Bunun yerine, üslubu SÖZLE tarif edip, gerçek verileri
+// doğrudan cümle içinde veriyoruz.
+const NARRATIVE_RULES = `
+KESİN KURALLAR:
+- Çıktında KÖŞELİ PARANTEZ ("[" veya "]") KULLANMA — hiçbir yer tutucu bırakma, sana verilen gerçek isim/tarih/saat bilgilerini doğrudan cümlenin içine yaz.
+- "Başvurucu vekili" ya da "Karşı taraf" gibi GENEL/İSİMSİZ ifadeler kullanma — her zaman gerçek ismi yaz (sana verilmişse).
+- Sana bir bilgi (tarih, saat, isim) verilmediyse, o bilgiyi UYDURMA; cümleyi o bilgiye hiç değinmeden, akıcı şekilde kur.
+- Yalnızca istenen paragrafları yaz — başlık, açıklama, giriş cümlesi ekleme.`;
+
 async function generateNarrative(prompt: string): Promise<string> {
   if (!process.env.GEMINI_API_KEY) throw new Error("AI yapılandırması eksik.");
   const res = await fetch(
@@ -31,13 +39,24 @@ async function generateNarrative(prompt: string): Promise<string> {
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") || "";
   if (!text.trim()) throw new Error("AI yanıt üretemedi.");
-  return text.trim();
+  // Güvenlik ağı: AI yine de köşeli parantez bırakırsa temizle.
+  return text.trim().replace(/[\[\]]/g, "");
 }
 
-function partiesSummary(mediationCase: any): string {
+function basvurucuTemsilci(mediationCase: any): string {
+  return mediationCase.basvurucuVekilAd
+    ? `${mediationCase.basvurucuVekilAd} (başvurucu ${mediationCase.basvurucuAd} vekili)`
+    : `${mediationCase.basvurucuAd} (başvurucu)`;
+}
+
+function karsiTemsilciListesi(mediationCase: any): string {
   return (mediationCase.karsiTaraflar || [])
-    .map((p: any) => p.ad + (p.vekilAd ? " vekili " + p.vekilAd : p.yetkiliAd ? " yetkilisi " + p.yetkiliAd : ""))
-    .join("; ");
+    .map((p: any) => {
+      if (p.vekilAd) return `${p.vekilAd} (${p.ad} vekili)`;
+      if (p.yetkiliAd) return `${p.yetkiliAd} (${p.ad} yetkilisi)`;
+      return `${p.ad} (kendisi)`;
+    })
+    .join(", ");
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -59,18 +78,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const profile = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, phone: true, email: true, arabuluculukBurosu: true, arabulucuSicilNo: true, arabulucuUets: true },
+    select: { name: true, phone: true, email: true, arabuluculukBurosu: true, arabulucuSicilNo: true, arabulucuUets: true, arabulucuAdres: true },
   });
   if (!profile) return NextResponse.json({ error: "Profil bulunamadı." }, { status: 404 });
 
   const body = await req.json();
-  const { docType } = body; // "davet" | "ilkoturum" | "sontutanak"
+  const { docType } = body;
 
   try {
     let finalText = "";
 
     if (docType === "davet") {
-      // davetEdilenSecim: "basvurucu" ya da "karsi-0", "karsi-1" gibi (karşı taraf sırası)
       const { davetEdilenSecim, gunSaat, toplantiYeri } = body;
       let ad = "", vekil = "", baroSicil = "", telefon = "";
       if (davetEdilenSecim === "basvurucu") {
@@ -88,7 +106,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       }
 
       const today = new Date().toLocaleDateString("tr-TR");
-      const uyusmazlikOzeti = (mediationCase.uyusmazlikKonusu || "").split("\n")[0] || "aranızdaki uyuşmazlığın";
+      const uyusmazlikOzeti = (mediationCase.uyusmazlikKonusu || "").split("\n")[0].replace(/[\[\]]/g, "") || "aranızdaki uyuşmazlığın";
 
       finalText = buildDavetMektubu(
         mediationCase,
@@ -108,30 +126,33 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         return NextResponse.json({ error: "Kısa notlar girmelisiniz." }, { status: 400 });
       }
 
-      const narrativePrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı" hazırlayan bir asistansın. Aşağıda, gerçek bir örnek tutanaktan alınmış İKİ anlatı paragrafının stili var — resmi, üçüncü şahıs, tarih/saat/telefon detaylarını içeren bir dil:
+      const openingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı" hazırlayan bir asistansın.
 
-"Başvurucu [ad] vekili [vekil] ile yapılan görüşmede toplantıya belirlenen gün ve saatte katılacağı [tarih] günü [telefon] numaralı GSM hattından yapılan görüşme ile teyit edildi. Karşı taraf olan [karşı taraf] ile [tarih] günü [telefon] numaralı GSM hattından yapılan görüşmede... Taraflarla karşılıklı görüşme sonunda bilgilendirme ve ilk oturum toplantısının [tarih] günü saat [saat]'da yapılmasına karar verildi."
+Şu ÜSLUP KURALINI izle: Resmi, üçüncü şahıs anlatımıyla, "[isim] ile yapılan görüşmede ... teyit edildi" ve "[isim ve isim]'in toplantı oturumunda oldukları görüldü ve müzakere süreci başladı" kalıplarını kullanarak İKİ ayrı paragraf yaz. Birden fazla karşı taraf varsa HER BİRİNİN katılım durumunu ayrı ayrı belirt.
+${NARRATIVE_RULES}
 
-"[Tarih] günü saat [saat]'da [taraflar]'ın toplantı oturumunda oldukları görüldü ve müzakere süreci başladı."
+GERÇEK BİLGİLER:
+Başvurucu tarafı: ${basvurucuTemsilci(mediationCase)}
+Karşı taraf(lar): ${karsiTemsilciListesi(mediationCase)}
+Toplantı Tarihi: ${toplantiTarihi || "(belirtilmedi)"}
+Toplantı Saati: ${toplantiSaati || "(belirtilmedi)"}
+Kullanıcının notu (görüşmelerin nasıl geçtiği, teyit süreci, toplantı yöntemi vb.): ${notlar}
 
-Şimdi SANA VERİLEN şu bilgilere göre, BU AYNI ÜSLUPTA, benzer uzunlukta 2 paragraf yaz (sadece bu 2 paragrafı yaz, başka açıklama ekleme, başlık ekleme). Karşı taraf sayısı birden fazlaysa HEPSİYLE yapılan görüşmeden bahset:
+Şimdi bu bilgilerle 2 paragraf yaz.`;
 
-Başvurucu: ${mediationCase.basvurucuAd}${mediationCase.basvurucuVekilAd ? " vekili " + mediationCase.basvurucuVekilAd : ""}
-Karşı Taraf(lar): ${partiesSummary(mediationCase)}
-Toplantı Tarihi ve Saati: ${toplantiTarihi || "belirtilmedi"} ${toplantiSaati || ""}
-Kullanıcının kısa notları (gerçekleşen görüşmeler, kararlaştırılanlar): ${notlar}
+      const narrative = await generateNarrative(openingPrompt);
 
-Emin olmadığın hiçbir ismi/tarihi/telefon numarasını uydurma — sadece yukarıda sana verilenleri kullan, verilmeyeni boş bırak veya genel ifadeyle geç.`;
+      const closingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı"nın KAPANIŞ paragrafını yazan bir asistansın.
 
-      const narrative = await generateNarrative(narrativePrompt);
+Şu ÜSLUP KURALINI izle: "[isim] söz alarak taleplerini iletti. [isim] söz alarak ... beyan etti/süre talep etti." kalıbıyla, oturumda kimin ne söylediğini, sonunda ne karara varıldığını (ikinci toplantı mı, tutanağın ne zaman sonlandırıldığı) anlatan TEK bir paragraf yaz. Birden fazla karşı taraf varsa HER BİRİNİN ayrı ayrı söz aldığını yaz.
+${NARRATIVE_RULES}
 
-      const closingPrompt = `Aşağıda, bir arabuluculuk "İlk Oturum" tutanağının KAPANIŞ paragrafının örnek üslubu var:
+GERÇEK BİLGİLER:
+Başvurucu tarafı: ${basvurucuTemsilci(mediationCase)}
+Karşı taraf(lar): ${karsiTemsilciListesi(mediationCase)}
+Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
 
-"Başvurucu vekili [vekil] söz alarak arabuluculuğa konu olayla ilgili taleplerini iletti. [Karşı taraf] söz alarak başvurucunun taleplerini değerlendirmek üzere süre talep etti. Taraflarla birlikte [tarih] günü ikinci toplantı yapılmasına karar verildi ve bilgilendirme ve ilk oturum toplantısı [tarih] günü saat [saat]'de sonlandırıldı."
-
-Şimdi şu kısa nottan yola çıkarak AYNI ÜSLUPTA tek bir kapanış paragrafı yaz (sadece bu paragrafı yaz, başka açıklama ekleme):
-
-Kullanıcının notu: ${notlar}`;
+Şimdi bu bilgilerle TEK paragraf yaz.`;
 
       const closing = await generateNarrative(closingPrompt);
 
@@ -149,35 +170,35 @@ Kullanıcının notu: ${notlar}`;
         `\n\t\n\tİşbu arabuluculuk bilgilendirme ve ilk oturum tutanağı üç sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${new Date().toLocaleDateString("tr-TR")}\n\n\n\n\n` +
         buildSignatureBlock(mediationCase, profile);
     } else if (docType === "sontutanak") {
-      const { sonuc, notlar } = body; // sonuc: "anlasma" | "anlasamama"
+      const { sonuc, notlar } = body;
       if (!notlar || !notlar.trim()) {
         return NextResponse.json({ error: "Kısa notlar girmelisiniz." }, { status: 400 });
       }
       const isAnlasma = sonuc === "anlasma";
 
       const narrativePrompt = isAnlasma
-        ? `Sen bir arabuluculuk bürosu için "Anlaşma Son Tutanağı" hazırlayan bir asistansın. Örnek üslup:
+        ? `Sen bir arabuluculuk bürosu için "Anlaşma Son Tutanağı" hazırlayan bir asistansın.
 
-"[Tarih] günü taraflarla görüşmeler yapılmış, [karşı taraf] ile yapılan görüşmede... taraflar aşağıda belirtilen şartlar altında anlaşmaya varmıştır." ardından anlaşma şartlarının madde madde/paragraf paragraf yazılması, ardından: "Taraflar, üzerinde anlaşılan hususlar hakkında dava açılamayacağını anladıklarını ve bu durumu kabul ettiklerini beyan ederek son tutanağın bu şekilde düzenlenmesini talep etmişlerdir. ... arabuluculuk süreci ANLAŞMA ile sonuçlandırılmıştır."
+Şu ÜSLUP KURALINI izle: Görüşmelerin nasıl geçtiğini ve anlaşma şartlarını resmi, üçüncü şahıs anlatımıyla anlat. Birden fazla karşı taraf varsa HER BİRİNİN görüşmede ne söylediğini/kabul ettiğini AYRI AYRI, isimleriyle belirt (ör. "[isim] söz alarak ... kabul etmiştir. [isim] söz alarak ... beyan etmiştir."). En sonunda "Taraflar, üzerinde anlaşılan hususlar hakkında dava açılamayacağını anladıklarını ve bu durumu kabul ettiklerini beyan ederek son tutanağın bu şekilde düzenlenmesini talep etmişlerdir." benzeri bir cümleyle ve arabuluculuğun ANLAŞMA ile sonuçlandığını belirterek bitir.
+${NARRATIVE_RULES}
 
-Şimdi şu bilgilerden AYNI ÜSLUPTA anlatı paragraf(lar)ı yaz (sadece anlatıyı yaz, başlık/açıklama ekleme). Karşı taraf sayısı birden fazlaysa hepsinin anlaşmaya katılıp katılmadığını netleştir:
+GERÇEK BİLGİLER:
+Başvurucu tarafı: ${basvurucuTemsilci(mediationCase)}
+Karşı taraf(lar): ${karsiTemsilciListesi(mediationCase)}
+Kullanıcının notu (anlaşma şartları, süreç, kim ne kabul etti): ${notlar}
 
-Başvurucu: ${mediationCase.basvurucuAd}${mediationCase.basvurucuVekilAd ? " vekili " + mediationCase.basvurucuVekilAd : ""}
-Karşı Taraf(lar): ${partiesSummary(mediationCase)}
-Kullanıcının notu (anlaşma şartları, süreç): ${notlar}
+Şimdi bu bilgilerle anlatı paragraf(lar)ını yaz.`
+        : `Sen bir arabuluculuk bürosu için "Anlaşamama Son Tutanağı" hazırlayan bir asistansın.
 
-Emin olmadığın hiçbir ismi/tutarı/tarihi uydurma — sadece verilenleri kullan.`
-        : `Sen bir arabuluculuk bürosu için "Anlaşamama Son Tutanağı" hazırlayan bir asistansın. Örnek üslup:
+Şu ÜSLUP KURALINI izle: Görüşmelerin nasıl geçtiğini resmi, üçüncü şahıs anlatımıyla anlat. Birden fazla karşı taraf varsa HER BİRİNİN görüşmede ne söylediğini AYRI AYRI, isimleriyle belirt (ör. "[isim] söz alarak ... beyan etti. [isim] söz alarak ... beyan etti.") — hepsini tek bir grup gibi anlatma, her biri kendi cümlesinde geçsin. En sonunda "Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde \"ANLAŞAMAMA\" olarak sonuçlandırılmıştır." cümlesiyle bitir.
+${NARRATIVE_RULES}
 
-"Başvurucu [ad] vekili [vekil] ... karşı taraf vekiline başvuruya konu olayı tekrar anlatarak ... talep ettiklerini iletti. [Karşı taraf] ... arabuluculuk sürecinde anlaşmanın mümkün olmadığını beyan etti. ... Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde \"ANLAŞAMAMA\" olarak sonuçlandırılmıştır."
+GERÇEK BİLGİLER:
+Başvurucu tarafı: ${basvurucuTemsilci(mediationCase)}
+Karşı taraf(lar): ${karsiTemsilciListesi(mediationCase)}
+Kullanıcının notu (görüşmede kim ne dedi, neden anlaşılamadı): ${notlar}
 
-Şimdi şu bilgilerden AYNI ÜSLUPTA anlatı paragraf(lar)ı yaz (sadece anlatıyı yaz, başlık/açıklama ekleme). Karşı taraf sayısı birden fazlaysa hepsinden bahset:
-
-Başvurucu: ${mediationCase.basvurucuAd}${mediationCase.basvurucuVekilAd ? " vekili " + mediationCase.basvurucuVekilAd : ""}
-Karşı Taraf(lar): ${partiesSummary(mediationCase)}
-Kullanıcının notu (görüşmede ne oldu, neden anlaşılamadı): ${notlar}
-
-Emin olmadığın hiçbir ismi/tarihi uydurma — sadece verilenleri kullan.`;
+Şimdi bu bilgilerle anlatı paragraf(lar)ını yaz.`;
 
       const narrative = await generateNarrative(narrativePrompt);
 
@@ -205,6 +226,10 @@ Emin olmadığın hiçbir ismi/tarihi uydurma — sadece verilenleri kullan.`;
       return NextResponse.json({ error: "Geçersiz belge türü." }, { status: 400 });
     }
 
+    if (docType === "davet") {
+      const docxBuffer = await generateDocx(finalText);
+      return NextResponse.json({ text: finalText, docxBase64: docxBuffer.toString("base64") });
+    }
     const udfBuffer = await generateUdf(finalText);
     return NextResponse.json({ text: finalText, udfBase64: udfBuffer.toString("base64") });
   } catch (e: any) {

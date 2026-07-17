@@ -38,10 +38,14 @@ export type ArabulucuProfile = {
   arabuluculukBurosu?: string | null;
   arabulucuSicilNo?: string | null;
   arabulucuUets?: string | null;
+  arabulucuAdres?: string | null;
 };
 
 function v(val?: string | null, fallback = "……………") {
-  return val && val.trim() ? val.trim() : fallback;
+  if (!val || !val.trim()) return fallback;
+  // Başvuru formlarındaki "[Haksız Fiilden Kaynaklanan (Nisbi)]" gibi
+  // köşeli parantezli ham metinleri temizler — nihai belgede çirkin durur.
+  return val.trim().replace(/^\[|\]$/g, "").trim();
 }
 
 function partiesList(c: MediationCaseData): MediationParty[] {
@@ -197,7 +201,7 @@ DAVETTE BULUNAN\t
 Arabulucu\t\t: Arb. ${v(a.name)}
 TELFON\t\t: ${v(a.phone)}
 E-Mail\t\t\t: ${v(a.email)}
-Adres\t\t\t: ${v(a.arabuluculukBurosu)}
+Adres\t\t\t: ${v(a.arabulucuAdres)}
 
 DAVET EDİLEN      \t\t
 Adı / Soyadı\t\t: ${v(davetEdilenAd)}

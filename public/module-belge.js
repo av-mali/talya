@@ -821,11 +821,14 @@ async function arGenerate(docType) {
       resultEl.innerHTML = `<div style="font-size:12px;color:var(--danger);">${data.error || 'Belge üretilemedi.'}</div>`;
       return;
     }
-    const filename = docType + '_' + (arSelectedCaseId || 'belge') + '.udf';
+    const isDavet = docType === 'davet';
+    const ext = isDavet ? 'docx' : 'udf';
+    const filename = docType + '_' + (arSelectedCaseId || 'belge') + '.' + ext;
+    const fileBase64 = isDavet ? data.docxBase64 : data.udfBase64;
     resultEl.innerHTML = `
       <div style="background:var(--bg2);border-radius:var(--r);padding:14px;">
         <div style="font-size:12px;color:var(--success);margin-bottom:8px;"><i class="fa-solid fa-circle-check"></i> Belge hazır.</div>
-        <button class="pop-cta-btn b" style="width:100%;" onclick='arDownloadUdf(${JSON.stringify(data.udfBase64)}, ${JSON.stringify(filename)})'><i class="fa-solid fa-download"></i><span>UDF İndir</span></button>
+        <button class="pop-cta-btn b" style="width:100%;" onclick='arDownloadFile(${JSON.stringify(fileBase64)}, ${JSON.stringify(filename)}, ${JSON.stringify(isDavet)})'><i class="fa-solid fa-download"></i><span>${ext.toUpperCase()} İndir</span></button>
         <details style="margin-top:10px;">
           <summary style="cursor:pointer;font-size:11px;color:var(--t3);">Metni önizle</summary>
           <div style="white-space:pre-wrap;font-size:11.5px;color:var(--t2);margin-top:8px;max-height:300px;overflow-y:auto;">${data.text.replace(/</g,'&lt;')}</div>
@@ -837,11 +840,12 @@ async function arGenerate(docType) {
   }
 }
 
-function arDownloadUdf(base64, filename) {
+function arDownloadFile(base64, filename, isDocx) {
   const byteChars = atob(base64);
   const byteNumbers = new Array(byteChars.length);
   for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
-  const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/octet-stream' });
+  const mime = isDocx ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/octet-stream';
+  const blob = new Blob([new Uint8Array(byteNumbers)], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;

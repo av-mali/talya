@@ -61,6 +61,7 @@ model User {
   arabuluculukBurosu String?
   arabulucuSicilNo   String?
   arabulucuUets      String?
+  arabulucuAdres     String?
   mediationCases     MediationCase[]
 }
 
