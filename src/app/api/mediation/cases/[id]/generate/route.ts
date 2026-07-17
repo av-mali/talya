@@ -12,6 +12,7 @@ import {
   buildAnlasmaNarrative,
   buildAnlasamamaNarrative,
   ILK_OTURUM_BILGILENDIRME,
+  stripMarkup,
 } from "@/lib/mediationTemplates";
 
 export const maxDuration = 60;
@@ -122,7 +123,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       );
 
       const docxBuffer = await generateDocx(finalText);
-      return NextResponse.json({ text: finalText, docxBase64: docxBuffer.toString("base64") });
+      return NextResponse.json({ text: stripMarkup(finalText), docxBase64: docxBuffer.toString("base64") });
     } else if (docType === "ilkoturum") {
       const { notlar, toplantiTarihi, toplantiSaati } = body;
       if (!notlar || !notlar.trim()) {
@@ -160,7 +161,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       const closing = await generateNarrative(closingPrompt);
 
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU");
-      const title = `...... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA \nDAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE \nİLK OTURUM TUTANAĞI\n\n\n`;
+      const title = `[[C]]**...... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
       finalText =
         title +
         header +
@@ -192,7 +193,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       const sonucLabel = isAnlasma ? "ANLAŞMA" : "ANLAŞAMAMA";
       const extraLine = `Arabuluculuk Sonucu\t\t\t: ${sonucLabel}`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine);
-      const title = `..... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA \nDAVA ŞARTI ARABULUCULUK \n"${sonucLabel}" SON TUTANAĞI\n\n`;
+      const title = `[[C]]**..... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
       const today = new Date().toLocaleDateString("tr-TR");
       const closingLine = isAnlasma
         ? `\tİşbu arabuluculuk anlaşma son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${today}`
@@ -212,7 +213,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
     }
 
     const udfBuffer = await generateUdf(finalText);
-    return NextResponse.json({ text: finalText, udfBase64: udfBuffer.toString("base64") });
+    return NextResponse.json({ text: stripMarkup(finalText), udfBase64: udfBuffer.toString("base64") });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || "Belge üretilemedi." }, { status: 500 });
   }

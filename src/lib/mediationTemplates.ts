@@ -41,6 +41,13 @@ export type ArabulucuProfile = {
   arabulucuAdres?: string | null;
 };
 
+export function stripMarkup(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => line.replace(/^\[\[C\]\]/, "").replace(/\*\*__(.+?)__\*\*/g, "$1").replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1"))
+    .join("\n");
+}
+
 function v(val?: string | null, fallback = "……………") {
   if (!val || !val.trim()) return fallback;
   // Başvuru formlarındaki "[Haksız Fiilden Kaynaklanan (Nisbi)]" gibi
@@ -55,7 +62,7 @@ function partiesList(c: MediationCaseData): MediationParty[] {
 // Bir karşı taraf bloğu (birden fazlaysa numaralanır: "KARŞI TARAF 1" vb.)
 function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): string {
   const label = total > 1 ? `KARŞI TARAF ${index + 1}` : "KARŞI TARAF";
-  return `${label}\t\t\t
+  return `**__${label}__**\t\t\t
 
 \tAdı ve Soyadı\t: ${v(p.ad)}
 \tAdres\t: ${v(p.adres)}
@@ -77,12 +84,12 @@ export function buildHeaderBlock(
   const parties = partiesList(c);
   const karsiTarafBlocks = parties.map((p, i) => buildKarsiTarafBlock(p, i, parties.length)).join("\n");
 
-  return `ARABULUCULUK BÜROSU\t\t\t\t  
+  return `**__ARABULUCULUK BÜROSU__**\t\t\t\t  
  
 \tArabuluculuk Bürosu\t: ${v(a.arabuluculukBurosu)}
  \tDosya Numarası\t: ${v(c.dosyaNo)}
 
-${arabulucuLabel}\t\t\t\t\t
+**__${arabulucuLabel}__**\t\t\t\t\t
 \t
 \tAdı ve Soyadı\t: ${v(a.name)}
 \tSicil Numarası\t: ${v(a.arabulucuSicilNo)}
@@ -90,7 +97,7 @@ ${arabulucuLabel}\t\t\t\t\t
 \tUETS\t: ${v(a.arabulucuUets)}
 \tE-Posta\t: ${v(a.email)}
 
-BAŞVURUCU\t\t\t
+**__BAŞVURUCU__**\t\t\t
 \t
 \tAdı Soyadı\t: ${v(c.basvurucuAd)}
 \tAdresi\t: ${v(c.basvurucuAdres)}
@@ -99,7 +106,7 @@ BAŞVURUCU\t\t\t
 \tTelefon\t: ${v(c.basvurucuTelefon)}
 
 ${karsiTarafBlocks}
-ARABULUCULUK KONUSU UYUŞMAZLIK
+**__ARABULUCULUK KONUSU UYUŞMAZLIK__**
  
 ${v(c.uyusmazlikKonusu)}
  
@@ -202,7 +209,11 @@ export function buildAnlasamamaNarrative(
       const toplantiCumlesi = ikinciToplantiIsteniyor
         ? "ikinci bir toplantı istediklerini"
         : "ikinci bir toplantı istemediklerini";
-      return `${temsilci} söz alarak başvurucunun taleplerini kabul etmediklerini, ${v(p.ad)} ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, ${teklifCumlesi} ve ${toplantiCumlesi} beyan etti.`;
+      // NOT: Buradaki "başvurucu yan ile" ifadesi, konuşan kişinin
+      // KENDİ tarafını değil, KARŞISINDAKİ (başvurucu) tarafı işaret
+      // eder — aksi halde "X, X ile anlaşamadı" gibi anlamsız bir
+      // cümle çıkardı (daha önce yaşanan bir hataydı).
+      return `${temsilci} söz alarak başvurucunun taleplerini kabul etmediklerini, başvurucu yan ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, ${teklifCumlesi} ve ${toplantiCumlesi} beyan etti.`;
     })
     .join(" ");
 
@@ -250,14 +261,14 @@ export function buildDavetMektubu(
   uyusmazlikOzeti: string,
   today: string
 ): string {
-  return `ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR
-DAVETTE BULUNAN\t
+  return `**ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR**
+**DAVETTE BULUNAN**	
 Arabulucu\t\t: Arb. ${v(a.name)}
 TELFON\t\t: ${v(a.phone)}
 E-Mail\t\t\t: ${v(a.email)}
 Adres\t\t\t: ${v(a.arabulucuAdres)}
 
-DAVET EDİLEN      \t\t
+**DAVET EDİLEN**      \t\t
 Adı / Soyadı\t\t: ${v(davetEdilenAd)}
 Vekili\t\t\t: ${v(davetEdilenVekil, "")}
 Baro / Sicil \t\t: ${v(davetEdilenBaroSicil, "")}

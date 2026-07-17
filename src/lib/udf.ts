@@ -26,34 +26,105 @@ export async function readUdfText(buffer: Buffer): Promise<string> {
   return match[1];
 }
 
+// Biçimlendirme işaretleri (kaynak metne BEN koyuyorum, kullanıcı hiç
+// görmüyor): "**kalın**", "__altı çizili__", ve bir satırın BAŞINDA
+// "[[C]]" varsa o paragraf ORTALANMIŞ olur. Gerçek bir örnek UDF
+// dosyasının <elements> yapısı incelenerek (paragraf başına Alignment +
+// karakter aralığı bazlı biçim "run"ları) birebir uyumlu üretiliyor.
+type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
+
+function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean } {
+  let line = rawLine;
+  let centered = false;
+  if (line.startsWith("[[C]]")) {
+    centered = true;
+    line = line.slice(5);
+  }
+
+  const runs: FormatRun[] = [];
+  let out = "";
+  let i = 0;
+  while (i < line.length) {
+    if (line.startsWith("**__", i)) {
+      const end = line.indexOf("__**", i + 4);
+      if (end !== -1) {
+        const inner = line.slice(i + 4, end);
+        runs.push({ start: out.length, length: inner.length, bold: true, underline: true });
+        out += inner;
+        i = end + 4;
+        continue;
+      }
+    }
+    if (line.startsWith("**", i)) {
+      const end = line.indexOf("**", i + 2);
+      if (end !== -1) {
+        const inner = line.slice(i + 2, end);
+        runs.push({ start: out.length, length: inner.length, bold: true, underline: false });
+        out += inner;
+        i = end + 2;
+        continue;
+      }
+    }
+    if (line.startsWith("__", i)) {
+      const end = line.indexOf("__", i + 2);
+      if (end !== -1) {
+        const inner = line.slice(i + 2, end);
+        runs.push({ start: out.length, length: inner.length, bold: false, underline: true });
+        out += inner;
+        i = end + 2;
+        continue;
+      }
+    }
+    out += line[i];
+    i++;
+  }
+  return { text: out, runs, centered };
+}
+
 export async function generateUdf(text: string): Promise<Buffer> {
-  // Gerçek, minimal bir örnek UDF dosyası (elle test edilmiş, sorunsuz
-  // açılan) incelenerek şu kritik eksikler bulundu ve düzeltildi:
-  //  1) <styles> bölümü hiç yoktu — <elements resolver="hvl-default">
-  //     bu isimde bir stile referans veriyor ama tanımı olmayınca
-  //     görüntüleyici muhtemelen çöküyordu. Şimdi ekleniyor.
-  //  2) <paragraph> etiketine gereksiz bir Alignment="0" eklemiştik;
-  //     minimal örnekte hiç Alignment yok — kaldırıldı.
-  //  3) Baştaki fazladan "\n" kaldırıldı (gerekli değilmiş).
+  const rawLines = text.replace(/\r\n/g, "\n").split("\n");
 
-  // CDATA içinde "]]>" dizisi geçerse XML bozulur — standart XML kaçış
-  // tekniğiyle bunu güvenli hale getiriyoruz.
-  const cdataContent = (text.replace(/\r\n/g, "\n") + "\n").replace(/]]>/g, "]]]]><![CDATA[>");
-  const lines = cdataContent.split("\n");
-
-  let offset = 0;
+  let plainCdata = "";
   let elementsXml = "";
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const isLast = i === lines.length - 1;
-    const lengthWithBreak = line.length + (isLast ? 0 : 1);
-    // Son satır tamamen boşsa (sondaki \n'den sonra kalan iz), uzunluğu 0
-    // olan bir paragraf oluşturmuyoruz.
+  let offset = 0;
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const isLast = i === rawLines.length - 1;
+    const { text: lineText, runs, centered } = parseLineMarkup(rawLines[i]);
+    const lengthWithBreak = lineText.length + (isLast ? 0 : 1);
+
+    plainCdata += lineText + (isLast ? "" : "\n");
+
     if (lengthWithBreak > 0) {
-      elementsXml += `<paragraph><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
+      const alignAttr = centered ? ` Alignment="1"` : "";
+      if (!runs.length) {
+        elementsXml += `<paragraph${alignAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
+      } else {
+        // Biçimli kısımlar ile düz kısımları, orijinal sırayla ayrı
+        // <content> "run"ları olarak yaz — gerçek UDF yapısı böyle çalışıyor.
+        let cursor = 0;
+        let inner = "";
+        const sorted = [...runs].sort((a, b) => a.start - b.start);
+        for (const r of sorted) {
+          if (r.start > cursor) {
+            inner += `<content startOffset="${offset + cursor}" length="${r.start - cursor}" />`;
+          }
+          const fmtAttrs = `${r.bold ? ' bold="true"' : ""}${r.underline ? ' underline="true"' : ""}`;
+          inner += `<content${fmtAttrs} startOffset="${offset + r.start}" length="${r.length}" />`;
+          cursor = r.start + r.length;
+        }
+        if (cursor < lineText.length + (isLast ? 0 : 1)) {
+          inner += `<content startOffset="${offset + cursor}" length="${lineText.length + (isLast ? 0 : 1) - cursor}" />`;
+        }
+        elementsXml += `<paragraph${alignAttr}>${inner}</paragraph>`;
+      }
     }
     offset += lengthWithBreak;
   }
+
+  // CDATA içinde "]]>" dizisi geçerse XML bozulur — standart XML kaçış
+  // tekniğiyle bunu güvenli hale getiriyoruz.
+  const cdataContent = (plainCdata + "\n").replace(/]]>/g, "]]]]><![CDATA[>");
 
   const xml = `<?xml version="1.0" encoding="UTF-8" ?> 
 
