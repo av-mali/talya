@@ -19,10 +19,15 @@ export async function generateDocx(text: string): Promise<Buffer> {
     if (boldMatch) {
       return new Paragraph({
         children: [new TextRun({ text: boldMatch[1], bold: true })],
+        spacing: { after: 0, before: 0 },
       });
     }
+    // spacing:{after:0} olmadan, Word'ün varsayılan paragraf aralığı her
+    // satırın arasına fazladan boşluk ekliyor — sıkı biçimli belgelerde
+    // (ör. Arabuluculuk formları) bu, orijinal formatı bozuyordu.
     return new Paragraph({
       children: [new TextRun(line)],
+      spacing: { after: 0, before: 0 },
     });
   });
 

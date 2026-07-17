@@ -9,16 +9,17 @@ import {
   buildHeaderBlock,
   buildSignatureBlock,
   buildDavetMektubu,
+  buildAnlasmaNarrative,
+  buildAnlasamamaNarrative,
   ILK_OTURUM_BILGILENDIRME,
-  ANLASMA_KAPANIS,
 } from "@/lib/mediationTemplates";
 
 export const maxDuration = 60;
 
-// ÖNEMLİ: Bu talimatlarda ASLA "[tarih]", "[saat]" gibi köşeli parantezli
-// yer tutucu ÖRNEKLER kullanmıyoruz — daha önce AI bunları harfiyen
-// kopyalamıştı. Bunun yerine, üslubu SÖZLE tarif edip, gerçek verileri
-// doğrudan cümle içinde veriyoruz.
+// SADECE İlk Oturum'un "kimle ne zaman görüşüldü / toplantı nasıl
+// kararlaştırıldı" kısmı AI ile yazılır — bu, her seferinde gerçekten
+// değişen, serbest bir anlatı. Anlaşma/Anlaşamama metinleri ise ARTIK
+// AI'a hiç yazdırılmıyor (kullanıcı geri bildirimiyle şablona çevrildi).
 const NARRATIVE_RULES = `
 KESİN KURALLAR:
 - Çıktında KÖŞELİ PARANTEZ ("[" veya "]") KULLANMA — hiçbir yer tutucu bırakma, sana verilen gerçek isim/tarih/saat bilgilerini doğrudan cümlenin içine yaz.
@@ -39,7 +40,6 @@ async function generateNarrative(prompt: string): Promise<string> {
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") || "";
   if (!text.trim()) throw new Error("AI yanıt üretemedi.");
-  // Güvenlik ağı: AI yine de köşeli parantez bırakırsa temizle.
   return text.trim().replace(/[\[\]]/g, "");
 }
 
@@ -120,6 +120,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         uyusmazlikOzeti,
         today
       );
+
+      const docxBuffer = await generateDocx(finalText);
+      return NextResponse.json({ text: finalText, docxBase64: docxBuffer.toString("base64") });
     } else if (docType === "ilkoturum") {
       const { notlar, toplantiTarihi, toplantiSaati } = body;
       if (!notlar || !notlar.trim()) {
@@ -170,54 +173,36 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         `\n\t\n\tİşbu arabuluculuk bilgilendirme ve ilk oturum tutanağı üç sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${new Date().toLocaleDateString("tr-TR")}\n\n\n\n\n` +
         buildSignatureBlock(mediationCase, profile);
     } else if (docType === "sontutanak") {
-      const { sonuc, notlar } = body;
-      if (!notlar || !notlar.trim()) {
-        return NextResponse.json({ error: "Kısa notlar girmelisiniz." }, { status: 400 });
-      }
+      const { sonuc, notlar, karsiTeklifVar, ikinciToplantiIsteniyor } = body;
       const isAnlasma = sonuc === "anlasma";
 
-      const narrativePrompt = isAnlasma
-        ? `Sen bir arabuluculuk bürosu için "Anlaşma Son Tutanağı" hazırlayan bir asistansın.
-
-Şu ÜSLUP KURALINI izle: Görüşmelerin nasıl geçtiğini ve anlaşma şartlarını resmi, üçüncü şahıs anlatımıyla anlat. Birden fazla karşı taraf varsa HER BİRİNİN görüşmede ne söylediğini/kabul ettiğini AYRI AYRI, isimleriyle belirt (ör. "[isim] söz alarak ... kabul etmiştir. [isim] söz alarak ... beyan etmiştir."). En sonunda "Taraflar, üzerinde anlaşılan hususlar hakkında dava açılamayacağını anladıklarını ve bu durumu kabul ettiklerini beyan ederek son tutanağın bu şekilde düzenlenmesini talep etmişlerdir." benzeri bir cümleyle ve arabuluculuğun ANLAŞMA ile sonuçlandığını belirterek bitir.
-${NARRATIVE_RULES}
-
-GERÇEK BİLGİLER:
-Başvurucu tarafı: ${basvurucuTemsilci(mediationCase)}
-Karşı taraf(lar): ${karsiTemsilciListesi(mediationCase)}
-Kullanıcının notu (anlaşma şartları, süreç, kim ne kabul etti): ${notlar}
-
-Şimdi bu bilgilerle anlatı paragraf(lar)ını yaz.`
-        : `Sen bir arabuluculuk bürosu için "Anlaşamama Son Tutanağı" hazırlayan bir asistansın.
-
-Şu ÜSLUP KURALINI izle: Görüşmelerin nasıl geçtiğini resmi, üçüncü şahıs anlatımıyla anlat. Birden fazla karşı taraf varsa HER BİRİNİN görüşmede ne söylediğini AYRI AYRI, isimleriyle belirt (ör. "[isim] söz alarak ... beyan etti. [isim] söz alarak ... beyan etti.") — hepsini tek bir grup gibi anlatma, her biri kendi cümlesinde geçsin. En sonunda "Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde \"ANLAŞAMAMA\" olarak sonuçlandırılmıştır." cümlesiyle bitir.
-${NARRATIVE_RULES}
-
-GERÇEK BİLGİLER:
-Başvurucu tarafı: ${basvurucuTemsilci(mediationCase)}
-Karşı taraf(lar): ${karsiTemsilciListesi(mediationCase)}
-Kullanıcının notu (görüşmede kim ne dedi, neden anlaşılamadı): ${notlar}
-
-Şimdi bu bilgilerle anlatı paragraf(lar)ını yaz.`;
-
-      const narrative = await generateNarrative(narrativePrompt);
+      let narrative: string;
+      if (isAnlasma) {
+        if (!notlar || !notlar.trim()) {
+          return NextResponse.json({ error: "Anlaşma şartlarını yazmalısınız." }, { status: 400 });
+        }
+        // Anlaşma şartları KULLANICININ YAZDIĞI METİN — AI hiç karışmaz.
+        narrative = buildAnlasmaNarrative(mediationCase, notlar, new Date().toLocaleDateString("tr-TR"));
+      } else {
+        // Anlaşamama metni artık TAMAMEN ŞABLONLA üretiliyor (AI'a hiç
+        // yazdırılmıyor) — kullanıcı geri bildirimiyle bu şekilde değiştirildi.
+        narrative = buildAnlasamamaNarrative(mediationCase, !!karsiTeklifVar, !!ikinciToplantiIsteniyor);
+      }
 
       const sonucLabel = isAnlasma ? "ANLAŞMA" : "ANLAŞAMAMA";
       const extraLine = `Arabuluculuk Sonucu\t\t\t: ${sonucLabel}`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine);
       const title = `..... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA \nDAVA ŞARTI ARABULUCULUK \n"${sonucLabel}" SON TUTANAĞI\n\n`;
       const today = new Date().toLocaleDateString("tr-TR");
-      const pageWord = "iki";
       const closingLine = isAnlasma
-        ? `\tİşbu arabuluculuk anlaşma son tutanağı ${pageWord} sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${today}`
-        : `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı ${pageWord} sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${today}`;
+        ? `\tİşbu arabuluculuk anlaşma son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${today}`
+        : `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${today}`;
 
       finalText =
         title +
         header +
         "\n\n\n\n\n" +
         narrative +
-        (isAnlasma ? "\n\n" + ANLASMA_KAPANIS : "") +
         "\n\n" +
         closingLine +
         "\n\n\n\n" +
@@ -226,10 +211,6 @@ Kullanıcının notu (görüşmede kim ne dedi, neden anlaşılamadı): ${notlar
       return NextResponse.json({ error: "Geçersiz belge türü." }, { status: 400 });
     }
 
-    if (docType === "davet") {
-      const docxBuffer = await generateDocx(finalText);
-      return NextResponse.json({ text: finalText, docxBase64: docxBuffer.toString("base64") });
-    }
     const udfBuffer = await generateUdf(finalText);
     return NextResponse.json({ text: finalText, udfBase64: udfBuffer.toString("base64") });
   } catch (e: any) {

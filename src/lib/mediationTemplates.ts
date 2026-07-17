@@ -160,6 +160,60 @@ export const ANLASMA_KAPANIS = `\tTaraflara arabuluculuğun temel ilkeleri, arab
 
 \tTaraflar, yapılan görüşmeler sırasında arabuluculuğun temel ilkelerini, arabuluculuk sürecini ve arabuluculuk son tutanağının hukuki ve mali sonuçlarını anladıklarını beyan etmişlerdir.`;
 
+// ANLAŞAMAMA anlatısı — kullanıcının verdiği GERÇEK ÖRNEK cümle kalıbı
+// BİREBİR kullanılır (AI'a hiç yazdırılmaz, hata/sapma riski olmasın).
+// Sadece isimler ve iki basit seçenek (karşı teklif / ikinci toplantı)
+// değişir, cümle yapısı sabittir.
+// ANLAŞMA anlatısı — açılış/kapanış cümleleri sabit şablon, ama anlaşma
+// ŞARTLARI kullanıcının yazdığı metin BİREBİR (AI hiç değiştirmeden)
+// kullanılır — para/tarih gibi kritik detaylarda hata riski olmasın.
+export function buildAnlasmaNarrative(c: MediationCaseData, sartlarMetni: string, today: string): string {
+  const basvurucuTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
+  const parties = partiesList(c);
+  const karsiIsimler = parties.map((p) => p.vekilAd || p.yetkiliAd || v(p.ad)).join(", ");
+
+  return `${today} günü taraflarla görüşmeler yapılmış, ${basvurucuTemsilci} ile ${karsiIsimler} arasında aşağıda belirtilen şartlar altında anlaşmaya varılmıştır.
+
+${sartlarMetni.trim()}
+
+\tTaraflar, üzerinde anlaşılan hususlar hakkında dava açılamayacağını anladıklarını ve bu durumu kabul ettiklerini beyan ederek son tutanağın bu şekilde düzenlenmesini talep etmişlerdir. Tarafların isteği üzerine tüm anlaşma şartları son tutanağa yazılmış ve arabuluculuk süreci ANLAŞMA ile sonuçlandırılmıştır.`;
+}
+
+// ANLAŞAMAMA anlatısı — kullanıcının verdiği GERÇEK ÖRNEK cümle kalıbı
+// BİREBİR kullanılır (AI'a hiç yazdırılmaz, hata/sapma riski olmasın).
+// Sadece isimler ve iki basit seçenek (karşı teklif / ikinci toplantı)
+// değişir, cümle yapısı sabittir.
+export function buildAnlasamamaNarrative(
+  c: MediationCaseData,
+  karsiTeklifVar: boolean,
+  ikinciToplantiIsteniyor: boolean
+): string {
+  const basvurucuTemsilci = c.basvurucuVekilAd
+    ? `Başvurucu vekili ${c.basvurucuVekilAd}`
+    : `Başvurucu ${v(c.basvurucuAd)}`;
+
+  const parties = partiesList(c);
+  const karsiCumleler = parties
+    .map((p) => {
+      const temsilci = p.vekilAd || p.yetkiliAd || v(p.ad);
+      const teklifCumlesi = karsiTeklifVar
+        ? "karşı tekliflerinin olduğunu"
+        : "herhangi bir karşı tekliflerinin olmadığını";
+      const toplantiCumlesi = ikinciToplantiIsteniyor
+        ? "ikinci bir toplantı istediklerini"
+        : "ikinci bir toplantı istemediklerini";
+      return `${temsilci} söz alarak başvurucunun taleplerini kabul etmediklerini, ${v(p.ad)} ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, ${teklifCumlesi} ve ${toplantiCumlesi} beyan etti.`;
+    })
+    .join(" ");
+
+  const basvurucuKapanisTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
+  const toplantiTaleb = ikinciToplantiIsteniyor
+    ? "ikinci bir toplantı talep ettiklerini"
+    : "ikinci bir toplantı taleplerinin olmadığını";
+
+  return `${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili taleplerini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak istediklerini, ${toplantiTaleb} beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
+}
+
 // Davet Mektubu'nda hiç değişmeyen, uzun HUAK bilgilendirme metni —
 // örnek belgeden birebir alınmıştır.
 export const DAVET_MEKTUBU_BILGILENDIRME = `Başvuruya konu hukuki uyuşmazlığınızın 6325 Sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu kapsamında, tarafların üzerinde serbestçe tasarruf edebileceği iş ve işlemlerden doğan özel hukuk uyuşmazlığı olduğu anlaşılmaktadır.
