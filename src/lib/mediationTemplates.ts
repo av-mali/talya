@@ -41,12 +41,7 @@ export type ArabulucuProfile = {
   arabulucuAdres?: string | null;
 };
 
-export function stripMarkup(text: string): string {
-  return text
-    .split("\n")
-    .map((line) => line.replace(/^\[\[C\]\]/, "").replace(/\*\*__(.+?)__\*\*/g, "$1").replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1"))
-    .join("\n");
-}
+export { stripMarkup } from "./richTextMarkup";
 
 function v(val?: string | null, fallback = "……………") {
   if (!val || !val.trim()) return fallback;

@@ -11,6 +11,7 @@
 // önerilir.
 
 import JSZip from "jszip";
+import { parseLineMarkup } from "./richTextMarkup";
 
 export async function readUdfText(buffer: Buffer): Promise<string> {
   const zip = await JSZip.loadAsync(buffer);
@@ -31,56 +32,6 @@ export async function readUdfText(buffer: Buffer): Promise<string> {
 // "[[C]]" varsa o paragraf ORTALANMIŞ olur. Gerçek bir örnek UDF
 // dosyasının <elements> yapısı incelenerek (paragraf başına Alignment +
 // karakter aralığı bazlı biçim "run"ları) birebir uyumlu üretiliyor.
-type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
-
-function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean } {
-  let line = rawLine;
-  let centered = false;
-  if (line.startsWith("[[C]]")) {
-    centered = true;
-    line = line.slice(5);
-  }
-
-  const runs: FormatRun[] = [];
-  let out = "";
-  let i = 0;
-  while (i < line.length) {
-    if (line.startsWith("**__", i)) {
-      const end = line.indexOf("__**", i + 4);
-      if (end !== -1) {
-        const inner = line.slice(i + 4, end);
-        runs.push({ start: out.length, length: inner.length, bold: true, underline: true });
-        out += inner;
-        i = end + 4;
-        continue;
-      }
-    }
-    if (line.startsWith("**", i)) {
-      const end = line.indexOf("**", i + 2);
-      if (end !== -1) {
-        const inner = line.slice(i + 2, end);
-        runs.push({ start: out.length, length: inner.length, bold: true, underline: false });
-        out += inner;
-        i = end + 2;
-        continue;
-      }
-    }
-    if (line.startsWith("__", i)) {
-      const end = line.indexOf("__", i + 2);
-      if (end !== -1) {
-        const inner = line.slice(i + 2, end);
-        runs.push({ start: out.length, length: inner.length, bold: false, underline: true });
-        out += inner;
-        i = end + 2;
-        continue;
-      }
-    }
-    out += line[i];
-    i++;
-  }
-  return { text: out, runs, centered };
-}
-
 export async function generateUdf(text: string): Promise<Buffer> {
   const rawLines = text.replace(/\r\n/g, "\n").split("\n");
 
@@ -96,7 +47,9 @@ export async function generateUdf(text: string): Promise<Buffer> {
     plainCdata += lineText + (isLast ? "" : "\n");
 
     if (lengthWithBreak > 0) {
-      const alignAttr = centered ? ` Alignment="1"` : "";
+      // Gerçek örnek belgelerde gövde metninin tamamı "iki yana yaslı"
+      // (Alignment="3") — sadece ana başlık satırları ortalanmış (Alignment="1").
+      const alignAttr = centered ? ` Alignment="1"` : ` Alignment="3"`;
       if (!runs.length) {
         elementsXml += `<paragraph${alignAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
       } else {

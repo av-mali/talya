@@ -3,30 +3,50 @@
 // aldığı için (PDF'in aksine yazı tipini gömmek gerekmez), Türkçe
 // karakterler (ç, ğ, ı, ö, ş, ü) sorunsuz görünür.
 
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { PDFDocument, rgb } from "pdf-lib";
 // @ts-ignore - @pdf-lib/fontkit için resmi TypeScript tip tanımı yok
 import fontkit from "@pdf-lib/fontkit";
 import fs from "fs";
 import path from "path";
+import { parseLineMarkup } from "./richTextMarkup";
 
 export async function generateDocx(text: string): Promise<Buffer> {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
 
-  const paragraphs = lines.map((line) => {
-    // "**kalın**" işaretli markdown satırlarını basitçe kalın yazıya çevir.
-    const boldMatch = line.match(/^\*\*(.+)\*\*$/);
-    if (boldMatch) {
-      return new Paragraph({
-        children: [new TextRun({ text: boldMatch[1], bold: true })],
-        spacing: { after: 0, before: 0 },
-      });
+  const paragraphs = lines.map((rawLine) => {
+    const { text: lineText, runs, centered } = parseLineMarkup(rawLine);
+
+    // Biçimli kısımları ve düz kısımları, orijinal sırayla ayrı
+    // TextRun'lar olarak oluştur — aynı satırda hem düz hem kalın/altı
+    // çizili metin bir arada olabiliyor (ör. "Vekili\t: Av. X").
+    const children: TextRun[] = [];
+    if (!runs.length) {
+      children.push(new TextRun(lineText));
+    } else {
+      let cursor = 0;
+      const sorted = [...runs].sort((a, b) => a.start - b.start);
+      for (const r of sorted) {
+        if (r.start > cursor) {
+          children.push(new TextRun(lineText.slice(cursor, r.start)));
+        }
+        children.push(
+          new TextRun({
+            text: lineText.slice(r.start, r.start + r.length),
+            bold: r.bold,
+            underline: r.underline ? {} : undefined,
+          })
+        );
+        cursor = r.start + r.length;
+      }
+      if (cursor < lineText.length) {
+        children.push(new TextRun(lineText.slice(cursor)));
+      }
     }
-    // spacing:{after:0} olmadan, Word'ün varsayılan paragraf aralığı her
-    // satırın arasına fazladan boşluk ekliyor — sıkı biçimli belgelerde
-    // (ör. Arabuluculuk formları) bu, orijinal formatı bozuyordu.
+
     return new Paragraph({
-      children: [new TextRun(line)],
+      children,
+      alignment: centered ? AlignmentType.CENTER : undefined,
       spacing: { after: 0, before: 0 },
     });
   });
