@@ -56,9 +56,11 @@ function karsiTemsilciListesi(mediationCase: any): string {
     .join(", ");
 }
 
-// Dosya adında kullanılamayacak karakterleri temizler.
+// Dosya adında kullanılamayacak karakterleri VE isim başına karışmış
+// olabilecek TC Kimlik/Vergi No gibi rakam dizilerini temizler.
 function safeFilePart(s: string): string {
-  return (s || "Belge").replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 80);
+  const noTc = (s || "Belge").replace(/^\d{10,11}\s+/, "");
+  return noTc.replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 80);
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -196,7 +198,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
 
       fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - Bilgilendirme ve İlk Oturum Toplantısı.udf`;
     } else if (docType === "sontutanak") {
-      const { sonuc, notlar, karsiTeklifVar, ikinciToplantiIsteniyor, tutanakTarihi } = body;
+      const { sonuc, notlar, karsiTeklifVar, ikinciToplantiIsteniyor, tutanakTarihi, tutanakSaati } = body;
       const isAnlasma = sonuc === "anlasma";
 
       let narrative: string;
@@ -229,7 +231,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         buildSignatureBlock(mediationCase, profile);
 
       if (tutanakTarihi) {
-        const dt = new Date(`${tutanakTarihi}T09:00:00`);
+        const dt = new Date(`${tutanakTarihi}T${tutanakSaati || "09:00"}:00`);
         if (!isNaN(dt.getTime())) {
           await prisma.mediationCase.update({
             where: { id: mediationCase.id },

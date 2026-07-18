@@ -78,7 +78,7 @@ export async function GET() {
       mediationItems.push({
         id: "med-son-" + m.id,
         type: "durusma",
-        title: `Son Tutanak (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`,
+        title: `Son Oturum (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`,
         dueDate: m.sonTutanakTarihi,
         clientId: null,
         clientName: `Arabuluculuk — ${m.basvurucuAd || "?"}`,

@@ -229,6 +229,19 @@ function submitPopup() {
 // ── CHAT ──
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
+// Bir tarihi gösterirken, eğer anlamlı bir saat bilgisi varsa (tam gece
+// yarısı değilse) tarihin yanına saati de ekler — ör. arabuluculuk
+// toplantı saatleri, Telegram botunun mesajında da bu saatin görünmesi
+// gerektiği için özellikle önemli.
+function fmtDueDate(dueDate) {
+  const d = new Date(dueDate);
+  const dateStr = d.toLocaleDateString('tr-TR');
+  const hasTime = !(d.getHours() === 0 && d.getMinutes() === 0);
+  if (!hasTime) return dateStr;
+  const timeStr = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  return `${dateStr} ${timeStr}`;
+}
+
 // ── BİNLİK AYRACI (para alanları) ──
 // "tl-amount" sınıflı her giriş alanına, kullanıcı yazarken otomatik
 // olarak "150.000" gibi binlik ayraç ekler. Sayfa yeniden yüklenmeden
@@ -517,7 +530,7 @@ async function openDeadlinesModal() {
       return `<div class="dl-row">
         <span class="dl-tag ${level}">${tag}</span>
         <span class="dl-text">${e.clientName} — ${e.title}</span>
-        <span class="dl-days">${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span>
+        <span class="dl-days">${fmtDueDate(e.dueDate)}</span>
       </div>`;
     }).join('');
   } catch (e) {
@@ -661,7 +674,7 @@ async function renderDashDeadlines() {
       return `<div class="dl-row">
         <span class="dl-tag ${level}">${tag}</span>
         <span class="dl-text">${e.clientName} — ${e.title}</span>
-        <span class="dl-days">${new Date(e.dueDate).toLocaleDateString('tr-TR')}</span>
+        <span class="dl-days">${fmtDueDate(e.dueDate)}</span>
       </div>`;
     }).join('');
   } catch (e) {

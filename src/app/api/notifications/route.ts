@@ -30,6 +30,16 @@ export async function GET() {
     return Math.round((dueMidnight.getTime() - nowMidnight.getTime()) / 86400000);
   }
 
+  // "3 gün kaldı" gibi etikete, anlamlı bir saat varsa (tam gece yarısı
+  // değilse) saati de ekler — ör. arabuluculuk toplantı saatleri.
+  function timeLabel(date: Date, daysLeft: number, overdue: boolean): string {
+    const base = overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`;
+    const hasTime = !(date.getHours() === 0 && date.getMinutes() === 0);
+    if (!hasTime) return base;
+    const clock = date.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+    return `${base} · ${clock}`;
+  }
+
   const [events, tasks, readRows, clientMessages, mediationCases] = await Promise.all([
     ws ? prisma.clientEvent.findMany({
       where: {
@@ -91,7 +101,7 @@ export async function GET() {
       level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
       label,
       text: `${g.caseTitle} — ${g.clientNamesDisplay} — ${g.title}${g.assigneeName ? ` — (${g.assigneeName})` : ''}`,
-      time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
+      time: timeLabel(g.dueDate, daysLeft, overdue),
       dueDate: g.dueDate,
       read: readIds.has(id),
     };
@@ -108,7 +118,7 @@ export async function GET() {
       level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
       label: "Görev",
       text: `${t.title}${t.assignedTo ? ` — (${t.assignedTo.name || t.assignedTo.email})` : ''}`,
-      time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
+      time: timeLabel(t.dueDate!, daysLeft, overdue),
       dueDate: t.dueDate!,
       read: readIds.has(id),
     };
@@ -141,13 +151,13 @@ export async function GET() {
         level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
         label: "Arabuluculuk",
         text: `${title} — ${m.basvurucuAd || "?"}`,
-        time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
+        time: timeLabel(dueDate, daysLeft, overdue),
         dueDate,
         read: readIds.has(id),
       });
     };
     pushNotif(m.ilkOturumTarihi, "Bilgilendirme ve İlk Oturum", "ilk");
-    pushNotif(m.sonTutanakTarihi, `Son Tutanak (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`, "son");
+    pushNotif(m.sonTutanakTarihi, `Son Oturum (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`, "son");
   });
 
   const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs, ...mediationNotifs].sort(

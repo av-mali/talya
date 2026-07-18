@@ -21,7 +21,7 @@ export async function generateGundemReport(userId: string): Promise<string> {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const todayEnd = new Date(todayStart.getTime() + 86400000);
 
-  const [todayEvents, tasks, casesWithFee, contracts] = await Promise.all([
+  const [todayEvents, tasks, casesWithFee, contracts, todayMediation] = await Promise.all([
     prisma.clientEvent.findMany({
       where: {
         case: {
@@ -55,19 +55,41 @@ export async function generateGundemReport(userId: string): Promise<string> {
       where: { workspaceId, endDate: { gte: now, lte: new Date(now.getTime() + 14 * 86400000) } },
       orderBy: { endDate: "asc" },
     }),
+    // Arabuluculuk kişiseldir (büro geneli değil) — sadece kendi
+    // dosyalarındaki bugünkü toplantılar.
+    prisma.mediationCase.findMany({
+      where: {
+        userId,
+        OR: [
+          { ilkOturumTarihi: { gte: todayStart, lt: todayEnd } },
+          { sonTutanakTarihi: { gte: todayStart, lt: todayEnd } },
+        ],
+      },
+    }),
   ]);
 
   const lines: string[] = [];
   lines.push(`📋 *Günaydın${user.name ? " " + user.name.split(" ")[0] : ""}! İşte bugünkü gündem:*`);
   lines.push("");
 
-  // 1) Bugünkü duruşma/tebligat tarihleri
+  // 1) Bugünkü duruşma/tebligat tarihleri (+ arabuluculuk toplantıları)
   const grouped = groupEventsByCaseAndDate(todayEvents);
   lines.push("⚖️ *Bugünkü Duruşma/Tebligatlar*");
-  if (grouped.length) {
+  if (grouped.length || todayMediation.length) {
     grouped.forEach((g) => {
       const time = new Date(g.dueDate).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
-      lines.push(`• ${g.caseTitle} — ${g.clientNamesDisplay} — ${g.title}${g.assigneeName ? ` (${g.assigneeName})` : ""}`);
+      lines.push(`• ${time} — ${g.caseTitle} — ${g.clientNamesDisplay} — ${g.title}${g.assigneeName ? ` (${g.assigneeName})` : ""}`);
+    });
+    todayMediation.forEach((m) => {
+      if (m.ilkOturumTarihi && m.ilkOturumTarihi >= todayStart && m.ilkOturumTarihi < todayEnd) {
+        const time = new Date(m.ilkOturumTarihi).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+        lines.push(`• ${time} — Arabuluculuk — Bilgilendirme ve İlk Oturum — ${m.basvurucuAd || "?"}`);
+      }
+      if (m.sonTutanakTarihi && m.sonTutanakTarihi >= todayStart && m.sonTutanakTarihi < todayEnd) {
+        const time = new Date(m.sonTutanakTarihi).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+        const sonucLabel = m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama";
+        lines.push(`• ${time} — Arabuluculuk — Son Oturum (${sonucLabel}) — ${m.basvurucuAd || "?"}`);
+      }
     });
   } else {
     lines.push("_Bugün için kayıtlı bir duruşma/tebligat yok._");

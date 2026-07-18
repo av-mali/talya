@@ -753,8 +753,11 @@ async function arSelectCase(index) {
 
         <div style="display:flex;gap:6px;align-items:flex-end;">
           <div style="flex:1;">
-            <div style="font-size:10.5px;color:var(--t3);margin-bottom:3px;">Son Tutanak Tarihi</div>
-            <input type="date" id="ar-fix-son-tarih" value="${c.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toISOString().slice(0,10) : ''}">
+            <div style="font-size:10.5px;color:var(--t3);margin-bottom:3px;">Son Oturum Tarihi/Saati</div>
+            <div style="display:flex;gap:4px;">
+              <input type="date" id="ar-fix-son-tarih" value="${c.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toISOString().slice(0,10) : ''}" style="flex:1;">
+              <input type="time" id="ar-fix-son-saat" value="${c.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toTimeString().slice(0,5) : '09:00'}" style="width:80px;">
+            </div>
           </div>
           <button class="pop-cta-btn b" style="width:auto;padding:7px 10px;" onclick="arSaveFixedDate('son')" title="Kaydet"><i class="fa-solid fa-check"></i></button>
           ${c.sonTutanakTarihi ? `<button class="pop-cta-btn" style="width:auto;padding:7px 10px;background:var(--danger);" onclick="arClearFixedDate('son')" title="Sil"><i class="fa-solid fa-xmark"></i></button>` : ''}
@@ -800,8 +803,9 @@ async function arSaveFixedDate(which) {
     body.ilkOturumTarihi = `${tarih}T${saat}:00`;
   } else {
     const tarih = document.getElementById('ar-fix-son-tarih').value;
+    const saat = document.getElementById('ar-fix-son-saat').value || '09:00';
     if (!tarih) { toast('Önce bir tarih seçin', 'fa-solid fa-triangle-exclamation'); return; }
-    body.sonTutanakTarihi = `${tarih}T09:00:00`;
+    body.sonTutanakTarihi = `${tarih}T${saat}:00`;
   }
   const res = await fetch('/api/mediation/cases/' + arSelectedCaseId, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -876,7 +880,10 @@ function arShowGenForm(docType) {
   } else if (docType === 'sontutanak') {
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Son Tutanak</div></div>
-      <div class="fg"><div class="fl">Tutanak Tarihi</div><input type="date" id="ar-son-tarih" value="${c?.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toISOString().slice(0,10) : ''}"></div>
+      <div style="display:flex;gap:6px;">
+        <div class="fg" style="flex:1;"><div class="fl">Tutanak Tarihi</div><input type="date" id="ar-son-tarih" value="${c?.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toISOString().slice(0,10) : ''}"></div>
+        <div class="fg" style="flex:1;"><div class="fl">Saati</div><input type="time" id="ar-son-saat" value="${c?.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toTimeString().slice(0,5) : '09:00'}"></div>
+      </div>
       <div class="fg"><div class="fl">Sonuç</div>
         <select id="ar-son-sonuc" onchange="arToggleSontutanakFields()">
           <option value="anlasma">Anlaşma</option>
@@ -946,6 +953,7 @@ async function arGenerate(docType) {
     body.notlar = document.getElementById('ar-ilk-notlar').value;
   } else if (docType === 'sontutanak') {
     body.tutanakTarihi = document.getElementById('ar-son-tarih').value;
+    body.tutanakSaati = document.getElementById('ar-son-saat').value;
     body.sonuc = document.getElementById('ar-son-sonuc').value;
     if (body.sonuc === 'anlasma') {
       body.notlar = document.getElementById('ar-son-notlar').value;
