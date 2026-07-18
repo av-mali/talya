@@ -61,7 +61,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
         ? ` TabSet="38.0:0:0"`
         : sigRow
         ? ` TabSet="20.0:0:0,190.0:0:0,360.0:0:0"`
-        : ` TabSet="42.0:0:0,300.0:0:0"`;
+        : ` TabSet="42.0:0:0,230.0:0:0,340.0:0:0"`;
       if (!runs.length) {
         elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
       } else {

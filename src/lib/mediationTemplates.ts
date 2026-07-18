@@ -127,9 +127,9 @@ ${karsiTarafBlocks}
  
 ${v(c.uyusmazlikKonusu)}
  
-Arabuluculuk Bürosuna Başvuru Tarihi\t: **${v(c.basvuruTarihi)}**
-Arabulucunun Görevlendirildiği Tarih\t: **${v(c.gorevlendirmeTarihi)}**
-Tutanağının Düzenlendiği Tarih\t: **${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
+**Arabuluculuk Bürosuna Başvuru Tarihi\t\t\t: ${v(c.basvuruTarihi)}**
+**Arabulucunun Görevlendirildiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}**
+**Tutanağının Düzenlendiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
 `;
 }
 
