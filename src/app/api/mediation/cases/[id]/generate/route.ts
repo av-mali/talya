@@ -234,7 +234,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
         .replace(/\s*hukuku\s*$/i, "")
         .toLocaleUpperCase("tr-TR") || "……";
-      const extraLine = `Arabuluculuk Sonucu\t\t\t: ${sonucLabel}`;
+      const extraLine = `Arabuluculuk Sonucu\t: **${sonucLabel}**`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine);
       const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
       const today = new Date().toLocaleDateString("tr-TR");

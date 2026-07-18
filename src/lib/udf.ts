@@ -41,7 +41,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
 
   for (let i = 0; i < rawLines.length; i++) {
     const isLast = i === rawLines.length - 1;
-    const { text: lineText, runs, centered, bulleted } = parseLineMarkup(rawLines[i]);
+    const { text: lineText, runs, centered, bulleted, sigRow } = parseLineMarkup(rawLines[i]);
     const lengthWithBreak = lineText.length + (isLast ? 0 : 1);
 
     plainCdata += lineText + (isLast ? "" : "\n");
@@ -54,9 +54,14 @@ export async function generateUdf(text: string): Promise<Buffer> {
       const alignAttr = centered ? ` Alignment="1"` : ` Alignment="3"`;
       const bulletAttr = bulleted ? ` Bulleted="true" BulletType="BULLET_TYPE_ELLIPSE" ListLevel="1"` : "";
       // Gerçek örnek belgelerin ham XML'inde bulunan sabit sekme
-      // noktaları — etiketler ("Vergi/Mersis/Detsis No" gibi) ne kadar
-      // uzun olursa olsun, değerler artık hep AYNI dikey hizada başlar.
-      const tabSetAttr = centered ? ` TabSet="38.0:0:0"` : ` TabSet="42.0:0:0,230.0:0:0,340.0:0:0"`;
+      // noktaları — etiketler ne kadar uzun olursa olsun, değerler hep
+      // aynı hizada başlar. İmza satırları (3 sütun, sayfa genişliğine
+      // sığması gereken dar sütunlar) AYRI bir sekme düzeni kullanır.
+      const tabSetAttr = centered
+        ? ` TabSet="38.0:0:0"`
+        : sigRow
+        ? ` TabSet="20.0:0:0,190.0:0:0,360.0:0:0"`
+        : ` TabSet="42.0:0:0,300.0:0:0"`;
       if (!runs.length) {
         elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
       } else {

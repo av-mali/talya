@@ -127,9 +127,9 @@ ${karsiTarafBlocks}
  
 ${v(c.uyusmazlikKonusu)}
  
-Arabuluculuk Bürosuna Başvuru Tarihi\t\t\t: ${v(c.basvuruTarihi)}
-Arabulucunun Görevlendirildiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}
-Tutanağının Düzenlendiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}${extraLine ? "\n" + extraLine : ""}
+Arabuluculuk Bürosuna Başvuru Tarihi\t: **${v(c.basvuruTarihi)}**
+Arabulucunun Görevlendirildiği Tarih\t: **${v(c.gorevlendirmeTarihi)}**
+Tutanağının Düzenlendiği Tarih\t: **${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
 `;
 }
 
@@ -168,10 +168,10 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): 
 
   const rowsText = rows
     .map((row) => {
-      const nameLine = row.map((s) => s.name).join("\t\t");
-      const roleLine = row.map((s) => s.role).join("\t\t");
-      const markLine = row.map(() => "¸").join("\t\t");
-      return `\t${nameLine}\n\t${roleLine}\n\t${markLine}`;
+      const nameLine = row.map((s) => s.name).join("\t");
+      const roleLine = row.map((s) => s.role).join("\t");
+      const markLine = row.map(() => "¸").join("\t");
+      return `[[S]]${nameLine}\n[[S]]${roleLine}\n[[S]]${markLine}`;
     })
     .join("\n\n");
 
