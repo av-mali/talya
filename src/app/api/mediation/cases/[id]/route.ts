@@ -38,6 +38,18 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     if (body[f] !== undefined) data[f] = body[f] || null;
   }
 
+  // İlk Oturum / Son Tutanak tarihleri — belge oluşturmadan BAĞIMSIZ
+  // olarak, doğrudan buradan da girilip silinebilir.
+  if (body.ilkOturumTarihi !== undefined) {
+    data.ilkOturumTarihi = body.ilkOturumTarihi ? new Date(body.ilkOturumTarihi) : null;
+  }
+  if (body.sonTutanakTarihi !== undefined) {
+    data.sonTutanakTarihi = body.sonTutanakTarihi ? new Date(body.sonTutanakTarihi) : null;
+  }
+  if (body.sonTutanakSonucu !== undefined) {
+    data.sonTutanakSonucu = body.sonTutanakSonucu || null;
+  }
+
   // Karşı taraf listesi gönderildiyse, eskilerini silip yenilerini yaz
   // (basit ve güvenilir bir "tamamını değiştir" yaklaşımı).
   if (Array.isArray(body.karsiTaraflar)) {

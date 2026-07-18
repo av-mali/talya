@@ -736,12 +736,30 @@ async function arSelectCase(index) {
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.dosyaNo || 'Dosya No yok'}</div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${c.basvurucuAd || '?'} — ${karsiOzet}</div>
 
-      ${(c.ilkOturumTarihi || c.sonTutanakTarihi) ? `
-        <div style="background:var(--bg2);border-radius:var(--r);padding:10px 12px;margin-bottom:16px;">
-          ${c.ilkOturumTarihi ? `<div style="font-size:12px;margin-bottom:${c.sonTutanakTarihi ? '4px' : '0'};"><i class="fa-solid fa-people-arrows" style="color:var(--gold);"></i> Bilgilendirme ve İlk Oturum: <strong>${new Date(c.ilkOturumTarihi).toLocaleString('tr-TR', {dateStyle:'medium', timeStyle:'short'})}</strong></div>` : ''}
-          ${c.sonTutanakTarihi ? `<div style="font-size:12px;"><i class="fa-solid fa-file-signature" style="color:var(--gold);"></i> Son Tutanak (${c.sonTutanakSonucu === 'anlasma' ? 'Anlaşma' : 'Anlaşamama'}): <strong>${new Date(c.sonTutanakTarihi).toLocaleDateString('tr-TR')}</strong></div>` : ''}
+      <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:16px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">Toplantı Tarihleri</div>
+
+        <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:10px;">
+          <div style="flex:1;">
+            <div style="font-size:10.5px;color:var(--t3);margin-bottom:3px;">İlk Oturum Tarihi/Saati</div>
+            <div style="display:flex;gap:4px;">
+              <input type="date" id="ar-fix-ilk-tarih" value="${c.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toISOString().slice(0,10) : ''}" style="flex:1;">
+              <input type="time" id="ar-fix-ilk-saat" value="${c.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toTimeString().slice(0,5) : '09:00'}" style="width:80px;">
+            </div>
+          </div>
+          <button class="pop-cta-btn b" style="width:auto;padding:7px 10px;" onclick="arSaveFixedDate('ilk')" title="Kaydet"><i class="fa-solid fa-check"></i></button>
+          ${c.ilkOturumTarihi ? `<button class="pop-cta-btn" style="width:auto;padding:7px 10px;background:var(--danger);" onclick="arClearFixedDate('ilk')" title="Sil"><i class="fa-solid fa-xmark"></i></button>` : ''}
         </div>
-      ` : ''}
+
+        <div style="display:flex;gap:6px;align-items:flex-end;">
+          <div style="flex:1;">
+            <div style="font-size:10.5px;color:var(--t3);margin-bottom:3px;">Son Tutanak Tarihi</div>
+            <input type="date" id="ar-fix-son-tarih" value="${c.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toISOString().slice(0,10) : ''}">
+          </div>
+          <button class="pop-cta-btn b" style="width:auto;padding:7px 10px;" onclick="arSaveFixedDate('son')" title="Kaydet"><i class="fa-solid fa-check"></i></button>
+          ${c.sonTutanakTarihi ? `<button class="pop-cta-btn" style="width:auto;padding:7px 10px;background:var(--danger);" onclick="arClearFixedDate('son')" title="Sil"><i class="fa-solid fa-xmark"></i></button>` : ''}
+        </div>
+      </div>
 
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
         <button class="pop-cta-btn b" onclick="arShowGenForm('davet')"><i class="fa-solid fa-envelope"></i><span>Davet Mektubu Oluştur</span></button>
@@ -772,7 +790,52 @@ async function getArabulucuProfile() {
   return arProfileCache;
 }
 
-async function arShowGenForm(docType) {
+async function arSaveFixedDate(which) {
+  if (!arSelectedCaseId) return;
+  const body = {};
+  if (which === 'ilk') {
+    const tarih = document.getElementById('ar-fix-ilk-tarih').value;
+    const saat = document.getElementById('ar-fix-ilk-saat').value || '09:00';
+    if (!tarih) { toast('Önce bir tarih seçin', 'fa-solid fa-triangle-exclamation'); return; }
+    body.ilkOturumTarihi = `${tarih}T${saat}:00`;
+  } else {
+    const tarih = document.getElementById('ar-fix-son-tarih').value;
+    if (!tarih) { toast('Önce bir tarih seçin', 'fa-solid fa-triangle-exclamation'); return; }
+    body.sonTutanakTarihi = `${tarih}T09:00:00`;
+  }
+  const res = await fetch('/api/mediation/cases/' + arSelectedCaseId, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    const data = await res.json();
+    const idx = arCasesCache.findIndex(c => c.id === arSelectedCaseId);
+    if (idx !== -1) arCasesCache[idx] = data.case;
+    toast('Tarih kaydedildi', 'fa-solid fa-check', true);
+    arSelectCase(idx);
+  } else {
+    toast('Kaydedilemedi', 'fa-solid fa-triangle-exclamation');
+  }
+}
+
+async function arClearFixedDate(which) {
+  if (!arSelectedCaseId) return;
+  if (!confirm('Bu tarihi silmek istediğinize emin misiniz?')) return;
+  const body = which === 'ilk' ? { ilkOturumTarihi: null } : { sonTutanakTarihi: null };
+  const res = await fetch('/api/mediation/cases/' + arSelectedCaseId, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    const data = await res.json();
+    const idx = arCasesCache.findIndex(c => c.id === arSelectedCaseId);
+    if (idx !== -1) arCasesCache[idx] = data.case;
+    toast('Tarih silindi', 'fa-solid fa-trash');
+    arSelectCase(idx);
+  }
+}
+
+function arShowGenForm(docType) {
   const formEl = document.getElementById('ar-gen-form');
   document.getElementById('ar-gen-result').innerHTML = '';
   const c = arCasesCache.find(cc => cc.id === arSelectedCaseId);
@@ -803,8 +866,8 @@ async function arShowGenForm(docType) {
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">İlk Oturum Tutanağı</div></div>
       <div style="display:flex;gap:6px;">
-        <div class="fg" style="flex:1;"><div class="fl">Toplantı Tarihi</div><input type="date" id="ar-ilk-tarih"></div>
-        <div class="fg" style="flex:1;"><div class="fl">Toplantı Saati</div><input type="time" id="ar-ilk-saat" value="09:00"></div>
+        <div class="fg" style="flex:1;"><div class="fl">Toplantı Tarihi</div><input type="date" id="ar-ilk-tarih" value="${c?.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toISOString().slice(0,10) : ''}"></div>
+        <div class="fg" style="flex:1;"><div class="fl">Toplantı Saati</div><input type="time" id="ar-ilk-saat" value="${c?.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toTimeString().slice(0,5) : '09:00'}"></div>
       </div>
       <div class="fg"><div class="fl">Kısa Notlar</div><textarea id="ar-ilk-notlar" rows="4" placeholder="Kiminle ne zaman görüşüldü, toplantı nasıl (yüz yüze/telekonferans) kararlaştırıldı, oturumda neler konuşuldu…"></textarea></div>
       <div style="font-size:10.5px;color:var(--t3);margin-bottom:6px;">Bu tarih, otomatik olarak Yaklaşan Süreler'e ve bildirim zilinize eklenecektir.</div>
@@ -813,7 +876,7 @@ async function arShowGenForm(docType) {
   } else if (docType === 'sontutanak') {
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Son Tutanak</div></div>
-      <div class="fg"><div class="fl">Tutanak Tarihi</div><input type="date" id="ar-son-tarih"></div>
+      <div class="fg"><div class="fl">Tutanak Tarihi</div><input type="date" id="ar-son-tarih" value="${c?.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toISOString().slice(0,10) : ''}"></div>
       <div class="fg"><div class="fl">Sonuç</div>
         <select id="ar-son-sonuc" onchange="arToggleSontutanakFields()">
           <option value="anlasma">Anlaşma</option>
