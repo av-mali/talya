@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { shouldRestrictToOwnItems } from "@/lib/workspace";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
+import { stripTcFromName } from "@/lib/mediationTemplates";
 
 // Talya Asistan (Telegram botu) ve ileride başka kanallar için ortak
 // "bugün gündemde ne var" raporunu üretir. Aynı yetki/atama mantığını
@@ -83,12 +84,12 @@ export async function generateGundemReport(userId: string): Promise<string> {
     todayMediation.forEach((m) => {
       if (m.ilkOturumTarihi && m.ilkOturumTarihi >= todayStart && m.ilkOturumTarihi < todayEnd) {
         const time = new Date(m.ilkOturumTarihi).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
-        lines.push(`• ${time} — Arabuluculuk — Bilgilendirme ve İlk Oturum — ${m.basvurucuAd || "?"}`);
+        lines.push(`• ${time} — Arabuluculuk — Bilgilendirme ve İlk Oturum — ${stripTcFromName(m.basvurucuAd) || "?"}`);
       }
       if (m.sonTutanakTarihi && m.sonTutanakTarihi >= todayStart && m.sonTutanakTarihi < todayEnd) {
         const time = new Date(m.sonTutanakTarihi).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
         const sonucLabel = m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama";
-        lines.push(`• ${time} — Arabuluculuk — Son Oturum (${sonucLabel}) — ${m.basvurucuAd || "?"}`);
+        lines.push(`• ${time} — Arabuluculuk — Son Oturum (${sonucLabel}) — ${stripTcFromName(m.basvurucuAd) || "?"}`);
       }
     });
   } else {

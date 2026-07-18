@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { stripTcFromName } from "@/lib/mediationTemplates";
+
+function cleanCase(c: any) {
+  return {
+    ...c,
+    basvurucuAd: stripTcFromName(c.basvurucuAd) || c.basvurucuAd,
+    karsiTaraflar: (c.karsiTaraflar || []).map((p: any) => ({
+      ...p,
+      ad: stripTcFromName(p.ad) || p.ad,
+    })),
+  };
+}
 
 async function requireOwnedMediationCase(id: string, userId: string) {
   return prisma.mediationCase.findFirst({ where: { id, userId } });
@@ -17,7 +29,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
   });
   if (!found) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });
-  return NextResponse.json({ case: found });
+  return NextResponse.json({ case: cleanCase(found) });
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
@@ -32,11 +44,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const data: any = {};
   const fields = [
     "dosyaNo", "basvurucuAd", "basvurucuAdres", "basvurucuVekilAd", "basvurucuBaroSicil",
-    "basvurucuTelefon", "uyusmazlikKonusu", "basvuruTarihi", "gorevlendirmeTarihi",
+    "basvurucuTelefon", "uyusmazlikKonusu", "uyusmazlikTuru", "basvuruTarihi", "gorevlendirmeTarihi",
   ];
   for (const f of fields) {
     if (body[f] !== undefined) data[f] = body[f] || null;
   }
+  if (data.basvurucuAd) data.basvurucuAd = stripTcFromName(data.basvurucuAd);
 
   // İlk Oturum / Son Tutanak tarihleri — belge oluşturmadan BAĞIMSIZ
   // olarak, doğrudan buradan da girilip silinebilir.
@@ -56,7 +69,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     await prisma.mediationParty.deleteMany({ where: { caseId: params.id } });
     data.karsiTaraflar = {
       create: body.karsiTaraflar.map((p: any, i: number) => ({
-        ad: p.ad || null,
+        ad: stripTcFromName(p.ad) || null,
         adres: p.adres || null,
         vergiMersis: p.vergiMersis || null,
         yetkiliAd: p.yetkiliAd || null,
@@ -72,7 +85,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     data,
     include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
   });
-  return NextResponse.json({ case: updated });
+  return NextResponse.json({ case: cleanCase(updated) });
 }
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {

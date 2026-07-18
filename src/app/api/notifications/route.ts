@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
 import { requireWorkspace, shouldRestrictToOwnItems } from "@/lib/workspace";
+import { stripTcFromName } from "@/lib/mediationTemplates";
 
 // Önümüzdeki 14 gün içindeki (ve geçmiş, henüz görülmemiş) duruşma/ödeme
 // tarihlerini VE süresi yaklaşan görevleri bildirim olarak döndürür —
@@ -150,7 +151,7 @@ export async function GET() {
         ico: "fa-handshake",
         level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
         label: "Arabuluculuk",
-        text: `${title} — ${m.basvurucuAd || "?"}`,
+        text: `${title} — ${stripTcFromName(m.basvurucuAd) || "?"}`,
         time: timeLabel(dueDate, daysLeft, overdue),
         dueDate,
         read: readIds.has(id),

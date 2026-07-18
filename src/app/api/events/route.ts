@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
 import { requireWorkspace, shouldRestrictToOwnItems } from "@/lib/workspace";
+import { stripTcFromName } from "@/lib/mediationTemplates";
 
 // Takvim VE ana sayfadaki "Yaklaşan Süreler" için: büronun tüm
 // müvekkillerindeki duruşma/ödeme tarihleri + büronun tarihi olan görevleri.
@@ -71,7 +72,7 @@ export async function GET() {
         title: "Bilgilendirme ve İlk Oturum",
         dueDate: m.ilkOturumTarihi,
         clientId: null,
-        clientName: `Arabuluculuk — ${m.basvurucuAd || "?"}`,
+        clientName: `Arabuluculuk — ${stripTcFromName(m.basvurucuAd) || "?"}`,
       });
     }
     if (m.sonTutanakTarihi) {
@@ -81,7 +82,7 @@ export async function GET() {
         title: `Son Oturum (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`,
         dueDate: m.sonTutanakTarihi,
         clientId: null,
-        clientName: `Arabuluculuk — ${m.basvurucuAd || "?"}`,
+        clientName: `Arabuluculuk — ${stripTcFromName(m.basvurucuAd) || "?"}`,
       });
     }
   });

@@ -329,6 +329,7 @@ model MediationCase {
   basvurucuBaroSicil    String?
   basvurucuTelefon      String?
   uyusmazlikKonusu      String?  @db.Text
+  uyusmazlikTuru        String?  // "İş Hukuku" | "Ticaret Hukuku" | ... | serbest metin (Diğer seçilirse)
   basvuruTarihi         String?  // "12.03.2026" formatında serbest metin
   gorevlendirmeTarihi   String?
   ilkOturumTarihi       DateTime? // Bilgilendirme ve İlk Oturum toplantı tarihi — takvimle senkronize

@@ -116,6 +116,17 @@ window.CURRENT_MODULE = {
         <div id="ar-karsi-list"></div>
         <button class="pop-cta-btn b" style="width:100%;margin-bottom:14px;" onclick="arAddKarsiRow()" type="button"><i class="fa-solid fa-plus"></i><span>Karşı Taraf Ekle</span></button>
 
+        <div class="fg"><div class="fl">Uyuşmazlık Türü</div>
+          <select id="ar-uyusmazlik-tur" onchange="document.getElementById('ar-uyusmazlik-tur-diger').style.display = this.value === 'Diğer' ? '' : 'none'">
+            <option value="İş Hukuku">İş Hukuku</option>
+            <option value="Ticaret Hukuku">Ticaret Hukuku</option>
+            <option value="Tüketici Hukuku">Tüketici Hukuku</option>
+            <option value="Kira Hukuku">Kira Hukuku</option>
+            <option value="Ortaklığın Giderilmesi">Ortaklığın Giderilmesi</option>
+            <option value="Diğer">Diğer</option>
+          </select>
+          <input type="text" id="ar-uyusmazlik-tur-diger" placeholder="Uyuşmazlık türünü yazın…" style="display:none;margin-top:6px;">
+        </div>
         <div class="fg"><div class="fl">Uyuşmazlık Konusu</div><textarea id="ar-uyusmazlik" rows="3" placeholder="Kısa açıklama, madde madde olabilir…"></textarea></div>
         <div class="fg"><div class="fl">Başvuru Tarihi</div><input type="text" id="ar-basvuru-tarih" placeholder="12.03.2026"></div>
         <div class="fg"><div class="fl">Görevlendirme Tarihi</div><input type="text" id="ar-gorev-tarih" placeholder="12.03.2026"></div>
@@ -717,7 +728,7 @@ function arRenderCaseList() {
       ${arCasesCache.length ? arCasesCache.map((c, i) => `
         <div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick="arSelectCase(${i})">
           <span class="ico"><i class="fa-solid fa-folder"></i></span>
-          <span style="flex:1;">${c.dosyaNo || 'Dosya No yok'} — ${c.basvurucuAd || '?'} / ${c.karsiTarafAd || '?'}</span>
+          <span style="flex:1;">${c.dosyaNo || 'Dosya No yok'} — ${c.basvurucuAd || '?'} / ${c.uyusmazlikTuru || '?'}</span>
         </div>
       `).join('') : emptyState('fa-handshake', 'Henüz dosya yok', 'Soldaki formdan bir başvuru evrakı yükleyip veya elle doldurup ilk dosyanızı oluşturun.')}
     </div>
@@ -1073,6 +1084,9 @@ async function arSaveCase() {
     basvurucuBaroSicil: document.getElementById('ar-bas-barosicil').value,
     basvurucuTelefon: document.getElementById('ar-bas-tel').value,
     karsiTaraflar: arKarsiTarafRows.filter(r => r.ad && r.ad.trim()),
+    uyusmazlikTuru: document.getElementById('ar-uyusmazlik-tur').value === 'Diğer'
+      ? document.getElementById('ar-uyusmazlik-tur-diger').value
+      : document.getElementById('ar-uyusmazlik-tur').value,
     uyusmazlikKonusu: document.getElementById('ar-uyusmazlik').value,
     basvuruTarihi: document.getElementById('ar-basvuru-tarih').value,
     gorevlendirmeTarihi: document.getElementById('ar-gorev-tarih').value,

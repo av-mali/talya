@@ -43,13 +43,18 @@ export type ArabulucuProfile = {
 
 export { stripMarkup } from "./richTextMarkup";
 
+// Bir isim alanının başına yanlışlıkla karışmış olabilecek 10-11 haneli
+// TC Kimlik/Vergi No gibi rakam dizilerini temizler. Hem belge üretirken
+// (v() içinde) hem de VERİ KAYDEDİLİRKEN (API'lerde) kullanılır — böylece
+// hatalı veri hiç veritabanına girmez, eski kayıtlar da temizlenebilir.
+export function stripTcFromName(val?: string | null): string {
+  if (!val) return "";
+  return val.trim().replace(/^\d{10,11}\s+/, "");
+}
+
 function v(val?: string | null, fallback = "……………") {
   if (!val || !val.trim()) return fallback;
-  let out = val.trim();
-  // Başındaki 10-11 haneli TC Kimlik/Vergi No gibi rakam dizilerini
-  // temizler — isim alanına yanlışlıkla karışmış olabilir (ör. eski
-  // kayıtlı veri, ya da AI çıkarımının bir istisnası).
-  out = out.replace(/^\d{10,11}\s+/, "");
+  let out = stripTcFromName(val);
   // Başvuru formlarındaki "[Haksız Fiilden Kaynaklanan (Nisbi)]" gibi
   // ham köşeli parantezli metinleri de temizler.
   return out.replace(/^\[|\]$/g, "").trim();
