@@ -43,6 +43,18 @@ export type ArabulucuProfile = {
 
 export { stripMarkup } from "./richTextMarkup";
 
+// Sabit metinlerimizdeki (HUAK bilgilendirmesi vb.) HER paragraf "\t" ile
+// (satır başı girintisiyle) başlıyor — AI'ın ürettiği ya da kullanıcının
+// yazdığı serbest metinler bu girintiyi hiç bilmiyor. Bu fonksiyon, bir
+// metnin İÇİNDEKİ her paragrafın (boş satırla ayrılmış blokların) başına
+// aynı girintiyi ekleyerek tüm sayfanın tutarlı görünmesini sağlar.
+export function indentParagraphs(text: string): string {
+  return text
+    .split("\n\n")
+    .map((para) => (para.startsWith("\t") ? para : "\t" + para))
+    .join("\n\n");
+}
+
 // Bir isim alanının başına yanlışlıkla karışmış olabilecek 10-11 haneli
 // TC Kimlik/Vergi No gibi rakam dizilerini temizler. Hem belge üretirken
 // (v() içinde) hem de VERİ KAYDEDİLİRKEN (API'lerde) kullanılır — böylece
@@ -115,9 +127,9 @@ ${karsiTarafBlocks}
  
 ${v(c.uyusmazlikKonusu)}
  
-Arabuluculuk Bürosuna Başvuru Tarihi\t\t: ${v(c.basvuruTarihi)}
-Arabulucunun Görevlendirildiği Tarih\t\t: ${v(c.gorevlendirmeTarihi)}
-Tutanağının Düzenlendiği Tarih\t\t: ${v(c.gorevlendirmeTarihi)}${extraLine ? "\n" + extraLine : ""}
+Arabuluculuk Bürosuna Başvuru Tarihi\t\t\t: ${v(c.basvuruTarihi)}
+Arabulucunun Görevlendirildiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}
+Tutanağının Düzenlendiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}${extraLine ? "\n" + extraLine : ""}
 `;
 }
 
@@ -143,30 +155,27 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): 
   });
 
   const arabulucuSign = { name: `Arb. ${v(a.name)}`, role: `(Sicil No: ${v(a.arabulucuSicilNo)})` };
+  const allSigns = [basvurucuSign, ...karsiSigns, arabulucuSign];
 
-  if (parties.length <= 1) {
-    // Tek karşı taraf — orijinal örneklerdeki gibi yan yana (3 sütun).
-    const allSigns = [basvurucuSign, ...karsiSigns, arabulucuSign];
-    const nameLine = allSigns.map((s) => s.name).join("\t\t");
-    const roleLine = allSigns.map((s) => s.role).join("\t\t");
-    const markLine = allSigns.map(() => "¸").join("\t\t");
-    return `        ${nameLine}
-       ${roleLine}
-      ${markLine}
- 
-
-   
- Bu evrak 5070 sayılı Elektronik İmza Kanunu hükümlerine uygun olarak elektronik imza ile imzalanmıştır.
-`;
+  // İmza sayısı 3'e kadar (arabulucu dahil) TEK satırda yan yana; 4 ve
+  // üzeri olduğunda 3'lü gruplar halinde alt alta devam eder — bu, hem
+  // az taraflı dosyalarda orijinal görünümü korur hem de çok taraflı
+  // dosyalarda satırın taşmasını engeller.
+  const rows: { name: string; role: string }[][] = [];
+  for (let i = 0; i < allSigns.length; i += 3) {
+    rows.push(allSigns.slice(i, i + 3));
   }
 
-  // Birden fazla karşı taraf — her imza kendi satırında, alt alta.
-  const allSigns = [basvurucuSign, ...karsiSigns, arabulucuSign];
-  const blocks = allSigns
-    .map((s) => `\t${s.name}\n\t${s.role}\n\t¸`)
+  const rowsText = rows
+    .map((row) => {
+      const nameLine = row.map((s) => s.name).join("\t\t");
+      const roleLine = row.map((s) => s.role).join("\t\t");
+      const markLine = row.map(() => "¸").join("\t\t");
+      return `\t${nameLine}\n\t${roleLine}\n\t${markLine}`;
+    })
     .join("\n\n");
 
-  return `${blocks}
+  return `${rowsText}
  
 
    
@@ -205,9 +214,9 @@ export function buildAnlasmaNarrative(c: MediationCaseData, sartlarMetni: string
   const parties = partiesList(c);
   const karsiIsimler = parties.map((p) => p.vekilAd || p.yetkiliAd || v(p.ad)).join(", ");
 
-  return `${today} günü taraflarla görüşmeler yapılmış, ${basvurucuTemsilci} ile ${karsiIsimler} arasında aşağıda belirtilen şartlar altında anlaşmaya varılmıştır.
+  return `\t${today} günü taraflarla görüşmeler yapılmış, ${basvurucuTemsilci} ile ${karsiIsimler} arasında aşağıda belirtilen şartlar altında anlaşmaya varılmıştır.
 
-${sartlarMetni.trim()}
+${indentParagraphs(sartlarMetni.trim())}
 
 \tTaraflar, üzerinde anlaşılan hususlar hakkında dava açılamayacağını anladıklarını ve bu durumu kabul ettiklerini beyan ederek son tutanağın bu şekilde düzenlenmesini talep etmişlerdir. Tarafların isteği üzerine tüm anlaşma şartları son tutanağa yazılmış ve arabuluculuk süreci ANLAŞMA ile sonuçlandırılmıştır.`;
 }
@@ -248,7 +257,7 @@ export function buildAnlasamamaNarrative(
     ? "ikinci bir toplantı talep ettiklerini"
     : "ikinci bir toplantı taleplerinin olmadığını";
 
-  return `${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili taleplerini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak istediklerini, ${toplantiTaleb} beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
+  return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili taleplerini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak istediklerini, ${toplantiTaleb} beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
 }
 
 // Davet Mektubu'nda hiç değişmeyen, uzun HUAK bilgilendirme metni —

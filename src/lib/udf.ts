@@ -56,7 +56,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
       // Gerçek örnek belgelerin ham XML'inde bulunan sabit sekme
       // noktaları — etiketler ("Vergi/Mersis/Detsis No" gibi) ne kadar
       // uzun olursa olsun, değerler artık hep AYNI dikey hizada başlar.
-      const tabSetAttr = centered ? ` TabSet="38.0:0:0"` : ` TabSet="42.0:0:0,230.0:0:0"`;
+      const tabSetAttr = centered ? ` TabSet="38.0:0:0"` : ` TabSet="42.0:0:0,230.0:0:0,340.0:0:0"`;
       if (!runs.length) {
         elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
       } else {

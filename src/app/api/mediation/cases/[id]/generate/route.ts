@@ -13,6 +13,7 @@ import {
   buildAnlasamamaNarrative,
   ILK_OTURUM_BILGILENDIRME,
   stripMarkup,
+  indentParagraphs,
 } from "@/lib/mediationTemplates";
 
 export const maxDuration = 60;
@@ -25,7 +26,7 @@ KESİN KURALLAR:
 - Yalnızca istenen paragrafları yaz — başlık, açıklama, giriş cümlesi ekleme.`;
 
 async function generateNarrative(prompt: string): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) throw new Error("AI yapılandırması eksik.");
+  if (!process.env.GEMINI_API_KEY) throw new Error("AI yapılandırması eksik (GEMINI_API_KEY tanımlı değil).");
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
@@ -35,8 +36,23 @@ async function generateNarrative(prompt: string): Promise<string> {
     }
   );
   const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") || "";
-  if (!text.trim()) throw new Error("AI yanıt üretemedi.");
+
+  if (!res.ok) {
+    const msg = data?.error?.message || `HTTP ${res.status}`;
+    throw new Error(`AI servis hatası: ${msg}`);
+  }
+
+  const candidate = data?.candidates?.[0];
+  const text = candidate?.content?.parts?.map((p: any) => p.text).join("") || "";
+
+  if (!text.trim()) {
+    // Boş dönüşün en sık sebebi bir güvenlik/içerik filtresi olabilir —
+    // bunu da göster ki gerçek sebep belli olsun, "AI yanıt üretemedi"
+    // diye belirsiz bir mesajda kalınmasın.
+    const reason = candidate?.finishReason || data?.promptFeedback?.blockReason;
+    throw new Error(`AI yanıt üretemedi${reason ? " (sebep: " + reason + ")" : ""}.`);
+  }
+
   return text.trim().replace(/[\[\]]/g, "");
 }
 
@@ -157,7 +173,7 @@ Kullanıcının notu (görüşmelerin nasıl geçtiği, teyit süreci, toplantı
 
 Şimdi bu bilgilerle 2 paragraf yaz.`;
 
-      const narrative = await generateNarrative(openingPrompt);
+      const narrative = indentParagraphs(await generateNarrative(openingPrompt));
 
       const closingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı"nın KAPANIŞ paragrafını yazan bir asistansın.
 
@@ -171,7 +187,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
 
 Şimdi bu bilgilerle TEK paragraf yaz.`;
 
-      const closing = await generateNarrative(closingPrompt);
+      const closing = indentParagraphs(await generateNarrative(closingPrompt));
 
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU");
       const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
