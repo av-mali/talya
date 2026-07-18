@@ -853,6 +853,18 @@ function arToggleSontutanakFields() {
   document.getElementById('ar-son-anlasamama-alan').style.display = isAnlasma ? 'none' : '';
 }
 
+async function arRefreshCaseDatesQuietly() {
+  if (!arSelectedCaseId) return;
+  try {
+    const res = await fetch('/api/mediation/cases/' + arSelectedCaseId);
+    const data = await res.json();
+    if (data.case) {
+      const idx = arCasesCache.findIndex(c => c.id === arSelectedCaseId);
+      if (idx !== -1) arCasesCache[idx] = data.case;
+    }
+  } catch (e) { /* sessizce geç, ekranı bozma */ }
+}
+
 async function arGenerate(docType) {
   if (!arSelectedCaseId) return;
   const resultEl = document.getElementById('ar-gen-result');
@@ -903,7 +915,11 @@ async function arGenerate(docType) {
         </details>
       </div>
     `;
-    if (docType === 'ilkoturum' || docType === 'sontutanak') arLoadCases(); // tarihler dosyaya kaydedildi, listeyi tazele
+    // Tarih dosyaya kaydedildi — ama ekranı (indirme linkini) SIFIRLAMADAN,
+    // sadece arka plandaki önbelleği sessizce güncelliyoruz. Daha önce
+    // burada arLoadCases() çağrılıyordu ve bu, kullanıcı dosyayı henüz
+    // indirmeden ekranı listeye geri atıyordu.
+    if (docType === 'ilkoturum' || docType === 'sontutanak') arRefreshCaseDatesQuietly();
   } catch (e) {
     resultEl.innerHTML = `<div style="font-size:12px;color:var(--danger);">Bağlantı hatası.</div>`;
   }
