@@ -6,6 +6,7 @@
 //   __altı çizili__        -> altı çizili
 //   **__kalın + altı çizili__**  -> ikisi birden
 //   satırın EN BAŞINDA "[[C]]" -> o paragraf ORTALANMIŞ olur
+//   satırın EN BAŞINDA "[[R]]" -> o paragraf SAĞA YASLI olur (ör. imza alanı)
 //   satırın EN BAŞINDA "[[B]]" -> o paragraf gerçek bir MADDE (liste
 //     öğesi) olarak işaretlenir — sadece görünüş değil, dosyanın kendi
 //     yapısında da gerçek bir liste öğesi (orijinal örnek belgelerde
@@ -16,12 +17,17 @@
 
 export type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
 
-export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; bulleted: boolean } {
+export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean } {
   let line = rawLine;
   let centered = false;
+  let right = false;
   let bulleted = false;
   if (line.startsWith("[[C]]")) {
     centered = true;
+    line = line.slice(5);
+  }
+  if (line.startsWith("[[R]]")) {
+    right = true;
     line = line.slice(5);
   }
   if (line.startsWith("[[B]]")) {
@@ -66,7 +72,7 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
     out += line[i];
     i++;
   }
-  return { text: out, runs, centered, bulleted };
+  return { text: out, runs, centered, right, bulleted };
 }
 
 export function stripMarkup(text: string): string {
@@ -75,6 +81,7 @@ export function stripMarkup(text: string): string {
     .map((line) =>
       line
         .replace(/^\[\[C\]\]/, "")
+        .replace(/^\[\[R\]\]/, "")
         .replace(/^\[\[B\]\]/, "• ")
         .replace(/\*\*__(.+?)__\*\*/g, "$1")
         .replace(/\*\*(.+?)\*\*/g, "$1")

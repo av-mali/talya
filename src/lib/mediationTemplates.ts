@@ -296,23 +296,23 @@ export function buildDavetMektubu(
 
   return `[[C]]**ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR**
 
-**__DAVETTE BULUNAN__**\t
+**__DAVETTE BULUNAN__**
 
-Arabulucu\t\t: Arb. **${v(a.name)}**
-TELFON\t\t: ${v(a.phone)}
-E-Mail\t\t\t: ${v(a.email)}
-Adres\t\t\t: ${v(a.arabulucuAdres)}
+Arabulucu\t: Arb. **${v(a.name)}**
+TELFON\t: ${v(a.phone)}
+E-Mail\t: ${v(a.email)}
+Adres\t: ${v(a.arabulucuAdres)}
 
-**__DAVET EDİLEN__**      \t\t
+**__DAVET EDİLEN__**
 
-Adı / Soyadı\t\t: **${v(davetEdilenAd)}**
-Vekili\t\t\t: ${davetEdilenVekil ? `**Av. ${davetEdilenVekil}**` : ""}
-Baro / Sicil \t\t: ${v(davetEdilenBaroSicil, "")}
-Telefon\t\t: ${v(davetEdilenTelefon)}
+Adı / Soyadı\t: **${v(davetEdilenAd)}**
+Vekili\t: ${davetEdilenVekil ? `**Av. ${davetEdilenVekil}**` : ""}
+Baro / Sicil\t: ${v(davetEdilenBaroSicil, "")}
+Telefon\t: ${v(davetEdilenTelefon)}
 
-**__GÜN VE SAAT__**\t\t: ${v(gunSaat)}
+**__GÜN VE SAAT__**\t: ${v(gunSaat)}
 
-**__TOPLANTI YERİ__**\t\t: ${v(toplantiYeri)}
+**__TOPLANTI YERİ__**\t: ${v(toplantiYeri)}
 
 
 **__AÇIKLAMALAR VE BİLGİLENDİRMELER: __**
@@ -325,5 +325,9 @@ ${basvuruCumlesi}
 
 ${DAVET_MEKTUBU_BILGILENDIRME}
 
-Saygılarımla… ${today}`;
+Saygılarımla… ${today}
+
+
+[[R]]Arb. **${v(a.name)}**
+[[R]]Sicil No: ${v(a.arabulucuSicilNo)}`;
 }

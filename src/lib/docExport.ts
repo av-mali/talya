@@ -3,7 +3,7 @@
 // aldığı için (PDF'in aksine yazı tipini gömmek gerekmez), Türkçe
 // karakterler (ç, ğ, ı, ö, ş, ü) sorunsuz görünür.
 
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import { Document, Packer, Paragraph, TextRun, AlignmentType, TabStopType } from "docx";
 import { PDFDocument, rgb } from "pdf-lib";
 // @ts-ignore - @pdf-lib/fontkit için resmi TypeScript tip tanımı yok
 import fontkit from "@pdf-lib/fontkit";
@@ -15,7 +15,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
 
   const paragraphs = lines.map((rawLine) => {
-    const { text: lineText, runs, centered, bulleted } = parseLineMarkup(rawLine);
+    const { text: lineText, runs, centered, right, bulleted } = parseLineMarkup(rawLine);
 
     // Biçimli kısımları ve düz kısımları, orijinal sırayla ayrı
     // TextRun'lar olarak oluştur — aynı satırda hem düz hem kalın/altı
@@ -46,9 +46,14 @@ export async function generateDocx(text: string): Promise<Buffer> {
 
     return new Paragraph({
       children,
-      alignment: centered ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
+      alignment: centered ? AlignmentType.CENTER : right ? AlignmentType.RIGHT : AlignmentType.JUSTIFIED,
       spacing: { after: 0, before: 0 },
       bullet: bulleted ? { level: 0 } : undefined,
+      // "Etiket\t\t: değer" tarzı satırlarda değerlerin hepsi AYNI dikey
+      // hizada başlasın diye sabit bir sekme noktası tanımlıyoruz —
+      // etiket uzunluğu farklı olsa bile (ör. "TELFON" ile "TOPLANTI
+      // YERİ") hizalama artık bozulmuyor.
+      tabStops: [{ type: TabStopType.LEFT, position: 2600 }],
     });
   });
 
