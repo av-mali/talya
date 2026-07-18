@@ -11,15 +11,53 @@
 // önerilir.
 
 import JSZip from "jszip";
+import zlib from "zlib";
 import { parseLineMarkup } from "./richTextMarkup";
 
-export async function readUdfText(buffer: Buffer): Promise<string> {
-  const zip = await JSZip.loadAsync(buffer);
-  const contentFile = zip.file("content.xml");
-  if (!contentFile) {
-    throw new Error("Geçerli bir UDF dosyası değil (content.xml bulunamadı).");
+// UYAP'ın ürettiği bazı UDF dosyaları, "streaming" (akış) modunda
+// yazılmış zip'lerdir — asıl sıkıştırılmış içerik sağlamdır, ama
+// standart bir ZIP dosyasının sonunda olması gereken "Central Directory"
+// (içindekiler listesi) hiç yazılmamıştır. Bu, dosyayı BOZUK yapmaz —
+// UYAP'ın kendi programı bunu sorunsuz okur — ama JSZip gibi standarda
+// sıkı sıkıya bağlı kütüphaneler reddeder. Bu fonksiyon, o durumda,
+// dosyanın en baştaki "local file header"ını elle ayrıştırıp içindeki
+// ham DEFLATE verisini doğrudan açar (zlib akışın gerçek bitişini
+// kendisi bulur, dosyanın geri kalanını sorun etmez).
+function tryRawDeflateExtract(buffer: Buffer): string | null {
+  if (buffer.length < 30 || buffer.readUInt32LE(0) !== 0x04034b50) return null; // "PK\x03\x04" imzası yok
+  const nameLen = buffer.readUInt16LE(26);
+  const extraLen = buffer.readUInt16LE(28);
+  const dataStart = 30 + nameLen + extraLen;
+  const name = buffer.subarray(30, 30 + nameLen).toString("utf-8");
+  if (!name.includes("content.xml")) return null;
+  try {
+    const inflated = zlib.inflateRawSync(buffer.subarray(dataStart));
+    return inflated.toString("utf-8");
+  } catch (e) {
+    return null; // sıkıştırma yöntemi deflate değilse (nadiren "store" olabilir) burada başarısız olur
   }
-  const xml = await contentFile.async("string");
+}
+
+export async function readUdfText(buffer: Buffer): Promise<string> {
+  let xml: string | null = null;
+  try {
+    const zip = await JSZip.loadAsync(buffer);
+    const contentFile = zip.file("content.xml");
+    if (contentFile) xml = await contentFile.async("string");
+  } catch (e) {
+    // JSZip standart kontrolde başarısız oldu — ham deflate ile deniyoruz.
+  }
+
+  if (!xml) {
+    xml = tryRawDeflateExtract(buffer);
+  }
+
+  if (!xml) {
+    throw new Error(
+      "Bu UDF dosyası okunamadı. Dosya gerçekten bozuk/eksik olabilir — kaynağından tekrar indirip deneyin."
+    );
+  }
+
   const match = xml.match(/<content><!\[CDATA\[([\s\S]*?)\]\]><\/content>/);
   if (!match) {
     throw new Error("UDF içeriği okunamadı.");
