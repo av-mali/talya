@@ -131,7 +131,7 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">Başvuru Tarihi</div><input type="text" id="ar-basvuru-tarih" placeholder="12.03.2026"></div>
         <div class="fg"><div class="fl">Görevlendirme Tarihi</div><input type="text" id="ar-gorev-tarih" placeholder="12.03.2026"></div>
 
-        <button class="pop-cta-btn g" style="width:100%;" onclick="arSaveCase()"><i class="fa-solid fa-floppy-disk"></i><span>Dosyayı Kaydet</span></button>
+        <button class="pop-cta-btn g" id="ar-save-btn" style="width:100%;" onclick="arSaveCase()"><i class="fa-solid fa-floppy-disk"></i><span>Dosyayı Kaydet</span></button>
       `,
       onOpen: () => arOnOpen(),
       prompt: () => ''
@@ -784,7 +784,8 @@ async function arSelectCase(index) {
       <div id="ar-gen-form"></div>
       <div id="ar-gen-result" style="margin-top:14px;"></div>
 
-      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:12px;">
+      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:12px;display:flex;gap:14px;">
+        <span style="cursor:pointer;color:var(--gold);font-size:11.5px;" onclick="arEditCase('${c.id}')"><i class="fa-solid fa-pen"></i> Düzenle</span>
         <span style="cursor:pointer;color:var(--danger);font-size:11.5px;" onclick="arDeleteCase('${c.id}')"><i class="fa-solid fa-trash"></i> Bu dosyayı sil</span>
       </div>
     </div>
@@ -1094,16 +1095,62 @@ async function arSaveCase() {
   if (!body.basvurucuAd) { toast('Başvurucu adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
   if (!body.karsiTaraflar.length) { toast('En az bir karşı taraf girmelisiniz', 'fa-solid fa-triangle-exclamation'); return; }
 
-  const res = await fetch('/api/mediation/cases', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+  const isEditing = !!arEditingCaseId;
+  const url = isEditing ? '/api/mediation/cases/' + arEditingCaseId : '/api/mediation/cases';
+  const res = await fetch(url, {
+    method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (res.ok) {
-    toast('Dosya kaydedildi', 'fa-solid fa-check', true);
+    toast(isEditing ? 'Dosya güncellendi' : 'Dosya kaydedildi', 'fa-solid fa-check', true);
+    arEditingCaseId = null;
+    const saveBtn = document.getElementById('ar-save-btn');
+    if (saveBtn) saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Dosyayı Kaydet</span>';
     await arLoadCases();
   } else {
     toast('Kaydedilemedi', 'fa-solid fa-triangle-exclamation');
   }
+}
+
+let arEditingCaseId = null;
+
+function arEditCase(id) {
+  const c = arCasesCache.find(cc => cc.id === id);
+  if (!c) return;
+  arEditingCaseId = id;
+
+  const setIf = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
+  setIf('ar-dosyano', c.dosyaNo);
+  setIf('ar-bas-ad', c.basvurucuAd);
+  setIf('ar-bas-adres', c.basvurucuAdres);
+  setIf('ar-bas-vekil', c.basvurucuVekilAd);
+  setIf('ar-bas-barosicil', c.basvurucuBaroSicil);
+  setIf('ar-bas-tel', c.basvurucuTelefon);
+  setIf('ar-uyusmazlik', c.uyusmazlikKonusu);
+  setIf('ar-basvuru-tarih', c.basvuruTarihi);
+  setIf('ar-gorev-tarih', c.gorevlendirmeTarihi);
+
+  const turSelect = document.getElementById('ar-uyusmazlik-tur');
+  const turDiger = document.getElementById('ar-uyusmazlik-tur-diger');
+  const knownTurler = ['İş Hukuku', 'Ticaret Hukuku', 'Tüketici Hukuku', 'Kira Hukuku', 'Ortaklığın Giderilmesi'];
+  if (c.uyusmazlikTuru && knownTurler.includes(c.uyusmazlikTuru)) {
+    turSelect.value = c.uyusmazlikTuru;
+    turDiger.style.display = 'none';
+  } else if (c.uyusmazlikTuru) {
+    turSelect.value = 'Diğer';
+    turDiger.style.display = '';
+    turDiger.value = c.uyusmazlikTuru;
+  }
+
+  arKarsiTarafRows = (c.karsiTaraflar && c.karsiTaraflar.length)
+    ? c.karsiTaraflar.map(p => ({ ad: p.ad || '', adres: p.adres || '', vergiMersis: p.vergiMersis || '', yetkiliAd: p.yetkiliAd || '', vekilAd: p.vekilAd || '', telefon: p.telefon || '' }))
+    : [{ ad: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', telefon: '' }];
+  arRenderKarsiRows();
+
+  const saveBtn = document.getElementById('ar-save-btn');
+  if (saveBtn) saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Dosyayı Güncelle</span>';
+
+  toast('Dosya bilgileri forma yüklendi — yukarı kaydırıp düzenleyin', 'fa-solid fa-pen', true);
 }
 
 async function arDeleteCase(id) {

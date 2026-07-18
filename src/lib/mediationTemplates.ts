@@ -123,7 +123,12 @@ Tutanağının Düzenlendiği Tarih\t\t: ${v(c.gorevlendirmeTarihi)}${extraLine 
 
 // İmza bloğu — Başvurucu tarafında vekil varsa vekil adı + "Başvurucu
 // Vekili", yoksa başvurucunun kendisi; her karşı taraf için de aynı
-// mantıkla (vekil / şirket yetkilisi / kendisi) ayrı bir imza sütunu.
+// mantıkla (vekil / şirket yetkilisi / kendisi) ayrı bir imza alanı.
+// NOT: Tek karşı taraf varsa yatay (yan yana) düzen kullanılır — orijinal
+// örnek belgelerdeki gibi. Birden fazla karşı taraf varsa (özellikle
+// uzun şirket unvanları taşabildiği için) her imza kendi satırında,
+// ALT ALTA dizilir — bu, uzun isimlerde satırın karmaşık/taşmış
+// görünmesini engeller.
 export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): string {
   const basvurucuSign = c.basvurucuVekilAd
     ? { name: c.basvurucuVekilAd, role: "Başvurucu Vekili" }
@@ -137,15 +142,31 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): 
     return { name: v(p.ad), role: `Karşı Taraf${suffix}` };
   });
 
-  const allSigns = [basvurucuSign, ...karsiSigns, { name: `Arb. ${v(a.name)}`, role: `(Sicil No: ${v(a.arabulucuSicilNo)})` }];
+  const arabulucuSign = { name: `Arb. ${v(a.name)}`, role: `(Sicil No: ${v(a.arabulucuSicilNo)})` };
 
-  const nameLine = allSigns.map((s) => s.name).join("\t\t");
-  const roleLine = allSigns.map((s) => s.role).join("\t\t");
-  const markLine = allSigns.map(() => "¸").join("\t\t");
-
-  return `        ${nameLine}
+  if (parties.length <= 1) {
+    // Tek karşı taraf — orijinal örneklerdeki gibi yan yana (3 sütun).
+    const allSigns = [basvurucuSign, ...karsiSigns, arabulucuSign];
+    const nameLine = allSigns.map((s) => s.name).join("\t\t");
+    const roleLine = allSigns.map((s) => s.role).join("\t\t");
+    const markLine = allSigns.map(() => "¸").join("\t\t");
+    return `        ${nameLine}
        ${roleLine}
       ${markLine}
+ 
+
+   
+ Bu evrak 5070 sayılı Elektronik İmza Kanunu hükümlerine uygun olarak elektronik imza ile imzalanmıştır.
+`;
+  }
+
+  // Birden fazla karşı taraf — her imza kendi satırında, alt alta.
+  const allSigns = [basvurucuSign, ...karsiSigns, arabulucuSign];
+  const blocks = allSigns
+    .map((s) => `\t${s.name}\n\t${s.role}\n\t¸`)
+    .join("\n\n");
+
+  return `${blocks}
  
 
    

@@ -174,7 +174,10 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       const closing = await generateNarrative(closingPrompt);
 
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU");
-      const title = `[[C]]**...... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
+      const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
+        .replace(/\s*hukuku\s*$/i, "")
+        .toLocaleUpperCase("tr-TR") || "……";
+      const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
       finalText =
         title +
         header +
@@ -212,9 +215,12 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       }
 
       const sonucLabel = isAnlasma ? "ANLAŞMA" : "ANLAŞAMAMA";
+      const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
+        .replace(/\s*hukuku\s*$/i, "")
+        .toLocaleUpperCase("tr-TR") || "……";
       const extraLine = `Arabuluculuk Sonucu\t\t\t: ${sonucLabel}`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine);
-      const title = `[[C]]**..... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
+      const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
       const today = new Date().toLocaleDateString("tr-TR");
       const closingLine = isAnlasma
         ? `\tİşbu arabuluculuk anlaşma son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${today}`
