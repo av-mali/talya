@@ -129,7 +129,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         uyusmazlikOzeti,
         today,
         digerTarafAd,
-        digerTarafVekil
+        digerTarafVekil,
+        davetEdilenSecim === "basvurucu"
       );
 
       const docxBuffer = await generateDocx(finalText);

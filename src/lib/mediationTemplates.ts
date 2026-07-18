@@ -45,9 +45,14 @@ export { stripMarkup } from "./richTextMarkup";
 
 function v(val?: string | null, fallback = "……………") {
   if (!val || !val.trim()) return fallback;
+  let out = val.trim();
+  // Başındaki 10-11 haneli TC Kimlik/Vergi No gibi rakam dizilerini
+  // temizler — isim alanına yanlışlıkla karışmış olabilir (ör. eski
+  // kayıtlı veri, ya da AI çıkarımının bir istisnası).
+  out = out.replace(/^\d{10,11}\s+/, "");
   // Başvuru formlarındaki "[Haksız Fiilden Kaynaklanan (Nisbi)]" gibi
-  // köşeli parantezli ham metinleri temizler — nihai belgede çirkin durur.
-  return val.trim().replace(/^\[|\]$/g, "").trim();
+  // ham köşeli parantezli metinleri de temizler.
+  return out.replace(/^\[|\]$/g, "").trim();
 }
 
 function partiesList(c: MediationCaseData): MediationParty[] {
@@ -274,11 +279,20 @@ export function buildDavetMektubu(
   uyusmazlikOzeti: string,
   today: string,
   digerTarafAd: string,
-  digerTarafVekil: string
+  digerTarafVekil: string,
+  invitingBasvurucu: boolean
 ): string {
   const digerTarafCumle = digerTarafVekil
     ? `**${v(digerTarafAd)}** ve vekili Sayın **Av. ${digerTarafVekil}**`
     : `**${v(digerTarafAd)}**`;
+
+  // Mektup BAŞVURUCU'nun kendisine gidiyorsa: "TARAFINIZCA yapılan
+  // başvuru" (o zaten kendisi başvurmuş, ismini tekrar anmaya gerek yok).
+  // Mektup KARŞI TARAF'a gidiyorsa: "[BAŞVURUCU ADI] TARAFINDAN yapılan
+  // başvuru" (karşı taraf başvurmadı, kimin başvurduğunu belirtmek gerekir).
+  const basvuruCumlesi = invitingBasvurucu
+    ? `Tarafınızca **${v(a.arabuluculukBurosu)}**'na yapılan başvuru üzerine UYAP Arabulucu Portal tarafından görevlendirilmiş Türkiye Cumhuriyeti Adalet Bakanlığı'ndaki resmi sicile kayıtlı ${v(a.arabulucuSicilNo)} sicil numaralı arabulucuyum.`
+    : `${digerTarafCumle} tarafından **${v(a.arabuluculukBurosu)}**'na yapılan başvuru üzerine UYAP Arabulucu Portal tarafından görevlendirilmiş Türkiye Cumhuriyeti Adalet Bakanlığı'ndaki resmi sicile kayıtlı ${v(a.arabulucuSicilNo)} sicil numaralı arabulucuyum.`;
 
   return `[[C]]**ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR**
 
@@ -305,7 +319,7 @@ Telefon\t\t: ${v(davetEdilenTelefon)}
 
 Sayın **${v(davetEdilenAd)}**${davetEdilenVekil ? ` ve vekili Sayın **Av. ${davetEdilenVekil}**` : ""},
 
-${digerTarafCumle} tarafından **${v(a.arabuluculukBurosu)}**'na yapılan başvuru üzerine UYAP Arabulucu Portal tarafından görevlendirilmiş Türkiye Cumhuriyeti Adalet Bakanlığı'ndaki resmi sicile kayıtlı ${v(a.arabulucuSicilNo)} sicil numaralı arabulucuyum.
+${basvuruCumlesi}
 
 **${v(digerTarafAd)}** ile aranızdaki uyuşmazlığın, barışçıl olarak arabuluculuk yoluyla çözümlenmesine olanak sağlamak üzere, sizi tüm tarafların katılımıyla gerçekleşmeyi dilediğimiz arabuluculuk ilk oturumuna davet ediyorum.
 
