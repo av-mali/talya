@@ -30,7 +30,7 @@ export async function GET() {
     return Math.round((dueMidnight.getTime() - nowMidnight.getTime()) / 86400000);
   }
 
-  const [events, tasks, readRows, clientMessages] = await Promise.all([
+  const [events, tasks, readRows, clientMessages, mediationCases] = await Promise.all([
     ws ? prisma.clientEvent.findMany({
       where: {
         case: {
@@ -58,6 +58,15 @@ export async function GET() {
       include: { client: true },
       orderBy: { createdAt: "desc" },
     }) : Promise.resolve([]),
+    prisma.mediationCase.findMany({
+      where: {
+        userId,
+        OR: [
+          { ilkOturumTarihi: { lte: in2days, gte: nowMidnight } },
+          { sonTutanakTarihi: { lte: in2days, gte: nowMidnight } },
+        ],
+      },
+    }),
   ]);
 
   const readIds = new Set(readRows.map((r) => r.notifId));
@@ -118,7 +127,30 @@ export async function GET() {
     read: false,
   }));
 
-  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs].sort(
+  const mediationNotifs: any[] = [];
+  mediationCases.forEach((m) => {
+    const pushNotif = (dueDate: Date | null, title: string, idSuffix: string) => {
+      if (!dueDate) return;
+      const daysLeft = daysUntil(dueDate);
+      const overdue = daysLeft < 0;
+      const id = "med-" + idSuffix + "-" + m.id;
+      mediationNotifs.push({
+        id,
+        type: "sure",
+        ico: "fa-handshake",
+        level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
+        label: "Arabuluculuk",
+        text: `${title} — ${m.basvurucuAd || "?"}`,
+        time: overdue ? `${Math.abs(daysLeft)} gün geçti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`,
+        dueDate,
+        read: readIds.has(id),
+      });
+    };
+    pushNotif(m.ilkOturumTarihi, "Bilgilendirme ve İlk Oturum", "ilk");
+    pushNotif(m.sonTutanakTarihi, `Son Tutanak (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`, "son");
+  });
+
+  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs, ...mediationNotifs].sort(
     (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   );
 

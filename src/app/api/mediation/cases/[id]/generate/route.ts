@@ -17,10 +17,6 @@ import {
 
 export const maxDuration = 60;
 
-// SADECE İlk Oturum'un "kimle ne zaman görüşüldü / toplantı nasıl
-// kararlaştırıldı" kısmı AI ile yazılır — bu, her seferinde gerçekten
-// değişen, serbest bir anlatı. Anlaşma/Anlaşamama metinleri ise ARTIK
-// AI'a hiç yazdırılmıyor (kullanıcı geri bildirimiyle şablona çevrildi).
 const NARRATIVE_RULES = `
 KESİN KURALLAR:
 - Çıktında KÖŞELİ PARANTEZ ("[" veya "]") KULLANMA — hiçbir yer tutucu bırakma, sana verilen gerçek isim/tarih/saat bilgilerini doğrudan cümlenin içine yaz.
@@ -60,6 +56,11 @@ function karsiTemsilciListesi(mediationCase: any): string {
     .join(", ");
 }
 
+// Dosya adında kullanılamayacak karakterleri temizler.
+function safeFilePart(s: string): string {
+  return (s || "Belge").replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 80);
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
@@ -88,6 +89,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   try {
     let finalText = "";
+    let fileName = "Belge";
 
     if (docType === "davet") {
       const { davetEdilenSecim, gunSaat, toplantiYeri } = body;
@@ -98,10 +100,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         vekil = mediationCase.basvurucuVekilAd || "";
         baroSicil = mediationCase.basvurucuBaroSicil || "";
         telefon = mediationCase.basvurucuTelefon || "";
-        // Başvurucu davet ediliyorsa, "diğer taraf" karşı taraf(lar) olur.
-        const first = mediationCase.karsiTaraflar[0];
         digerTarafAd = (mediationCase.karsiTaraflar || []).map((p) => p.ad).filter(Boolean).join(", ") || "";
-        digerTarafVekil = first?.vekilAd || "";
+        digerTarafVekil = mediationCase.karsiTaraflar[0]?.vekilAd || "";
       } else {
         const idx = parseInt(String(davetEdilenSecim).replace("karsi-", ""), 10);
         const p = mediationCase.karsiTaraflar[idx];
@@ -109,7 +109,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         ad = p.ad || "";
         vekil = p.vekilAd || "";
         telefon = p.telefon || "";
-        // Karşı taraf davet ediliyorsa, "diğer taraf" başvurucu olur.
         digerTarafAd = mediationCase.basvurucuAd || "";
         digerTarafVekil = mediationCase.basvurucuVekilAd || "";
       }
@@ -133,8 +132,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         davetEdilenSecim === "basvurucu"
       );
 
+      fileName = `${safeFilePart(ad)} - Davet Mektubu.docx`;
       const docxBuffer = await generateDocx(finalText);
-      return NextResponse.json({ text: stripMarkup(finalText), docxBase64: docxBuffer.toString("base64") });
+      return NextResponse.json({ text: stripMarkup(finalText), docxBase64: docxBuffer.toString("base64"), fileName });
     } else if (docType === "ilkoturum") {
       const { notlar, toplantiTarihi, toplantiSaati } = body;
       if (!notlar || !notlar.trim()) {
@@ -184,8 +184,19 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         closing +
         `\n\t\n\tİşbu arabuluculuk bilgilendirme ve ilk oturum tutanağı üç sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${new Date().toLocaleDateString("tr-TR")}\n\n\n\n\n` +
         buildSignatureBlock(mediationCase, profile);
+
+      // Tarih/saat girildiyse dosyaya kaydet — bu, Yaklaşan Süreler ve
+      // bildirim ziliyle otomatik senkronize olur.
+      if (toplantiTarihi) {
+        const dt = new Date(`${toplantiTarihi}T${toplantiSaati || "09:00"}:00`);
+        if (!isNaN(dt.getTime())) {
+          await prisma.mediationCase.update({ where: { id: mediationCase.id }, data: { ilkOturumTarihi: dt } });
+        }
+      }
+
+      fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - Bilgilendirme ve İlk Oturum Toplantısı.udf`;
     } else if (docType === "sontutanak") {
-      const { sonuc, notlar, karsiTeklifVar, ikinciToplantiIsteniyor } = body;
+      const { sonuc, notlar, karsiTeklifVar, ikinciToplantiIsteniyor, tutanakTarihi } = body;
       const isAnlasma = sonuc === "anlasma";
 
       let narrative: string;
@@ -193,11 +204,8 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         if (!notlar || !notlar.trim()) {
           return NextResponse.json({ error: "Anlaşma şartlarını yazmalısınız." }, { status: 400 });
         }
-        // Anlaşma şartları KULLANICININ YAZDIĞI METİN — AI hiç karışmaz.
         narrative = buildAnlasmaNarrative(mediationCase, notlar, new Date().toLocaleDateString("tr-TR"));
       } else {
-        // Anlaşamama metni artık TAMAMEN ŞABLONLA üretiliyor (AI'a hiç
-        // yazdırılmıyor) — kullanıcı geri bildirimiyle bu şekilde değiştirildi.
         narrative = buildAnlasamamaNarrative(mediationCase, !!karsiTeklifVar, !!ikinciToplantiIsteniyor);
       }
 
@@ -219,12 +227,24 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         closingLine +
         "\n\n\n\n" +
         buildSignatureBlock(mediationCase, profile);
+
+      if (tutanakTarihi) {
+        const dt = new Date(`${tutanakTarihi}T09:00:00`);
+        if (!isNaN(dt.getTime())) {
+          await prisma.mediationCase.update({
+            where: { id: mediationCase.id },
+            data: { sonTutanakTarihi: dt, sonTutanakSonucu: sonuc },
+          });
+        }
+      }
+
+      fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - ${isAnlasma ? "Anlaşma" : "Anlaşamama"} Son Tutanağı.udf`;
     } else {
       return NextResponse.json({ error: "Geçersiz belge türü." }, { status: 400 });
     }
 
     const udfBuffer = await generateUdf(finalText);
-    return NextResponse.json({ text: stripMarkup(finalText), udfBase64: udfBuffer.toString("base64") });
+    return NextResponse.json({ text: stripMarkup(finalText), udfBase64: udfBuffer.toString("base64"), fileName });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || "Belge üretilemedi." }, { status: 500 });
   }

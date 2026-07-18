@@ -736,6 +736,13 @@ async function arSelectCase(index) {
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.dosyaNo || 'Dosya No yok'}</div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${c.basvurucuAd || '?'} — ${karsiOzet}</div>
 
+      ${(c.ilkOturumTarihi || c.sonTutanakTarihi) ? `
+        <div style="background:var(--bg2);border-radius:var(--r);padding:10px 12px;margin-bottom:16px;">
+          ${c.ilkOturumTarihi ? `<div style="font-size:12px;margin-bottom:${c.sonTutanakTarihi ? '4px' : '0'};"><i class="fa-solid fa-people-arrows" style="color:var(--gold);"></i> Bilgilendirme ve İlk Oturum: <strong>${new Date(c.ilkOturumTarihi).toLocaleString('tr-TR', {dateStyle:'medium', timeStyle:'short'})}</strong></div>` : ''}
+          ${c.sonTutanakTarihi ? `<div style="font-size:12px;"><i class="fa-solid fa-file-signature" style="color:var(--gold);"></i> Son Tutanak (${c.sonTutanakSonucu === 'anlasma' ? 'Anlaşma' : 'Anlaşamama'}): <strong>${new Date(c.sonTutanakTarihi).toLocaleDateString('tr-TR')}</strong></div>` : ''}
+        </div>
+      ` : ''}
+
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
         <button class="pop-cta-btn b" onclick="arShowGenForm('davet')"><i class="fa-solid fa-envelope"></i><span>Davet Mektubu Oluştur</span></button>
         <button class="pop-cta-btn b" onclick="arShowGenForm('ilkoturum')"><i class="fa-solid fa-people-arrows"></i><span>İlk Oturum Tutanağı Oluştur</span></button>
@@ -752,7 +759,20 @@ async function arSelectCase(index) {
   `;
 }
 
-function arShowGenForm(docType) {
+let arProfileCache = null;
+async function getArabulucuProfile() {
+  if (arProfileCache) return arProfileCache;
+  try {
+    const res = await fetch('/api/profile');
+    const data = await res.json();
+    arProfileCache = data.user || {};
+  } catch (e) {
+    arProfileCache = {};
+  }
+  return arProfileCache;
+}
+
+async function arShowGenForm(docType) {
   const formEl = document.getElementById('ar-gen-form');
   document.getElementById('ar-gen-result').innerHTML = '';
   const c = arCasesCache.find(cc => cc.id === arSelectedCaseId);
@@ -765,21 +785,35 @@ function arShowGenForm(docType) {
       <div class="fg"><div class="fl">Davet Edilecek Taraf</div>
         <select id="ar-davet-taraf">${options.join('')}</select>
       </div>
-      <div class="fg"><div class="fl">Gün ve Saat</div><input type="text" id="ar-davet-gunsaat" placeholder="05.09.2026 Saat 14.00"></div>
-      <div class="fg"><div class="fl">Toplantı Yeri</div><input type="text" id="ar-davet-yer" placeholder="Telekonferans / Büro adresi"></div>
-      <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('davet')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
+      <div style="display:flex;gap:6px;">
+        <div class="fg" style="flex:1;"><div class="fl">Tarih</div><input type="date" id="ar-davet-tarih"></div>
+        <div class="fg" style="flex:1;"><div class="fl">Saat</div><input type="time" id="ar-davet-saat" value="14:00"></div>
+      </div>
+      <div class="fg">
+        <div class="fl">Toplantı Yeri</div>
+        <input type="text" id="ar-davet-yer" placeholder="Telekonferans / Büro adresi">
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <span class="pop-cta-btn b" style="width:auto;padding:5px 10px;font-size:11px;cursor:pointer;" onclick="document.getElementById('ar-davet-yer').value='Telekonferans'">Telekonferans</span>
+          <span class="pop-cta-btn b" style="width:auto;padding:5px 10px;font-size:11px;cursor:pointer;" onclick="arUseKayitliAdres()">Kayıtlı Adresimi Kullan</span>
+        </div>
+      </div>
+      <button class="pop-cta-btn g" style="width:100%;margin-top:6px;" onclick="arGenerate('davet')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
     `;
   } else if (docType === 'ilkoturum') {
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">İlk Oturum Tutanağı</div></div>
-      <div class="fg"><div class="fl">Toplantı Tarihi</div><input type="text" id="ar-ilk-tarih" placeholder="28.03.2026"></div>
-      <div class="fg"><div class="fl">Toplantı Saati</div><input type="text" id="ar-ilk-saat" placeholder="16.00"></div>
+      <div style="display:flex;gap:6px;">
+        <div class="fg" style="flex:1;"><div class="fl">Toplantı Tarihi</div><input type="date" id="ar-ilk-tarih"></div>
+        <div class="fg" style="flex:1;"><div class="fl">Toplantı Saati</div><input type="time" id="ar-ilk-saat" value="09:00"></div>
+      </div>
       <div class="fg"><div class="fl">Kısa Notlar</div><textarea id="ar-ilk-notlar" rows="4" placeholder="Kiminle ne zaman görüşüldü, toplantı nasıl (yüz yüze/telekonferans) kararlaştırıldı, oturumda neler konuşuldu…"></textarea></div>
+      <div style="font-size:10.5px;color:var(--t3);margin-bottom:6px;">Bu tarih, otomatik olarak Yaklaşan Süreler'e ve bildirim zilinize eklenecektir.</div>
       <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('ilkoturum')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
     `;
   } else if (docType === 'sontutanak') {
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Son Tutanak</div></div>
+      <div class="fg"><div class="fl">Tutanak Tarihi</div><input type="date" id="ar-son-tarih"></div>
       <div class="fg"><div class="fl">Sonuç</div>
         <select id="ar-son-sonuc" onchange="arToggleSontutanakFields()">
           <option value="anlasma">Anlaşma</option>
@@ -800,9 +834,17 @@ function arShowGenForm(docType) {
         </label>
         <div style="font-size:11px;color:var(--t3);margin-bottom:10px;">Bu belge, standart bir "anlaşamama" cümle kalıbıyla otomatik oluşturulur — yukarıdaki iki seçenek dışında bir metin girmenize gerek yoktur.</div>
       </div>
+      <div style="font-size:10.5px;color:var(--t3);margin-bottom:6px;">Bu tarih, otomatik olarak Yaklaşan Süreler'e ve bildirim zilinize eklenecektir.</div>
       <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('sontutanak')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
     `;
   }
+}
+
+async function arUseKayitliAdres() {
+  const profile = await getArabulucuProfile();
+  const el = document.getElementById('ar-davet-yer');
+  if (el) el.value = profile.arabulucuAdres || '';
+  if (!profile.arabulucuAdres) toast('Kayıtlı bir adresiniz yok — Üyelik & Hesap → Profil\'den ekleyebilirsiniz', 'fa-solid fa-triangle-exclamation');
 }
 
 function arToggleSontutanakFields() {
@@ -819,13 +861,16 @@ async function arGenerate(docType) {
   const body = { docType };
   if (docType === 'davet') {
     body.davetEdilenSecim = document.getElementById('ar-davet-taraf').value;
-    body.gunSaat = document.getElementById('ar-davet-gunsaat').value;
+    const tarih = document.getElementById('ar-davet-tarih').value;
+    const saat = document.getElementById('ar-davet-saat').value;
+    body.gunSaat = tarih ? `${tarih.split('-').reverse().join('.')} Saat ${saat || '14:00'}` : '';
     body.toplantiYeri = document.getElementById('ar-davet-yer').value;
   } else if (docType === 'ilkoturum') {
     body.toplantiTarihi = document.getElementById('ar-ilk-tarih').value;
     body.toplantiSaati = document.getElementById('ar-ilk-saat').value;
     body.notlar = document.getElementById('ar-ilk-notlar').value;
   } else if (docType === 'sontutanak') {
+    body.tutanakTarihi = document.getElementById('ar-son-tarih').value;
     body.sonuc = document.getElementById('ar-son-sonuc').value;
     if (body.sonuc === 'anlasma') {
       body.notlar = document.getElementById('ar-son-notlar').value;
@@ -846,19 +891,19 @@ async function arGenerate(docType) {
       return;
     }
     const isDavet = docType === 'davet';
-    const ext = isDavet ? 'docx' : 'udf';
-    const filename = docType + '_' + (arSelectedCaseId || 'belge') + '.' + ext;
+    const filename = data.fileName || (docType + '_belge.' + (isDavet ? 'docx' : 'udf'));
     const fileBase64 = isDavet ? data.docxBase64 : data.udfBase64;
     resultEl.innerHTML = `
       <div style="background:var(--bg2);border-radius:var(--r);padding:14px;">
         <div style="font-size:12px;color:var(--success);margin-bottom:8px;"><i class="fa-solid fa-circle-check"></i> Belge hazır.</div>
-        <button class="pop-cta-btn b" style="width:100%;" onclick='arDownloadFile(${JSON.stringify(fileBase64)}, ${JSON.stringify(filename)}, ${JSON.stringify(isDavet)})'><i class="fa-solid fa-download"></i><span>${ext.toUpperCase()} İndir</span></button>
+        <button class="pop-cta-btn b" style="width:100%;" onclick='arDownloadFile(${JSON.stringify(fileBase64)}, ${JSON.stringify(filename)}, ${JSON.stringify(isDavet)})'><i class="fa-solid fa-download"></i><span>${isDavet ? 'DOCX' : 'UDF'} İndir</span></button>
         <details style="margin-top:10px;">
           <summary style="cursor:pointer;font-size:11px;color:var(--t3);">Metni önizle</summary>
           <div style="white-space:pre-wrap;font-size:11.5px;color:var(--t2);margin-top:8px;max-height:300px;overflow-y:auto;">${data.text.replace(/</g,'&lt;')}</div>
         </details>
       </div>
     `;
+    if (docType === 'ilkoturum' || docType === 'sontutanak') arLoadCases(); // tarihler dosyaya kaydedildi, listeyi tazele
   } catch (e) {
     resultEl.innerHTML = `<div style="font-size:12px;color:var(--danger);">Bağlantı hatası.</div>`;
   }

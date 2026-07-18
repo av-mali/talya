@@ -331,6 +331,9 @@ model MediationCase {
   uyusmazlikKonusu      String?  @db.Text
   basvuruTarihi         String?  // "12.03.2026" formatında serbest metin
   gorevlendirmeTarihi   String?
+  ilkOturumTarihi       DateTime? // Bilgilendirme ve İlk Oturum toplantı tarihi — takvimle senkronize
+  sonTutanakTarihi      DateTime? // Son Tutanak (Anlaşma/Anlaşamama) tarihi — takvimle senkronize
+  sonTutanakSonucu      String?   // "anlasma" | "anlasamama" — takvimde doğru etiket için
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)

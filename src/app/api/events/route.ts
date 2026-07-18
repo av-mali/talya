@@ -10,7 +10,7 @@ export async function GET() {
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const restricted = await shouldRestrictToOwnItems(ws.userId);
 
-  const [events, tasks] = await Promise.all([
+  const [events, tasks, mediationCases] = await Promise.all([
     prisma.clientEvent.findMany({
       where: {
         case: {
@@ -30,6 +30,14 @@ export async function GET() {
       },
       include: { assignedTo: { select: { name: true, email: true } } },
       orderBy: { dueDate: "asc" },
+    }),
+    // Arabuluculuk dosyaları kişiseldir (büro geneli değil) — sadece
+    // kendi tarihlerini görür.
+    prisma.mediationCase.findMany({
+      where: {
+        userId: ws.userId,
+        OR: [{ ilkOturumTarihi: { not: null } }, { sonTutanakTarihi: { not: null } }],
+      },
     }),
   ]);
 
@@ -54,7 +62,31 @@ export async function GET() {
     clientName: t.assignedTo ? `Görev — (${t.assignedTo.name || t.assignedTo.email})` : "Görev",
   }));
 
-  const out = [...eventItems, ...taskItems].sort(
+  const mediationItems: any[] = [];
+  mediationCases.forEach((m) => {
+    if (m.ilkOturumTarihi) {
+      mediationItems.push({
+        id: "med-ilk-" + m.id,
+        type: "durusma",
+        title: "Bilgilendirme ve İlk Oturum",
+        dueDate: m.ilkOturumTarihi,
+        clientId: null,
+        clientName: `Arabuluculuk — ${m.basvurucuAd || "?"}`,
+      });
+    }
+    if (m.sonTutanakTarihi) {
+      mediationItems.push({
+        id: "med-son-" + m.id,
+        type: "durusma",
+        title: `Son Tutanak (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`,
+        dueDate: m.sonTutanakTarihi,
+        clientId: null,
+        clientName: `Arabuluculuk — ${m.basvurucuAd || "?"}`,
+      });
+    }
+  });
+
+  const out = [...eventItems, ...taskItems, ...mediationItems].sort(
     (a, b) => new Date(a.dueDate as any).getTime() - new Date(b.dueDate as any).getTime()
   );
 
