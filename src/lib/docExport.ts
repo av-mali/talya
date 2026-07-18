@@ -15,7 +15,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
 
   const paragraphs = lines.map((rawLine) => {
-    const { text: lineText, runs, centered } = parseLineMarkup(rawLine);
+    const { text: lineText, runs, centered, bulleted } = parseLineMarkup(rawLine);
 
     // Biçimli kısımları ve düz kısımları, orijinal sırayla ayrı
     // TextRun'lar olarak oluştur — aynı satırda hem düz hem kalın/altı
@@ -48,6 +48,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
       children,
       alignment: centered ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
       spacing: { after: 0, before: 0 },
+      bullet: bulleted ? { level: 0 } : undefined,
     });
   });
 

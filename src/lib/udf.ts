@@ -41,7 +41,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
 
   for (let i = 0; i < rawLines.length; i++) {
     const isLast = i === rawLines.length - 1;
-    const { text: lineText, runs, centered } = parseLineMarkup(rawLines[i]);
+    const { text: lineText, runs, centered, bulleted } = parseLineMarkup(rawLines[i]);
     const lengthWithBreak = lineText.length + (isLast ? 0 : 1);
 
     plainCdata += lineText + (isLast ? "" : "\n");
@@ -49,9 +49,12 @@ export async function generateUdf(text: string): Promise<Buffer> {
     if (lengthWithBreak > 0) {
       // Gerçek örnek belgelerde gövde metninin tamamı "iki yana yaslı"
       // (Alignment="3") — sadece ana başlık satırları ortalanmış (Alignment="1").
+      // Madde işaretli paragraflar (HUAK bilgilendirme metinleri gibi)
+      // gerçek örnek belgelerde Bulleted="true" ile işaretliydi.
       const alignAttr = centered ? ` Alignment="1"` : ` Alignment="3"`;
+      const bulletAttr = bulleted ? ` Bulleted="true" BulletType="BULLET_TYPE_ELLIPSE" ListLevel="1"` : "";
       if (!runs.length) {
-        elementsXml += `<paragraph${alignAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
+        elementsXml += `<paragraph${alignAttr}${bulletAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
       } else {
         // Biçimli kısımlar ile düz kısımları, orijinal sırayla ayrı
         // <content> "run"ları olarak yaz — gerçek UDF yapısı böyle çalışıyor.
@@ -69,7 +72,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
         if (cursor < lineText.length + (isLast ? 0 : 1)) {
           inner += `<content startOffset="${offset + cursor}" length="${lineText.length + (isLast ? 0 : 1) - cursor}" />`;
         }
-        elementsXml += `<paragraph${alignAttr}>${inner}</paragraph>`;
+        elementsXml += `<paragraph${alignAttr}${bulletAttr}>${inner}</paragraph>`;
       }
     }
     offset += lengthWithBreak;

@@ -6,17 +6,26 @@
 //   __altı çizili__        -> altı çizili
 //   **__kalın + altı çizili__**  -> ikisi birden
 //   satırın EN BAŞINDA "[[C]]" -> o paragraf ORTALANMIŞ olur
+//   satırın EN BAŞINDA "[[B]]" -> o paragraf gerçek bir MADDE (liste
+//     öğesi) olarak işaretlenir — sadece görünüş değil, dosyanın kendi
+//     yapısında da gerçek bir liste öğesi (orijinal örnek belgelerde
+//     HUAK bilgilendirme paragrafları böyle işaretliydi)
 //
 // Bu işaretler olmayan satırlar İKİ YANA YASLI (justify) kabul edilir —
 // gerçek örnek UYAP belgelerinde gövde metninin tamamı böyledir.
 
 export type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
 
-export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean } {
+export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; bulleted: boolean } {
   let line = rawLine;
   let centered = false;
+  let bulleted = false;
   if (line.startsWith("[[C]]")) {
     centered = true;
+    line = line.slice(5);
+  }
+  if (line.startsWith("[[B]]")) {
+    bulleted = true;
     line = line.slice(5);
   }
 
@@ -57,7 +66,7 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
     out += line[i];
     i++;
   }
-  return { text: out, runs, centered };
+  return { text: out, runs, centered, bulleted };
 }
 
 export function stripMarkup(text: string): string {
@@ -66,6 +75,7 @@ export function stripMarkup(text: string): string {
     .map((line) =>
       line
         .replace(/^\[\[C\]\]/, "")
+        .replace(/^\[\[B\]\]/, "• ")
         .replace(/\*\*__(.+?)__\*\*/g, "$1")
         .replace(/\*\*(.+?)\*\*/g, "$1")
         .replace(/__(.+?)__/g, "$1")
