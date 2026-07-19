@@ -755,7 +755,7 @@ async function arSelectCase(index) {
             <div style="font-size:10.5px;color:var(--t3);margin-bottom:3px;">İlk Oturum Tarihi/Saati</div>
             <div style="display:flex;gap:4px;">
               <input type="date" id="ar-fix-ilk-tarih" value="${c.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toISOString().slice(0,10) : ''}" style="flex:1;">
-              <input type="time" id="ar-fix-ilk-saat" value="${c.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toTimeString().slice(0,5) : '09:00'}" style="width:80px;">
+              <input type="time" id="ar-fix-ilk-saat" value="${c.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toTimeString().slice(0,5) : '09:00'}" style="width:110px;">
             </div>
           </div>
           <button class="pop-cta-btn b" style="width:auto;padding:7px 10px;" onclick="arSaveFixedDate('ilk')" title="Kaydet"><i class="fa-solid fa-check"></i></button>
@@ -767,7 +767,7 @@ async function arSelectCase(index) {
             <div style="font-size:10.5px;color:var(--t3);margin-bottom:3px;">Son Oturum Tarihi/Saati</div>
             <div style="display:flex;gap:4px;">
               <input type="date" id="ar-fix-son-tarih" value="${c.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toISOString().slice(0,10) : ''}" style="flex:1;">
-              <input type="time" id="ar-fix-son-saat" value="${c.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toTimeString().slice(0,5) : '09:00'}" style="width:80px;">
+              <input type="time" id="ar-fix-son-saat" value="${c.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toTimeString().slice(0,5) : '09:00'}" style="width:110px;">
             </div>
           </div>
           <button class="pop-cta-btn b" style="width:auto;padding:7px 10px;" onclick="arSaveFixedDate('son')" title="Kaydet"><i class="fa-solid fa-check"></i></button>

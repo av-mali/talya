@@ -1098,7 +1098,7 @@ function taskCard(t, colKey) {
         <input type="text" id="task-edit-title-${t.id}" value="${(t.title||'').replace(/"/g,'&quot;')}" style="width:100%;margin-bottom:6px;font-size:12.5px;">
         <div style="display:flex;gap:4px;margin-bottom:6px;">
           <input type="date" id="task-edit-date-${t.id}" value="${dueDateVal}" style="flex:1;font-size:11px;">
-          <input type="time" id="task-edit-time-${t.id}" value="${dueTimeVal}" style="width:75px;font-size:11px;">
+          <input type="time" id="task-edit-time-${t.id}" value="${dueTimeVal}" style="width:100px;font-size:11px;">
         </div>
         <div style="display:flex;gap:6px;">
           <button class="pop-cta-btn b" style="flex:1;padding:5px;font-size:11px;" onclick="taskSaveEdit('${t.id}')"><i class="fa-solid fa-check"></i></button>
