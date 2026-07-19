@@ -17,7 +17,7 @@ export async function GET() {
       ...(restricted ? { assignedToId: ws.userId } : {}),
     },
     include: { assignedTo: { select: { id: true, name: true, email: true } } },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
   });
   return NextResponse.json({ tasks });
 }

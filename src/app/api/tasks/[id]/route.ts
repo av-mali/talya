@@ -16,6 +16,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   const body = await req.json();
   const data: any = {};
+  if (body.title !== undefined) {
+    data.title = body.title;
+  }
+  if (body.dueDate !== undefined) {
+    data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
+  }
   if (body.status !== undefined) {
     data.status = body.status;
     data.done = body.status === "tamamlandi"; // geri uyum için done alanı da senkron tutulur

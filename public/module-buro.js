@@ -121,7 +121,10 @@ window.CURRENT_MODULE = {
       btnClass: 'b', btnIco: 'fa-list-check', btnLbl: '', hideCta: true,
       body: `
         <div class="fg"><input type="text" id="task-title" placeholder="Yeni görev…" onkeydown="if(event.key==='Enter')taskAdd()"></div>
-        <div class="fg"><input type="date" id="task-date"></div>
+        <div style="display:flex;gap:6px;">
+          <div class="fg" style="flex:1;"><input type="date" id="task-date"></div>
+          <div class="fg" style="flex:1;"><input type="time" id="task-time"></div>
+        </div>
         <div class="fg" id="task-assignee-wrap" style="display:none;">
           <div class="fl">Kime Atansın <span class="opt">(opsiyonel)</span></div>
           <select id="task-assignee"></select>
@@ -1079,27 +1082,76 @@ async function taskRenderList() {
   }
 }
 
+let taskEditingId = null;
+
 function taskCard(t, colKey) {
   const overdue = t.dueDate && colKey !== 'tamamlandi' && new Date(t.dueDate) < new Date(new Date().toDateString());
   const colIdx = KANBAN_COLUMNS.findIndex(c => c.key === colKey);
   const prevCol = KANBAN_COLUMNS[colIdx - 1];
   const nextCol = KANBAN_COLUMNS[colIdx + 1];
+
+  if (taskEditingId === t.id) {
+    const dueDateVal = t.dueDate ? new Date(t.dueDate).toISOString().slice(0, 10) : '';
+    const dueTimeVal = t.dueDate ? new Date(t.dueDate).toTimeString().slice(0, 5) : '';
+    return `
+      <div class="kanban-card" style="background:var(--card);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+        <input type="text" id="task-edit-title-${t.id}" value="${(t.title||'').replace(/"/g,'&quot;')}" style="width:100%;margin-bottom:6px;font-size:12.5px;">
+        <div style="display:flex;gap:4px;margin-bottom:6px;">
+          <input type="date" id="task-edit-date-${t.id}" value="${dueDateVal}" style="flex:1;font-size:11px;">
+          <input type="time" id="task-edit-time-${t.id}" value="${dueTimeVal}" style="width:75px;font-size:11px;">
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="pop-cta-btn b" style="flex:1;padding:5px;font-size:11px;" onclick="taskSaveEdit('${t.id}')"><i class="fa-solid fa-check"></i></button>
+          <button class="pop-cta-btn" style="flex:1;padding:5px;font-size:11px;background:var(--bg2);color:var(--t2);" onclick="taskCancelEdit()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+    `;
+  }
+
   return `
     <div class="kanban-card" draggable="true"
          ondragstart="event.dataTransfer.setData('text/plain','${t.id}')"
          style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
       <div style="font-size:12.5px;margin-bottom:4px;">${t.title}</div>
       ${t.assignedTo ? `<div style="font-size:10px;color:var(--t3);margin-bottom:4px;"><i class="fa-solid fa-user"></i> ${t.assignedTo.name || t.assignedTo.email}</div>` : ''}
-      ${t.dueDate ? `<div style="font-size:10px;color:${overdue ? 'var(--danger)' : 'var(--t3)'};margin-bottom:6px;"><i class="fa-solid fa-calendar"></i> ${new Date(t.dueDate).toLocaleDateString('tr-TR')}${overdue ? ' — süresi geçti' : ''}</div>` : ''}
+      ${t.dueDate ? `<div style="font-size:10px;color:${overdue ? 'var(--danger)' : 'var(--t3)'};margin-bottom:6px;"><i class="fa-solid fa-calendar"></i> ${new Date(t.dueDate).toLocaleDateString('tr-TR')} ${new Date(t.dueDate).toTimeString().slice(0,5)}${overdue ? ' — süresi geçti' : ''}</div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
         <span style="display:flex;gap:6px;">
           ${prevCol ? `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="taskMoveStatus('${t.id}','${prevCol.key}')" title="${prevCol.label}'a taşı"><i class="fa-solid fa-arrow-left"></i></span>` : '<span style="width:12px;"></span>'}
           ${nextCol ? `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="taskMoveStatus('${t.id}','${nextCol.key}')" title="${nextCol.label}'a taşı"><i class="fa-solid fa-arrow-right"></i></span>` : '<span style="width:12px;"></span>'}
         </span>
-        <span style="cursor:pointer;color:var(--t3);" onclick="taskDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+        <span style="display:flex;gap:8px;">
+          <span style="cursor:pointer;color:var(--t3);" onclick="taskStartEdit('${t.id}')" title="Düzenle"><i class="fa-solid fa-pen"></i></span>
+          <span style="cursor:pointer;color:var(--t3);" onclick="taskDelete('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
+        </span>
       </div>
     </div>
   `;
+}
+
+function taskStartEdit(id) {
+  taskEditingId = id;
+  taskRenderList();
+}
+
+function taskCancelEdit() {
+  taskEditingId = null;
+  taskRenderList();
+}
+
+async function taskSaveEdit(id) {
+  const title = document.getElementById('task-edit-title-' + id).value.trim();
+  const dateVal = document.getElementById('task-edit-date-' + id).value;
+  const timeVal = document.getElementById('task-edit-time-' + id).value;
+  if (!title) { toast('Görev başlığı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
+  const dueDate = dateVal ? `${dateVal}T${timeVal || '09:00'}:00` : null;
+  await fetch('/api/tasks/' + id, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, dueDate })
+  });
+  taskEditingId = null;
+  toast('Görev güncellendi', 'fa-solid fa-check', true);
+  taskRenderList();
 }
 
 function taskDropOnColumn(event, colKey) {
@@ -1118,16 +1170,19 @@ async function taskMoveStatus(id, status) {
 
 async function taskAdd() {
   const title = document.getElementById('task-title').value.trim();
-  const dueDate = document.getElementById('task-date').value;
+  const dueDateRaw = document.getElementById('task-date').value;
+  const dueTimeRaw = document.getElementById('task-time').value;
+  const dueDate = dueDateRaw ? `${dueDateRaw}T${dueTimeRaw || '09:00'}:00` : null;
   const assigneeEl = document.getElementById('task-assignee');
   const assignedToId = assigneeEl && assigneeEl.closest('#task-assignee-wrap').style.display !== 'none' ? assigneeEl.value : null;
   if (!title) { toast('Görev başlığı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
   await fetch('/api/tasks', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, dueDate: dueDate || null, assignedToId })
+    body: JSON.stringify({ title, dueDate, assignedToId })
   });
   document.getElementById('task-title').value = '';
   document.getElementById('task-date').value = '';
+  document.getElementById('task-time').value = '';
   toast('Görev eklendi', 'fa-solid fa-check', true);
   taskRenderList();
 }
