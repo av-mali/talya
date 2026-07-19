@@ -216,6 +216,40 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* UYAP EKLENTİSİ */}
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "20px 20px 60px" }}>
+          <div
+            className="reveal"
+            style={{
+              background: "var(--card)",
+              border: "1px solid var(--border)",
+              borderRadius: 16,
+              padding: "32px 28px",
+              textAlign: "center",
+            }}
+          >
+            <i className="fa-solid fa-puzzle-piece" style={{ fontSize: 26, color: "var(--gold)", marginBottom: 12 }}></i>
+            <div className="hero-title" style={{ fontSize: 20, marginBottom: 8 }}>
+              UYAP <em>Tarayıcı Eklentisi</em>
+            </div>
+            <div style={{ fontSize: 13, color: "var(--t2)", lineHeight: 1.6, marginBottom: 18, maxWidth: 480, margin: "0 auto 18px" }}>
+              UYAP Avukat Portalı'ndaki duruşma/tebligat tarihlerini tek tıkla Talya'ya aktarın, dosyanızdaki tüm belgeleri toplu indirin. Chrome için ücretsiz.
+            </div>
+            <a
+              href="/talya-uyap-extension.zip"
+              download
+              className="nav-pill gold cta-pulse"
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", padding: "10px 22px", fontSize: 13 }}
+            >
+              <i className="fa-solid fa-download"></i>
+              <span>Eklentiyi İndir</span>
+            </a>
+            <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 12 }}>
+              Kurulum: chrome://extensions → Geliştirici modu → Paketlenmemiş öğe yükle
+            </div>
+          </div>
+        </div>
+
         {/* FİYATLANDIRMA */}
         <div id="fiyatlar" style={{ maxWidth: 1000, margin: "0 auto", padding: "70px 20px 30px" }}>
           <div style={{ textAlign: "center", marginBottom: 36 }}>
