@@ -209,7 +209,9 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       // Tarih/saat girildiyse dosyaya kaydet — bu, Yaklaşan Süreler ve
       // bildirim ziliyle otomatik senkronize olur.
       if (toplantiTarihi) {
-        const dt = new Date(`${toplantiTarihi}T${toplantiSaati || "09:00"}:00`);
+        // Sunucu UTC'de çalışabiliyor — Türkiye saatini (+03:00) açıkça
+        // belirtmezsek, girilen saat yanlışlıkla UTC sanılıp 3 saat kayar.
+        const dt = new Date(`${toplantiTarihi}T${toplantiSaati || "09:00"}:00+03:00`);
         if (!isNaN(dt.getTime())) {
           await prisma.mediationCase.update({ where: { id: mediationCase.id }, data: { ilkOturumTarihi: dt } });
         }
@@ -253,7 +255,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         buildSignatureBlock(mediationCase, profile);
 
       if (tutanakTarihi) {
-        const dt = new Date(`${tutanakTarihi}T${tutanakSaati || "09:00"}:00`);
+        const dt = new Date(`${tutanakTarihi}T${tutanakSaati || "09:00"}:00+03:00`);
         if (!isNaN(dt.getTime())) {
           await prisma.mediationCase.update({
             where: { id: mediationCase.id },

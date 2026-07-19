@@ -1144,7 +1144,7 @@ async function taskSaveEdit(id) {
   const dateVal = document.getElementById('task-edit-date-' + id).value;
   const timeVal = document.getElementById('task-edit-time-' + id).value;
   if (!title) { toast('Görev başlığı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
-  const dueDate = dateVal ? `${dateVal}T${timeVal || '09:00'}:00` : null;
+  const dueDate = dateVal ? localDateTimeToISO(dateVal, timeVal) : null;
   await fetch('/api/tasks/' + id, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, dueDate })
@@ -1172,7 +1172,7 @@ async function taskAdd() {
   const title = document.getElementById('task-title').value.trim();
   const dueDateRaw = document.getElementById('task-date').value;
   const dueTimeRaw = document.getElementById('task-time').value;
-  const dueDate = dueDateRaw ? `${dueDateRaw}T${dueTimeRaw || '09:00'}:00` : null;
+  const dueDate = dueDateRaw ? localDateTimeToISO(dueDateRaw, dueTimeRaw) : null;
   const assigneeEl = document.getElementById('task-assignee');
   const assignedToId = assigneeEl && assigneeEl.closest('#task-assignee-wrap').style.display !== 'none' ? assigneeEl.value : null;
   if (!title) { toast('Görev başlığı gerekli', 'fa-solid fa-triangle-exclamation'); return; }

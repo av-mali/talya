@@ -812,12 +812,12 @@ async function arSaveFixedDate(which) {
     const tarih = document.getElementById('ar-fix-ilk-tarih').value;
     const saat = document.getElementById('ar-fix-ilk-saat').value || '09:00';
     if (!tarih) { toast('Önce bir tarih seçin', 'fa-solid fa-triangle-exclamation'); return; }
-    body.ilkOturumTarihi = `${tarih}T${saat}:00`;
+    body.ilkOturumTarihi = localDateTimeToISO(tarih, saat);
   } else {
     const tarih = document.getElementById('ar-fix-son-tarih').value;
     const saat = document.getElementById('ar-fix-son-saat').value || '09:00';
     if (!tarih) { toast('Önce bir tarih seçin', 'fa-solid fa-triangle-exclamation'); return; }
-    body.sonTutanakTarihi = `${tarih}T${saat}:00`;
+    body.sonTutanakTarihi = localDateTimeToISO(tarih, saat);
   }
   const res = await fetch('/api/mediation/cases/' + arSelectedCaseId, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },

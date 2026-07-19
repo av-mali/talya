@@ -227,6 +227,21 @@ function submitPopup() {
 }
 
 // ── CHAT ──
+// Bir <input type="date"> + <input type="time"> ikilisini, TARAYICININ
+// YEREL saat dilimini doğru şekilde hesaba katarak sunucuya gönderilecek
+// bir ISO metnine çevirir. "2026-07-20T23:25:00" gibi saat dilimsiz bir
+// metin doğrudan gönderilirse, sunucu bunu UTC sanabilir — bu da
+// Türkiye'de +3 saatlik kaymaya yol açar. new Date(y,m,d,h,dk) YEREL
+// saat olarak yorumlanır, toISOString() ise bunu doğru UTC karşılığına
+// çevirir; sunucu tarafında hangi saat diliminde çalışırsa çalışsın
+// artık doğru anı temsil eder.
+function localDateTimeToISO(dateStr, timeStr) {
+  if (!dateStr) return null;
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const [hh, mm] = (timeStr || '09:00').split(':').map(Number);
+  return new Date(y, mo - 1, d, hh, mm, 0).toISOString();
+}
+
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
 // Bir tarihi gösterirken, eğer anlamlı bir saat bilgisi varsa (tam gece
