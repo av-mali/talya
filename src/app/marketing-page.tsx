@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 
 const FEATURES = [
   { icon: "fa-file-lines", title: "Belge & Analiz", desc: "Dosya analizi, dilekçe sihirbazı, mevzuat arama — gerçek zamanlı AI desteğiyle." },
+  { icon: "fa-handshake", title: "Arabuluculuk", desc: "Davet mektubu, ilk oturum ve son tutanağı, gerçek UYAP formatında otomatik oluşturun." },
   { icon: "fa-briefcase", title: "Büro Yönetimi", desc: "Müvekkil, dosya, gelir-gider, görev panosu — hepsi tek yerde." },
   { icon: "fa-user-group", title: "Müvekkil Paneli", desc: "Müvekkilleriniz kendi dosya durumunu görsün, size doğrudan mesaj göndersin." },
   { icon: "fa-puzzle-piece", title: "UYAP Entegrasyonu", desc: "Duruşma ve tebligat tarihlerini otomatik senkronize edin." },
@@ -102,9 +103,14 @@ export default function LandingPage() {
               <span className="home-logo-tag">AI Legal Suite</span>
             </div>
           </div>
-          <Link href="/login" className="nav-pill gold" style={{ textDecoration: "none" }}>
-            Giriş Yap
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Link href="/muvekkil" className="nav-pill always-show" style={{ textDecoration: "none" }}>
+              Müvekkil Girişi
+            </Link>
+            <Link href="/login" className="nav-pill gold" style={{ textDecoration: "none" }}>
+              Giriş Yap
+            </Link>
+          </div>
         </div>
 
         {/* HERO — soyut adalet terazisi çizimi + hareketli parıltı/parçacıklar */}

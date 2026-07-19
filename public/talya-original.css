@@ -452,7 +452,8 @@ textarea{resize:none;line-height:1.6;}
   /* Ana ekran üst menü */
   .home-nav{padding:0 14px;height:52px;}
   .home-logo-tag{display:none;}
-  .home-nav .nav-pill:not(.gold){display:none;}
+  .home-nav .nav-pill:not(.gold):not(.always-show){display:none;}
+  .home-nav .nav-pill.always-show{font-size:10.5px;padding:5px 8px;}
   .home-nav .nav-pill.gold{font-size:11px;padding:6px 10px;}
 
   /* Hero ve modül kartları */
