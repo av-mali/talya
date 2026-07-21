@@ -15,7 +15,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
 
   const paragraphs = lines.map((rawLine) => {
-    const { text: lineText, runs, centered, right, bulleted, numbered } = parseLineMarkup(rawLine);
+    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow } = parseLineMarkup(rawLine);
 
     // Biçimli kısımları ve düz kısımları, orijinal sırayla ayrı
     // TextRun'lar olarak oluştur — aynı satırda hem düz hem kalın/altı
@@ -55,10 +55,18 @@ export async function generateDocx(text: string): Promise<Buffer> {
       // için) ve 3200 ("Etiket\t: değer" tarzı satırlarda değerlerin
       // hepsinin AYNI dikey hizada başlaması için — etiket zaten 400'ü
       // geçtiğinden otomatik olarak ikinci noktaya atlar).
-      tabStops: [
-        { type: TabStopType.LEFT, position: 400 },
-        { type: TabStopType.LEFT, position: 3200 },
-      ],
+      // İmza satırları (sigRow) ise farklı bir düzen kullanır: her isim,
+      // sayfanın dörtte bir ve dörtte üç noktalarında ORTALANIR (CENTER
+      // tipi sekme) — birbirine yakın durmasınlar diye geniş aralıklı.
+      tabStops: sigRow
+        ? [
+            { type: TabStopType.CENTER, position: 2400 },
+            { type: TabStopType.CENTER, position: 7200 },
+          ]
+        : [
+            { type: TabStopType.LEFT, position: 400 },
+            { type: TabStopType.LEFT, position: 3200 },
+          ],
     });
   });
 
@@ -83,7 +91,11 @@ export async function generateDocx(text: string): Promise<Buffer> {
     },
     sections: [
       {
-        properties: {},
+        properties: {
+          page: {
+            margin: { top: 720, bottom: 720, left: 1080, right: 1080 },
+          },
+        },
         children: paragraphs,
       },
     ],
