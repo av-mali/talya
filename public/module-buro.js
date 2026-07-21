@@ -2259,7 +2259,7 @@ function mvRenderTaksitRows() {
     <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;">
       <span style="font-size:11px;color:var(--t3);width:16px;">${i+1}.</span>
       <input type="text" class="tl-amount" id="fee-taksit-tutar-${i}" value="${new Intl.NumberFormat('tr-TR').format(t.tutar||0)}" oninput="mvOnTaksitInput(${i}, this.value)" placeholder="Tutar" style="flex:1;">
-      <input type="date" id="fee-taksit-tarih-${i}" value="${t.tarih && t.tarih.includes('.') ? '' : (t.tarih||'')}" onchange="mvTaksitRows[${i}].tarih=this.value.split('-').reverse().join('.'); if(${i}===0) mvAutoFillTaksitTarihleri();" style="flex:1;">
+      <input type="date" id="fee-taksit-tarih-${i}" value="${t.tarih && t.tarih.includes('.') ? t.tarih.split('.').reverse().join('-') : (t.tarih||'')}" onchange="mvTaksitRows[${i}].tarih=this.value.split('-').reverse().join('.'); if(${i}===0) mvAutoFillTaksitTarihleri();" style="flex:1;">
       <span style="cursor:pointer;color:var(--t3);" onclick="mvRemoveTaksitRow(${i})"><i class="fa-solid fa-xmark"></i></span>
     </div>
   `).join('') + `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="mvAddTaksitRow()"><i class="fa-solid fa-plus"></i> Taksit Ekle</span>`;
