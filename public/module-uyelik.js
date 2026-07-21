@@ -278,46 +278,58 @@ async function homeStatsOnOpen() {
   homeWidgetsSettingsOnOpen();
 }
 
-const HOME_WIDGETS_OPTIONS = [
-  { key: 'bugun', label: 'Bugün (bugüne ait süreler)' },
-  { key: 'bekleyenAlacaklar', label: 'Bekleyen Alacaklar özeti' },
-  { key: 'hizliErisim', label: 'Hızlı Erişim butonları' },
-  { key: 'sonMuvekkilAktivitesi', label: 'Son Müvekkil Aktivitesi' },
-];
-
 async function homeWidgetsSettingsOnOpen() {
   const box = document.getElementById('homewidgets-box');
   box.innerHTML = skeletonLines(3);
   try {
     const res = await fetch('/api/profile/home-widget-prefs');
     const data = await res.json();
-    homeWidgetsSettingsRender(data.prefs || {});
+    homeWidgetsSettingsRender(data.prefs.hizliErisimTools || []);
   } catch (e) {
     box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
   }
 }
 
-function homeWidgetsSettingsRender(prefs) {
+function homeWidgetsSettingsRender(selectedTools) {
   const box = document.getElementById('homewidgets-box');
+  const modules = window.MODULES_INDEX || [];
+  const selectedKeys = new Set(selectedTools.map(t => t.mod + ':' + t.id));
+
   box.innerHTML = `
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Ana Sayfa Widget'ları</div>
-    ${HOME_WIDGETS_OPTIONS.map(opt => `
-      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-        <input type="checkbox" class="homewidgets-cb" value="${opt.key}" ${prefs[opt.key] !== false ? 'checked' : ''} onchange="homeWidgetsToggle()">
-        <span style="font-size:13px;">${opt.label}</span>
-      </label>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:6px;">Ana Sayfa — Hızlı Erişim</div>
+    <div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-bottom:14px;">
+      Ana sayfada kare kutular halinde görünecek araçları seçin — hangi modülden olduğu fark etmez.
+    </div>
+    ${modules.map(mod => `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px;">${mod.label}</div>
+        ${mod.items.map(item => {
+          const key = mod.key + ':' + item.id;
+          return `
+            <label style="display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer;">
+              <input type="checkbox" class="homewidgets-tool-cb" data-mod="${mod.key}" data-id="${item.id}" ${selectedKeys.has(key) ? 'checked' : ''} onchange="homeWidgetsToolsToggle()">
+              <span style="font-size:12.5px;"><i class="fa-solid ${item.icon}" style="width:14px;color:var(--t3);margin-right:4px;"></i>${item.name}</span>
+            </label>`;
+        }).join('')}
+      </div>
     `).join('')}
+    <div id="homewidgets-msg" style="font-size:11px;color:var(--t3);margin-top:4px;"></div>
   `;
 }
 
-function homeWidgetsToggle() {
-  const checkboxes = document.querySelectorAll('.homewidgets-cb');
-  const prefs = {};
-  checkboxes.forEach(cb => { prefs[cb.value] = cb.checked; });
+function homeWidgetsToolsToggle() {
+  const checkboxes = document.querySelectorAll('.homewidgets-tool-cb');
+  const tools = Array.from(checkboxes)
+    .filter(cb => cb.checked)
+    .map(cb => ({ mod: cb.dataset.mod, id: cb.dataset.id }));
+
   fetch('/api/profile/home-widget-prefs', {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prefs })
-  }).then(() => toast('Kaydedildi', 'fa-solid fa-check', true));
+    body: JSON.stringify({ prefs: { hizliErisimTools: tools } })
+  }).then(() => {
+    document.getElementById('homewidgets-msg').textContent = 'Kaydedildi ✓';
+    setTimeout(() => { const m = document.getElementById('homewidgets-msg'); if (m) m.textContent = ''; }, 1500);
+  });
 }
 
 function homeStatsRender(selected) {

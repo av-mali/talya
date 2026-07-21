@@ -3,12 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// 4 ek widget — hepsi varsayılan olarak AÇIK (kullanıcı isterse kapatır).
+// Ana sayfadaki "Hızlı Erişim" kutusunda hangi araçların (hangi modülden)
+// gösterileceği — kullanıcı Üyelik & Hesap'tan istediği gibi değiştirebilir.
 const DEFAULT_PREFS = {
-  bekleyenAlacaklar: true,
-  hizliErisim: true,
-  bugun: true,
-  sonMuvekkilAktivitesi: true,
+  hizliErisimTools: [
+    { mod: "buro", id: "muvekkilekle" },
+    { mod: "belge", id: "wizard" },
+    { mod: "buro", id: "gorevler" },
+  ],
 };
 
 export async function GET() {
@@ -17,7 +19,10 @@ export async function GET() {
   const userId = (session.user as any).id as string;
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { homeWidgetPrefs: true } });
-  const prefs = { ...DEFAULT_PREFS, ...((user?.homeWidgetPrefs as any) || {}) };
+  const stored = (user?.homeWidgetPrefs as any) || {};
+  const prefs = {
+    hizliErisimTools: Array.isArray(stored.hizliErisimTools) ? stored.hizliErisimTools : DEFAULT_PREFS.hizliErisimTools,
+  };
   return NextResponse.json({ prefs });
 }
 

@@ -93,28 +93,9 @@
         </div>
       </div>
 
-      <div id="widget-bugun" class="dash-card" style="margin-top:14px;display:none;">
-        <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-calendar-day"></i> Bugün</div></div>
-        <div id="widget-bugun-box"></div>
-      </div>
-
-      <div id="widget-bekleyenAlacaklar" class="dash-card" style="margin-top:14px;display:none;">
-        <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-turkish-lira-sign"></i> Bekleyen Alacaklar</div><div class="dash-link" onclick="openModule('buro?open=gelirgider')">Tümünü gör →</div></div>
-        <div id="widget-bekleyenAlacaklar-box"></div>
-      </div>
-
       <div id="widget-hizliErisim" class="dash-card" style="margin-top:14px;display:none;">
         <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-bolt"></i> Hızlı Erişim</div></div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:6px;">
-          <span class="nav-pill" style="cursor:pointer;" onclick="openModule('buro?open=muvekkilekle')"><i class="fa-solid fa-user-plus"></i> Yeni Müvekkil</span>
-          <span class="nav-pill" style="cursor:pointer;" onclick="openModule('buro?open=gorevler')"><i class="fa-solid fa-list-check"></i> Yeni Görev</span>
-          <span class="nav-pill" style="cursor:pointer;" onclick="openModule('belge?open=wizard')"><i class="fa-solid fa-scroll"></i> Dilekçe Yaz</span>
-        </div>
-      </div>
-
-      <div id="widget-sonMuvekkilAktivitesi" class="dash-card" style="margin-top:14px;display:none;">
-        <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-user-clock"></i> Son Müvekkil Aktivitesi</div></div>
-        <div id="widget-sonMuvekkilAktivitesi-box"></div>
+        <div id="widget-hizliErisim-box" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;padding-top:6px;"></div>
       </div>
     </div>
     </div>
