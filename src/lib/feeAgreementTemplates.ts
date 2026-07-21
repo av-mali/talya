@@ -123,7 +123,9 @@ ${diger}
 **__Sözleşme Tarihi__**\t: ${v(sozlesmeTarihi)}
 
 
+
+
 [[S]]\t**${v(musteri.name)}**\t**${v(avukat.name)}**
 [[S]]\tİş Sahibi\tAvukat
-[[S]]\t¸\t¸`;
+[[S]]\tİmza\tİmza`;
 }
