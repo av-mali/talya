@@ -69,7 +69,12 @@ async function initModulePage() {
   const nav = document.getElementById('sidebarNav');
   if (nav) {
     const modules = window.MODULES_INDEX || [cfg];
-    nav.innerHTML = modules.map(mod => {
+    nav.innerHTML =
+      `<div class="s-item" style="font-weight:600;cursor:pointer;margin-bottom:4px;" onclick="goHome()">
+        <span class="ico"><i class="fa-solid fa-house"></i></span>
+        Ana Sayfa
+      </div>` +
+      modules.map(mod => {
       const isCurrent = mod.key === cfg.key;
       const header = `
         <div class="s-item" style="font-weight:600;cursor:pointer;${isCurrent ? 'color:var(--gold);' : ''}" onclick="openModule('${mod.key}')">
@@ -1073,7 +1078,57 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── INIT ──
+// Ana sayfadaki sol kenar çubuğu — tüm modüllerin araçlarını, tıklamadan
+// (sadece kategori başlığına tıklayıp açarak) gösterir. Modül sayfalarının
+// aksine BURADA "mevcut modül" diye bir şey yok, o yüzden hepsi başlangıçta
+// kapalı — hangisine tıklarsan o açılır (basit bir akordeon durumu).
+let homeSidebarExpanded = new Set();
+
+async function renderHomeSidebar() {
+  const nav = document.getElementById('homeSidebarNav');
+  if (!nav) return;
+  await loadMyPermissions();
+  const blockedSet = new Set(MY_PERMISSIONS.blockedTools || []);
+  const modules = window.MODULES_INDEX || [];
+
+  nav.innerHTML =
+    `<div class="s-item active-g" style="font-weight:600;cursor:default;">
+      <span class="ico"><i class="fa-solid fa-house"></i></span>
+      Ana Sayfa
+    </div>` +
+    modules.map(mod => {
+      const isOpen = homeSidebarExpanded.has(mod.key);
+      const header = `
+        <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;" onclick="toggleHomeSidebarGroup('${mod.key}')">
+          <span class="ico"><i class="fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:10px;"></i></span>
+          ${mod.label}
+        </div>`;
+      let children = '';
+      if (isOpen) {
+        let lastGroup = null;
+        mod.items.forEach(item => {
+          if (blockedSet.has(item.id)) return; // yönetici bu aracı kapatmış
+          if (item.group && item.group !== lastGroup) {
+            children += `<div style="padding:8px 12px 4px 30px;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:600;">${item.group}</div>`;
+          }
+          lastGroup = item.group || null;
+          const indent = item.group ? 40 : 30;
+          children += `
+            <div class="s-item" style="padding-left:${indent}px;" onclick="openModule('${mod.key}?open=${item.id}')">
+              <span class="ico"><i class="fa-solid ${item.icon}"></i></span>
+              ${item.name}
+            </div>`;
+        });
+      }
+      return header + children;
+    }).join('');
+}
+
+function toggleHomeSidebarGroup(key) {
+  if (homeSidebarExpanded.has(key)) homeSidebarExpanded.delete(key);
+  else homeSidebarExpanded.add(key);
+  renderHomeSidebar();
+}
 cmdkItems = window.CMDK_INDEX || [];
 if (window.CURRENT_MODULE) {
   initModulePage();
@@ -1081,6 +1136,7 @@ if (window.CURRENT_MODULE) {
   runCountUp();
   renderDashDeadlines();
   renderGelirGiderOzet();
+  renderHomeSidebar();
 }
 loadRealNotifications();
 loadNotifPrefs();

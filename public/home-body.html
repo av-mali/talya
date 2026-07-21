@@ -46,7 +46,17 @@
     </div>
   </nav>
 
-  <div class="home-body">
+  <div class="app-body" style="flex:1;display:flex;overflow:hidden;min-height:0;">
+    <!-- SOL KENAR ÇUBUĞU — tüm araçlara buradan, tıklamadan ulaşılır -->
+    <div class="app-sidebar" id="homeSidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-mod-label">TALYA HUKUK</div>
+        <div class="sidebar-mod-name">Tüm Araçlar</div>
+      </div>
+      <div class="s-nav" id="homeSidebarNav"></div>
+    </div>
+
+    <div class="home-body">
     <div class="hero-mark" aria-hidden="true">
       <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg">
         <g class="beam-arm">
@@ -83,42 +93,6 @@
         </div>
       </div>
     </div>
-
-    <div class="modules-grid">
-      <!-- Belge & Analiz -->
-      <div class="module-card gold-card" onclick="openModule('belge')">
-        <div class="mc-count">8 araç</div>
-        <div class="mc-ico g"><i class="fa-solid fa-scroll"></i></div>
-        <div class="mc-name">Belge & Analiz</div>
-        <div class="mc-desc">Dilekçe, emsal, sözleşme, risk analizi ve duruşma hazırlığı</div>
-      </div>
-      <!-- Büro Yönetimi -->
-      <div class="module-card blue-card" onclick="openModule('buro')">
-        <div class="mc-count">11 araç</div>
-        <div class="mc-ico b"><i class="fa-solid fa-briefcase"></i></div>
-        <div class="mc-name">Büro Yönetimi</div>
-        <div class="mc-desc">Müvekkil, takvim, arşiv, fatura ve büro analitiği</div>
-      </div>
-      <!-- UYAP -->
-      <div class="module-card teal-card" onclick="openModule('uyap')">
-        <div class="mc-count">5 araç</div>
-        <div class="mc-ico t"><i class="fa-solid fa-building-columns"></i></div>
-        <div class="mc-name">UYAP Entegrasyonu</div>
-        <div class="mc-desc">Dilekçe gönder, dosya sorgula, tebligat ve harç hesapla</div>
-      </div>
-      <!-- Hesaplama -->
-      <div class="module-card purple-card" onclick="openModule('hesap')">
-        <div class="mc-count">8 araç</div>
-        <div class="mc-ico p"><i class="fa-solid fa-calculator"></i></div>
-        <div class="mc-name">Hesaplama Araçları</div>
-        <div class="mc-desc">Kıdem, ihbar, faiz, nafaka, kira artışı ve zamanaşımı</div>
-      </div>
-      <!-- Üyelik -->
-      <div class="module-card gray-card" onclick="openModule('uyelik')">
-        <div class="mc-ico gr"><i class="fa-solid fa-user-circle"></i></div>
-        <div class="mc-name">Üyelik & Hesap</div>
-        <div class="mc-desc">Plan yönetimi, fatura geçmişi ve hesap ayarları</div>
-      </div>
     </div>
   </div>
 
