@@ -116,5 +116,10 @@ export function buildFeeAgreementDocx(
 
 ${diger}
 
-**__Sözleşme Tarihi__**\t: ${v(sozlesmeTarihi)}`;
+**__Sözleşme Tarihi__**\t: ${v(sozlesmeTarihi)}
+
+
+[[S]]${v(musteri.name)}\t${v(avukat.name)}
+[[S]]İş Sahibi\tAvukat
+[[S]]¸\t¸`;
 }

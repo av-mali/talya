@@ -67,11 +67,17 @@ export async function generateDocx(text: string): Promise<Buffer> {
       config: [
         {
           reference: "n1-list",
-          levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1-", alignment: AlignmentType.START }],
+          levels: [{
+            level: 0, format: LevelFormat.DECIMAL, text: "%1-", alignment: AlignmentType.START,
+            style: { paragraph: { indent: { left: 500, hanging: 300 } } },
+          }],
         },
         {
           reference: "n2-list",
-          levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1-", alignment: AlignmentType.START }],
+          levels: [{
+            level: 0, format: LevelFormat.DECIMAL, text: "%1-", alignment: AlignmentType.START,
+            style: { paragraph: { indent: { left: 500, hanging: 300 } } },
+          }],
         },
       ],
     },
