@@ -26,6 +26,7 @@ model User {
   notifPrefs   Json?
   kvkkChecklist Json?
   homeStatsPrefs Json?
+  homeWidgetPrefs Json? // ana sayfada hangi ek widget'ların (Bekleyen Alacaklar, Hızlı Erişim, Bugün, Son Müvekkil Aktivitesi) gösterileceği
   createdAt    DateTime  @default(now())
   messages     Message[]
   clients      Client[] // ESKİ ilişki — göç sonrası kullanılmayacak ama veri kaybı olmasın diye duruyor

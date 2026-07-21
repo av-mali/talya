@@ -184,7 +184,7 @@ window.CURRENT_MODULE = {
 // ══════════════════════════════════════════════════════
 // ORTAK YARDIMCI FONKSİYONLAR
 // ══════════════════════════════════════════════════════
-function fmtTL(n) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(n); }
+// fmtTL artık engine.js'de tanımlı (tüm sayfalarda erişilebilir olsun diye taşındı)
 
 function mvDaysLeft(dueDate) {
   const due = new Date(dueDate);

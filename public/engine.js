@@ -342,6 +342,105 @@ function talyaConfirm(message, confirmLabel, confirmColor) {
   });
 }
 
+// ── ANA SAYFA EK WİDGET'LARI (Üyelik & Hesap'tan açılıp kapatılabilir) ──
+async function renderHomeWidgets() {
+  let prefs;
+  try {
+    const res = await fetch('/api/profile/home-widget-prefs');
+    const data = await res.json();
+    prefs = data.prefs || {};
+  } catch (e) {
+    prefs = {};
+  }
+
+  if (prefs.bugun) { document.getElementById('widget-bugun').style.display = ''; renderWidgetBugun(); }
+  if (prefs.bekleyenAlacaklar) { document.getElementById('widget-bekleyenAlacaklar').style.display = ''; renderWidgetBekleyenAlacaklar(); }
+  if (prefs.hizliErisim) { document.getElementById('widget-hizliErisim').style.display = ''; }
+  if (prefs.sonMuvekkilAktivitesi) { document.getElementById('widget-sonMuvekkilAktivitesi').style.display = ''; renderWidgetSonMuvekkilAktivitesi(); }
+}
+
+async function renderWidgetBugun() {
+  const box = document.getElementById('widget-bugun-box');
+  box.innerHTML = skeletonLines(2);
+  try {
+    const res = await fetch('/api/events');
+    const data = await res.json();
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 86400000);
+    const items = (data.events || []).filter(e => {
+      const d = new Date(e.dueDate);
+      return d >= todayStart && d < todayEnd;
+    });
+    if (!items.length) {
+      box.innerHTML = `<div style="font-size:12.5px;color:var(--t3);padding:6px 0;">Bugün için kayıtlı bir şey yok.</div>`;
+      return;
+    }
+    box.innerHTML = items.map(e => `
+      <div class="dl-row">
+        <span class="dl-tag crit">BUGÜN</span>
+        <span class="dl-text">${e.clientName || ''} — ${e.title}</span>
+        <span class="dl-days">${fmtDueDate(e.dueDate)}</span>
+      </div>
+    `).join('');
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);">Yüklenemedi.</div>`;
+  }
+}
+
+async function renderWidgetBekleyenAlacaklar() {
+  const box = document.getElementById('widget-bekleyenAlacaklar-box');
+  box.innerHTML = skeletonLines(2);
+  try {
+    const res = await fetch('/api/receivables');
+    const data = await res.json();
+    const rows = data.rows || [];
+    if (!rows.length) {
+      box.innerHTML = `<div style="font-size:12.5px;color:var(--t3);padding:6px 0;">Bekleyen bir alacağınız yok.</div>`;
+      return;
+    }
+    const toplam = rows.reduce((s, r) => s + r.remaining, 0);
+    const gecikmis = rows.filter(r => r.overdue).length;
+    box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0 10px;">
+        <span style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--gold);">${fmtTL(toplam)}</span>
+        ${gecikmis > 0 ? `<span style="font-size:11px;color:var(--danger);font-weight:600;">${gecikmis} tanesi vadesi geçmiş</span>` : ''}
+      </div>
+      ${rows.slice(0, 3).map(r => `
+        <div class="dl-row" style="cursor:pointer;" onclick="openModule('buro?open=gelirgider')">
+          <span class="dl-text">${r.clientName} — ${r.caseTitle}</span>
+          <span class="dl-days" style="color:${r.overdue ? 'var(--danger)' : 'var(--warn)'};">${fmtTL(r.remaining)}</span>
+        </div>
+      `).join('')}
+    `;
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);">Yüklenemedi.</div>`;
+  }
+}
+
+async function renderWidgetSonMuvekkilAktivitesi() {
+  const box = document.getElementById('widget-sonMuvekkilAktivitesi-box');
+  box.innerHTML = skeletonLines(2);
+  try {
+    const res = await fetch('/api/clients/recent-activity');
+    const data = await res.json();
+    const items = data.items || [];
+    if (!items.length) {
+      box.innerHTML = `<div style="font-size:12.5px;color:var(--t3);padding:6px 0;">Henüz bir aktivite yok.</div>`;
+      return;
+    }
+    box.innerHTML = items.map(it => `
+      <div class="dl-row" style="cursor:pointer;" onclick="openModule('buro?open=tablo')">
+        <span class="dl-tag" style="background:${it.type === 'mesaj' ? 'var(--gold-lo)' : 'var(--bg2)'};color:${it.type === 'mesaj' ? 'var(--gold-hi)' : 'var(--t3)'};"><i class="fa-solid ${it.type === 'mesaj' ? 'fa-comment-dots' : 'fa-user-plus'}"></i></span>
+        <span class="dl-text">${it.text}</span>
+        <span class="dl-days">${new Date(it.date).toLocaleDateString('tr-TR')}</span>
+      </div>
+    `).join('');
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);">Yüklenemedi.</div>`;
+  }
+}
+
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
 // Bir tarihi gösterirken, eğer anlamlı bir saat bilgisi varsa (tam gece
@@ -757,6 +856,7 @@ async function renderGelirGiderOzet() {
   }
 }
 
+function fmtTL(n) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(n); }
 function fmtTLShort(n) {
   if (typeof fmtTL === 'function') return fmtTL(n);
   return n.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 });
@@ -1126,6 +1226,7 @@ if (window.CURRENT_MODULE) {
   renderDashDeadlines();
   renderGelirGiderOzet();
   renderAppSidebar();
+  renderHomeWidgets();
 }
 loadRealNotifications();
 loadNotifPrefs();

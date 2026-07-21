@@ -83,7 +83,7 @@ window.CURRENT_MODULE = {
       badge: 'g', badgeText: 'Ana Sayfa', titleHtml: 'Ana Sayfa <em class="g">İstatistikleri</em>',
       desc: 'Ana sayfada hangi istatistiklerin gösterileceğini seçin (en fazla 2).',
       btnClass: 'g', btnIco: 'fa-chart-simple', btnLbl: '', hideCta: true,
-      body: `<div id="homestats-box"></div>`,
+      body: `<div id="homestats-box"></div><div id="homewidgets-box" style="margin-top:20px;"></div>`,
       onOpen: () => homeStatsOnOpen(),
       prompt: () => ''
     },
@@ -275,6 +275,49 @@ async function homeStatsOnOpen() {
   } catch (e) {
     box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
   }
+  homeWidgetsSettingsOnOpen();
+}
+
+const HOME_WIDGETS_OPTIONS = [
+  { key: 'bugun', label: 'Bugün (bugüne ait süreler)' },
+  { key: 'bekleyenAlacaklar', label: 'Bekleyen Alacaklar özeti' },
+  { key: 'hizliErisim', label: 'Hızlı Erişim butonları' },
+  { key: 'sonMuvekkilAktivitesi', label: 'Son Müvekkil Aktivitesi' },
+];
+
+async function homeWidgetsSettingsOnOpen() {
+  const box = document.getElementById('homewidgets-box');
+  box.innerHTML = skeletonLines(3);
+  try {
+    const res = await fetch('/api/profile/home-widget-prefs');
+    const data = await res.json();
+    homeWidgetsSettingsRender(data.prefs || {});
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
+  }
+}
+
+function homeWidgetsSettingsRender(prefs) {
+  const box = document.getElementById('homewidgets-box');
+  box.innerHTML = `
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Ana Sayfa Widget'ları</div>
+    ${HOME_WIDGETS_OPTIONS.map(opt => `
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+        <input type="checkbox" class="homewidgets-cb" value="${opt.key}" ${prefs[opt.key] !== false ? 'checked' : ''} onchange="homeWidgetsToggle()">
+        <span style="font-size:13px;">${opt.label}</span>
+      </label>
+    `).join('')}
+  `;
+}
+
+function homeWidgetsToggle() {
+  const checkboxes = document.querySelectorAll('.homewidgets-cb');
+  const prefs = {};
+  checkboxes.forEach(cb => { prefs[cb.value] = cb.checked; });
+  fetch('/api/profile/home-widget-prefs', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prefs })
+  }).then(() => toast('Kaydedildi', 'fa-solid fa-check', true));
 }
 
 function homeStatsRender(selected) {
