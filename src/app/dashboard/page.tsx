@@ -36,7 +36,7 @@ export default function Dashboard() {
     return <OnboardingScreen onDone={() => setHasWorkspace(true)} />;
   }
 
-  return <TalyaShell bodyUrl="/home-body.html" scripts={["/cmdk-index.js", "/engine.js"]} />;
+  return <TalyaShell bodyUrl="/home-body.html" scripts={["/modules-index.js", "/cmdk-index.js", "/engine.js"]} />;
 }
 
 function OnboardingScreen({ onDone }: { onDone: () => void }) {
