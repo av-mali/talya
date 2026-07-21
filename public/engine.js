@@ -265,6 +265,38 @@ function closeTalyaModal() {
   if (el) el.remove();
 }
 
+// Tarayıcının çirkin, varsayılan confirm() penceresi yerine sitenin
+// kendi tasarımına uygun bir onay penceresi. Promise<boolean> döner —
+// kullanıcı "Evet" derse true, "Vazgeç"/kapatırsa false.
+function talyaConfirm(message, confirmLabel, confirmColor) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      closeTalyaModal();
+      resolve(result);
+    };
+    openTalyaModal(`
+      <div style="text-align:center;padding:8px 4px;">
+        <div style="font-size:14px;color:var(--t0);line-height:1.6;margin-bottom:22px;">${message}</div>
+        <div style="display:flex;gap:8px;">
+          <button class="pop-cta-btn" style="flex:1;background:var(--bg2);color:var(--t2);" id="talyaConfirmNo">Vazgeç</button>
+          <button class="pop-cta-btn ${confirmColor === 'danger' ? '' : 'g'}" style="flex:1;${confirmColor === 'danger' ? 'background:var(--danger);' : ''}" id="talyaConfirmYes">${confirmLabel || 'Evet'}</button>
+        </div>
+      </div>
+    `);
+    document.getElementById('talyaConfirmYes').onclick = () => finish(true);
+    document.getElementById('talyaConfirmNo').onclick = () => finish(false);
+    // Kapatma (X) butonuna basılırsa da "hayır" say.
+    const overlay = document.getElementById('talyaModalOverlay');
+    const observer = new MutationObserver(() => {
+      if (!document.body.contains(overlay)) { settled = true; resolve(false); observer.disconnect(); }
+    });
+    observer.observe(document.body, { childList: true });
+  });
+}
+
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
 // Bir tarihi gösterirken, eğer anlamlı bir saat bilgisi varsa (tam gece

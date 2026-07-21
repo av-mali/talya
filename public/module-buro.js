@@ -1417,11 +1417,11 @@ async function txRenderList() {
         ${receivables.length ? `
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;"><i class="fa-solid fa-hourglass-half"></i> Bekleyen Alacaklar (${receivables.length})</div>
           ${receivables.map(r => `
-            <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-              <span style="cursor:pointer;" onclick="mvSelect('${r.clientId}')">${r.overdue ? '<span style="color:var(--danger);font-size:10px;font-weight:600;margin-right:6px;">VADESİ GEÇTİ</span>' : ''}${r.clientName} — ${r.caseTitle}</span>
-              <span style="display:flex;align-items:center;gap:8px;">
+            <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <span style="cursor:pointer;flex:1;min-width:0;" onclick="mvSelect('${r.clientId}')">${r.overdue ? '<span style="color:var(--danger);font-size:10px;font-weight:600;margin-right:6px;">VADESİ GEÇTİ</span>' : ''}${r.clientName} — ${r.caseTitle}</span>
+              <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <span style="font-family:'JetBrains Mono',monospace;color:${r.overdue ? 'var(--danger)' : 'var(--warn)'};">${fmtTL(r.remaining)}</span>
-                ${r.feeAgreementPaymentId ? `<span style="cursor:pointer;color:var(--success);font-size:11px;" onclick="event.stopPropagation();mvMarkFeePaymentPaid('${r.feeAgreementPaymentId}')" title="Ödendi olarak işaretle"><i class="fa-solid fa-circle-check"></i></span>` : ''}
+                ${r.feeAgreementPaymentId ? `<button class="pop-cta-btn" style="width:auto;padding:6px 12px;font-size:11px;background:var(--success);color:#fff;" onclick="event.stopPropagation();mvMarkFeePaymentPaid('${r.feeAgreementPaymentId}')"><i class="fa-solid fa-check"></i> Ödendi</button>` : ''}
               </span>
             </div>
           `).join('')}
@@ -2096,12 +2096,12 @@ function mvRenderFeeAgreements(clientId) {
         ${a.payments && a.payments.length ? `
           <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
             ${a.payments.map(p => `
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px;gap:8px;">
                 <span style="color:${p.odendiMi ? 'var(--success)' : (new Date(p.vadeTarihi) < new Date() ? 'var(--danger)' : 'var(--t2)')};">
                   ${new Date(p.vadeTarihi).toLocaleDateString('tr-TR')} — ${new Intl.NumberFormat('tr-TR').format(p.tutar)} TL
                   ${p.odendiMi ? ' ✓ Ödendi' : (new Date(p.vadeTarihi) < new Date() ? ' — Vadesi Geçti' : '')}
                 </span>
-                ${!p.odendiMi ? `<span style="cursor:pointer;color:var(--success);" onclick="mvMarkFeePaymentPaid('${p.id}')" title="Ödendi işaretle"><i class="fa-solid fa-circle-check"></i></span>` : ''}
+                ${!p.odendiMi ? `<button class="pop-cta-btn" style="width:auto;padding:6px 12px;font-size:11px;background:var(--success);color:#fff;flex-shrink:0;" onclick="mvMarkFeePaymentPaid('${p.id}')"><i class="fa-solid fa-check"></i> Ödendi</button>` : ''}
               </div>
             `).join('')}
           </div>
@@ -2331,7 +2331,8 @@ async function mvGenerateFeeAgreement(id) {
 }
 
 async function mvMarkFeePaymentPaid(paymentId) {
-  if (!confirm('Bu ödemeyi "ödendi" olarak işaretlemek istediğinize emin misiniz? Gelir-Gider\'e otomatik eklenecektir.')) return;
+  const ok = await talyaConfirm('Bu ödemeyi <strong>"ödendi"</strong> olarak işaretlemek istediğinize emin misiniz?<br><span style="font-size:12px;color:var(--t3);">Gelir-Gider\'e otomatik eklenecektir.</span>', 'Evet, Ödendi');
+  if (!ok) return;
   const res = await fetch('/api/fee-agreement-payments/' + paymentId + '/mark-paid', { method: 'POST' });
   if (res.ok) {
     toast('Ödeme kaydedildi, Gelir-Gider\'e eklendi', 'fa-solid fa-check', true);
