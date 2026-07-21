@@ -62,6 +62,7 @@ model User {
   arabulucuSicilNo   String?
   arabulucuUets      String?
   arabulucuAdres     String?
+  officeAddress      String? // genel büro adresi (Avukatlık Ücret Sözleşmesi gibi belgeler için)
   mediationCases     MediationCase[]
 }
 
@@ -139,6 +140,7 @@ model Client {
   email       String?
   notes       String?   // genel not (dava konusu vb.)
   tcMersis    String?   // TC Kimlik No / Mersis No
+  address     String?   // Tebligat Adresi (Avukatlık Ücret Sözleşmesi için)
   archived    Boolean   @default(false)
   portalPasswordHash String? // müvekkil paneli girişi için (TC No + bu şifre)
   createdAt   DateTime  @default(now())
@@ -153,9 +155,28 @@ model Client {
   logs        ClientLog[]
   cases       Case[]
   messages    ClientPortalMessage[]
+  feeAgreements FeeAgreement[]
 }
 
 // Müvekkil Paneli üzerinden müvekkil ile büro arasındaki yazışma
+// Avukatlık Ücret Sözleşmesi — bir müvekkille yapılan ücret anlaşması.
+model FeeAgreement {
+  id             String   @id @default(cuid())
+  konu           String?  @db.Text // Sözleşme Konusu İş
+  sabitUcret     Float?
+  yuzdeVarMi     Boolean  @default(false)
+  yuzdeOrani     Float?   // dava değeri üzerinden % oranı
+  odemeSekli     String   @default("pesin") // "pesin" | "taksit"
+  pesinTarihi    DateTime?
+  taksitler      Json?    // [{ tutar: number, tarih: "GG.AA.YYYY" }] — taksitli ise
+  yetkiYeri      String?  // "Antalya" gibi — uyuşmazlık çözüm yeri maddesinde kullanılır
+  sozlesmeTarihi DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId       String
+}
+
 model ClientPortalMessage {
   id           String   @id @default(cuid())
   content      String

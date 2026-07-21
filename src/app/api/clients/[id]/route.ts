@@ -43,6 +43,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (body.email !== undefined) data.email = body.email;
   if (body.notes !== undefined) data.notes = body.notes;
   if (body.tcMersis !== undefined) data.tcMersis = body.tcMersis;
+  if (body.address !== undefined) data.address = body.address;
   if (body.archived !== undefined) data.archived = !!body.archived;
 
   const client = await prisma.client.update({

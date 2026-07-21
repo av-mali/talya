@@ -36,6 +36,15 @@ export async function requireOwnedCase(caseId: string): Promise<{ userId: string
   return found ? ws : null;
 }
 
+// Belirtilen ücret sözleşmesinin, oturum açan kullanıcının BÜROSUNA ait
+// bir müvekkile bağlı olup olmadığını doğrular.
+export async function requireOwnedFeeAgreement(agreementId: string): Promise<{ userId: string; workspaceId: string } | null> {
+  const ws = await requireWorkspace();
+  if (!ws) return null;
+  const found = await prisma.feeAgreement.findFirst({ where: { id: agreementId, client: { workspaceId: ws.workspaceId } } });
+  return found ? ws : null;
+}
+
 // Bir üyenin belirli bir aracı kullanmaya yetkisi var mı? (Büro yöneticisi
 // kapatmışsa false döner.) Yönetici hesapları her zaman her şeyi kullanabilir.
 export async function hasToolAccess(userId: string, toolKey: string): Promise<boolean> {

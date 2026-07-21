@@ -122,6 +122,7 @@ async function profilOnOpen() {
       <div class="fg"><div class="fl">Telefon</div><input type="text" id="pf-phone" value="${(u.phone||'').replace(/"/g,'&quot;')}"></div>
       <div class="fg"><div class="fl">Baro</div><input type="text" id="pf-baro" value="${(u.baro||'').replace(/"/g,'&quot;')}"></div>
       <div class="fg"><div class="fl">Sicil Numarası</div><input type="text" id="pf-sicil" value="${(u.sicilNo||'').replace(/"/g,'&quot;')}"></div>
+      <div class="fg"><div class="fl">Büro Adresi <span class="opt">(Avukatlık Ücret Sözleşmesi gibi belgelerde otomatik kullanılır)</span></div><input type="text" id="pf-office-address" value="${(u.officeAddress||'').replace(/"/g,'&quot;')}" placeholder="ör. Kızılsaray M. Şarampol Cd. ... No.107 K.4 D.19 ANTALYA"></div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-handshake"></i> Arabuluculuk Profili (opsiyonel)</div>
       <div class="fg"><div class="fl">Arabuluculuk Bürosu <span class="opt">(bağlı olduğunuz resmi büro adı, ör. "Antalya Arabuluculuk Bürosu")</span></div><input type="text" id="pf-arab-buro" value="${(u.arabuluculukBurosu||'').replace(/"/g,'&quot;')}" placeholder="ör. Antalya Arabuluculuk Bürosu"></div>
@@ -142,6 +143,7 @@ async function profilSave() {
   const phone = document.getElementById('pf-phone').value;
   const baro = document.getElementById('pf-baro').value;
   const sicilNo = document.getElementById('pf-sicil').value;
+  const officeAddress = document.getElementById('pf-office-address').value;
   const arabuluculukBurosu = document.getElementById('pf-arab-buro').value;
   const arabulucuAdres = document.getElementById('pf-arab-adres').value;
   const arabulucuSicilNo = document.getElementById('pf-arab-sicil').value;
@@ -150,7 +152,7 @@ async function profilSave() {
 
   const res = await fetch('/api/profile', {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, phone, baro, sicilNo, arabuluculukBurosu, arabulucuSicilNo, arabulucuUets, arabulucuAdres })
+    body: JSON.stringify({ name, phone, baro, sicilNo, officeAddress, arabuluculukBurosu, arabulucuSicilNo, arabulucuUets, arabulucuAdres })
   });
   if (res.ok) {
     msg.style.color = 'var(--success)';
