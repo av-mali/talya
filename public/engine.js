@@ -250,7 +250,8 @@ function openTalyaModal(innerHtml) {
   const overlay = document.createElement('div');
   overlay.className = 'talya-modal-overlay';
   overlay.id = 'talyaModalOverlay';
-  overlay.onclick = (e) => { if (e.target === overlay) closeTalyaModal(); };
+  // NOT: Dışarı tıklayınca kapanmıyor bilerek — kullanıcı yanlışlıkla
+  // form dışına tıklayıp girdiği bilgileri kaybetmesin diye.
   overlay.innerHTML = `
     <div class="talya-modal-box">
       <span class="talya-modal-close" onclick="closeTalyaModal()"><i class="fa-solid fa-xmark"></i></span>

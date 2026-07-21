@@ -22,14 +22,35 @@ export async function GET() {
     include: { client: true, invoices: true },
   });
 
+  // Avukatlık Ücret Sözleşmesi'ndeki, vadesi gelmiş/geçmiş ama henüz
+  // ödenmemiş taksitler de Bekleyen Alacaklar'a düşer.
+  const feePayments = await prisma.feeAgreementPayment.findMany({
+    where: { odendiMi: false, agreement: { client: { workspaceId: ws.workspaceId } } },
+    include: { agreement: { include: { client: true } } },
+  });
+
   const now = new Date();
-  const rows = cases
-    .map((c) => {
+  const feeRows = feePayments.map((p) => ({
+    caseId: null,
+    feeAgreementPaymentId: p.id,
+    clientId: p.agreement.clientId,
+    clientName: p.agreement.client.name,
+    caseTitle: `Vekâlet Ücreti${p.agreement.konu ? " — " + p.agreement.konu.slice(0, 30) : ""}`,
+    agreedFee: p.tutar,
+    invoiced: 0,
+    remaining: p.tutar,
+    paymentDueDate: p.vadeTarihi,
+    overdue: new Date(p.vadeTarihi) < now,
+  }));
+
+  const rows = [
+    ...cases.map((c) => {
       const invoiced = c.invoices.reduce((s, i) => s + i.amount, 0);
       const remaining = (c.agreedFee || 0) - invoiced;
       const overdue = c.paymentDueDate ? new Date(c.paymentDueDate) < now : false;
       return {
         caseId: c.id,
+        feeAgreementPaymentId: null,
         clientId: c.clientId,
         clientName: c.client.name,
         caseTitle: c.title,
@@ -39,7 +60,9 @@ export async function GET() {
         paymentDueDate: c.paymentDueDate,
         overdue,
       };
-    })
+    }),
+    ...feeRows,
+  ]
     .filter((r) => r.remaining > 0)
     .sort((a, b) => {
       if (a.overdue !== b.overdue) return a.overdue ? -1 : 1; // vadesi geçmiş önce

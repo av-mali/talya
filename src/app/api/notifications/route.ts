@@ -41,7 +41,7 @@ export async function GET() {
     return `${base} · ${clock}`;
   }
 
-  const [events, tasks, readRows, clientMessages, mediationCases] = await Promise.all([
+  const [events, tasks, readRows, clientMessages, mediationCases, feePayments] = await Promise.all([
     ws ? prisma.clientEvent.findMany({
       where: {
         case: {
@@ -78,6 +78,14 @@ export async function GET() {
         ],
       },
     }),
+    ws ? prisma.feeAgreementPayment.findMany({
+      where: {
+        odendiMi: false,
+        vadeTarihi: { lte: in2days, gte: nowMidnight },
+        agreement: { client: { workspaceId: ws.workspaceId } },
+      },
+      include: { agreement: { include: { client: true } } },
+    }) : Promise.resolve([]),
   ]);
 
   const readIds = new Set(readRows.map((r) => r.notifId));
@@ -161,7 +169,25 @@ export async function GET() {
     pushNotif(m.sonTutanakTarihi, `Son Oturum (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`, "son");
   });
 
-  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs, ...mediationNotifs].sort(
+  const feePaymentNotifs = feePayments.map((p) => {
+    const daysLeft = daysUntil(p.vadeTarihi);
+    const overdue = daysLeft < 0;
+    const id = "feepay-" + p.id;
+    return {
+      id,
+      type: "tebligat",
+      ico: "fa-turkish-lira-sign",
+      level: overdue ? "danger" : daysLeft <= 3 ? "danger" : daysLeft <= 7 ? "warn" : "info",
+      label: "Ödeme",
+      text: `${p.agreement.client.name} — ${new Intl.NumberFormat("tr-TR").format(p.tutar)} TL vekâlet ücreti`,
+      time: timeLabel(p.vadeTarihi, daysLeft, overdue),
+      dueDate: p.vadeTarihi,
+      clientId: p.agreement.clientId,
+      read: readIds.has(id),
+    };
+  });
+
+  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs, ...mediationNotifs, ...feePaymentNotifs].sort(
     (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   );
 

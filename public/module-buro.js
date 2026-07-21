@@ -1417,9 +1417,12 @@ async function txRenderList() {
         ${receivables.length ? `
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;"><i class="fa-solid fa-hourglass-half"></i> Bekleyen Alacaklar (${receivables.length})</div>
           ${receivables.map(r => `
-            <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${r.clientId}')">
-              <span>${r.overdue ? '<span style="color:var(--danger);font-size:10px;font-weight:600;margin-right:6px;">VADESİ GEÇTİ</span>' : ''}${r.clientName} — ${r.caseTitle}</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:${r.overdue ? 'var(--danger)' : 'var(--warn)'};">${fmtTL(r.remaining)}</span>
+            <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <span style="cursor:pointer;" onclick="mvSelect('${r.clientId}')">${r.overdue ? '<span style="color:var(--danger);font-size:10px;font-weight:600;margin-right:6px;">VADESİ GEÇTİ</span>' : ''}${r.clientName} — ${r.caseTitle}</span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span style="font-family:'JetBrains Mono',monospace;color:${r.overdue ? 'var(--danger)' : 'var(--warn)'};">${fmtTL(r.remaining)}</span>
+                ${r.feeAgreementPaymentId ? `<span style="cursor:pointer;color:var(--success);font-size:11px;" onclick="event.stopPropagation();mvMarkFeePaymentPaid('${r.feeAgreementPaymentId}')" title="Ödendi olarak işaretle"><i class="fa-solid fa-circle-check"></i></span>` : ''}
+              </span>
             </div>
           `).join('')}
           <div style="margin-bottom:20px;"></div>
@@ -2078,16 +2081,31 @@ function mvRenderFeeAgreements(clientId) {
   const box = document.getElementById('mv-fee-box');
   box.innerHTML = `
     ${mvFeeAgreementsCache.map(a => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;">
-        <div style="flex:1;overflow:hidden;">
-          <div style="font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">${(a.konu || 'Konu belirtilmemiş').slice(0,40)}</div>
-          <div style="font-size:10px;color:var(--t3);">${new Date(a.sozlesmeTarihi).toLocaleDateString('tr-TR')} — ${a.sabitUcret ? new Intl.NumberFormat('tr-TR').format(a.sabitUcret) + ' TL' : ''}</div>
+      <div style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="flex:1;overflow:hidden;">
+            <div style="font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">${(a.konu || 'Konu belirtilmemiş').slice(0,40)}</div>
+            <div style="font-size:10px;color:var(--t3);">${new Date(a.sozlesmeTarihi).toLocaleDateString('tr-TR')} — ${a.sabitUcret ? new Intl.NumberFormat('tr-TR').format(a.sabitUcret) + ' TL' : ''}</div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <span style="cursor:pointer;color:var(--gold);" onclick="mvGenerateFeeAgreement('${a.id}')" title="Word olarak indir"><i class="fa-solid fa-download"></i></span>
+            <span style="cursor:pointer;color:var(--t3);" onclick="mvEditFeeAgreement('${a.id}')" title="Düzenle"><i class="fa-solid fa-pen"></i></span>
+            <span style="cursor:pointer;color:var(--danger);" onclick="mvDeleteFeeAgreement('${clientId}','${a.id}')" title="Sil"><i class="fa-solid fa-trash"></i></span>
+          </div>
         </div>
-        <div style="display:flex;gap:10px;">
-          <span style="cursor:pointer;color:var(--gold);" onclick="mvGenerateFeeAgreement('${a.id}')" title="Word olarak indir"><i class="fa-solid fa-download"></i></span>
-          <span style="cursor:pointer;color:var(--t3);" onclick="mvEditFeeAgreement('${a.id}')" title="Düzenle"><i class="fa-solid fa-pen"></i></span>
-          <span style="cursor:pointer;color:var(--danger);" onclick="mvDeleteFeeAgreement('${clientId}','${a.id}')" title="Sil"><i class="fa-solid fa-trash"></i></span>
-        </div>
+        ${a.payments && a.payments.length ? `
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+            ${a.payments.map(p => `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px;">
+                <span style="color:${p.odendiMi ? 'var(--success)' : (new Date(p.vadeTarihi) < new Date() ? 'var(--danger)' : 'var(--t2)')};">
+                  ${new Date(p.vadeTarihi).toLocaleDateString('tr-TR')} — ${new Intl.NumberFormat('tr-TR').format(p.tutar)} TL
+                  ${p.odendiMi ? ' ✓ Ödendi' : (new Date(p.vadeTarihi) < new Date() ? ' — Vadesi Geçti' : '')}
+                </span>
+                ${!p.odendiMi ? `<span style="cursor:pointer;color:var(--success);" onclick="mvMarkFeePaymentPaid('${p.id}')" title="Ödendi işaretle"><i class="fa-solid fa-circle-check"></i></span>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
       </div>
     `).join('')}
     <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvShowFeeForm('${clientId}')"><i class="fa-solid fa-plus"></i><span>Yeni Sözleşme Oluştur</span></button>
@@ -2129,6 +2147,7 @@ function mvShowFeeForm(clientId, existing) {
       <select id="fee-odeme-sekli" onchange="mvToggleOdemeSekli()">
         <option value="pesin" ${!existing || existing.odemeSekli==='pesin' ? 'selected' : ''}>Peşin</option>
         <option value="taksit" ${existing && existing.odemeSekli==='taksit' ? 'selected' : ''}>Taksitli</option>
+        <option value="pesin_taksit" ${existing && existing.odemeSekli==='pesin_taksit' ? 'selected' : ''}>Peşinat + Taksitli</option>
       </select>
     </div>
 
@@ -2136,9 +2155,17 @@ function mvShowFeeForm(clientId, existing) {
       <div class="fl">Ödeme Tarihi</div><input type="date" id="fee-pesin-tarih" value="${existing && existing.pesinTarihi ? new Date(existing.pesinTarihi).toISOString().slice(0,10) : ''}">
     </div>
 
-    <div id="fee-taksit-wrap" style="display:${existing && existing.odemeSekli==='taksit' ? '' : 'none'};">
+    <div id="fee-pesinat-wrap" style="display:${existing && existing.odemeSekli==='pesin_taksit' ? '' : 'none'};">
+      <div style="display:flex;gap:6px;">
+        <div class="fg" style="flex:1;"><div class="fl">Peşinat Tutarı (TL)</div><input type="text" class="tl-amount" id="fee-pesinat-tutar" value="${existing && existing.pesinatTutar != null ? new Intl.NumberFormat('tr-TR').format(existing.pesinatTutar) : ''}" placeholder="50.000"></div>
+        <div class="fg" style="flex:1;"><div class="fl">Peşinat Tarihi</div><input type="date" id="fee-pesinat-tarih" value="${existing && existing.pesinTarihi && existing.odemeSekli==='pesin_taksit' ? new Date(existing.pesinTarihi).toISOString().slice(0,10) : ''}"></div>
+      </div>
+      <div style="font-size:11px;color:var(--t3);margin:4px 0 8px;">Kalan tutar aşağıda taksitlere bölünür.</div>
+    </div>
+
+    <div id="fee-taksit-wrap" style="display:${existing && (existing.odemeSekli==='taksit' || existing.odemeSekli==='pesin_taksit') ? '' : 'none'};">
       <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:8px;">
-        <div class="fg" style="flex:1;margin-bottom:0;"><div class="fl">Taksit Sayısı</div><input type="number" id="fee-taksit-sayisi" min="2" placeholder="4"></div>
+        <div class="fg" style="flex:1;margin-bottom:0;"><div class="fl">Taksit Sayısı</div><input type="number" id="fee-taksit-sayisi" min="1" placeholder="4"></div>
         <button class="pop-cta-btn b" style="width:auto;padding:8px 12px;" onclick="mvCalcTaksit()">Hesapla</button>
       </div>
       <div id="fee-taksit-rows"></div>
@@ -2147,15 +2174,19 @@ function mvShowFeeForm(clientId, existing) {
     <div class="fg"><div class="fl">Yetkili Yer <span class="opt">(uyuşmazlık çözüm yeri, ör. Antalya)</span></div><input type="text" id="fee-yetki-yeri" value="${existing ? (existing.yetkiYeri||'') : ''}" placeholder="Antalya"></div>
     <div class="fg"><div class="fl">Sözleşme Tarihi</div><input type="date" id="fee-sozlesme-tarih" value="${existing && existing.sozlesmeTarihi ? new Date(existing.sozlesmeTarihi).toISOString().slice(0,10) : todayISO}"></div>
 
-    <button class="pop-cta-btn g" style="width:100%;margin-top:6px;" onclick="mvSaveFeeAgreement('${clientId}')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>${existing ? 'Güncelle ve Word Oluştur' : 'Kaydet ve Word Oluştur'}</span></button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="pop-cta-btn g" style="flex:1;" onclick="mvSaveFeeAgreement('${clientId}')"><i class="fa-solid fa-floppy-disk"></i><span>${existing ? 'Güncelle' : 'Kaydet'}</span></button>
+      <button class="pop-cta-btn" style="flex:1;background:var(--bg2);color:var(--t2);" onclick="closeTalyaModal()"><span>Kaydetmeden Çık</span></button>
+    </div>
   `);
   mvRenderTaksitRows();
 }
 
 function mvToggleOdemeSekli() {
-  const isTaksit = document.getElementById('fee-odeme-sekli').value === 'taksit';
-  document.getElementById('fee-pesin-wrap').style.display = isTaksit ? 'none' : '';
-  document.getElementById('fee-taksit-wrap').style.display = isTaksit ? '' : 'none';
+  const val = document.getElementById('fee-odeme-sekli').value;
+  document.getElementById('fee-pesin-wrap').style.display = val === 'pesin' ? '' : 'none';
+  document.getElementById('fee-pesinat-wrap').style.display = val === 'pesin_taksit' ? '' : 'none';
+  document.getElementById('fee-taksit-wrap').style.display = (val === 'taksit' || val === 'pesin_taksit') ? '' : 'none';
 }
 
 function mvCalcTaksit() {
@@ -2234,8 +2265,11 @@ async function mvSaveFeeAgreement(clientId) {
     harcMasrafDahil: document.getElementById('fee-harc-masraf').checked,
     yuzdeOrani: document.getElementById('fee-yuzde-oran').value || null,
     odemeSekli,
-    pesinTarihi: odemeSekli === 'pesin' ? document.getElementById('fee-pesin-tarih').value : null,
-    taksitler: odemeSekli === 'taksit' ? mvTaksitRows.filter(t => t.tutar > 0) : null,
+    pesinTarihi: odemeSekli === 'pesin' ? document.getElementById('fee-pesin-tarih').value
+      : odemeSekli === 'pesin_taksit' ? document.getElementById('fee-pesinat-tarih').value
+      : null,
+    pesinatTutar: odemeSekli === 'pesin_taksit' ? tlParseValue(document.getElementById('fee-pesinat-tutar').value) : null,
+    taksitler: (odemeSekli === 'taksit' || odemeSekli === 'pesin_taksit') ? mvTaksitRows.filter(t => t.tutar > 0) : null,
     yetkiYeri: document.getElementById('fee-yetki-yeri').value,
     sozlesmeTarihi: document.getElementById('fee-sozlesme-tarih').value,
   };
@@ -2246,12 +2280,9 @@ async function mvSaveFeeAgreement(clientId) {
     body: JSON.stringify(body)
   });
   if (!res.ok) { toast('Kaydedilemedi', 'fa-solid fa-triangle-exclamation'); return; }
-  const data = await res.json();
-  const savedId = data.agreement.id;
   closeTalyaModal();
   toast('Sözleşme kaydedildi', 'fa-solid fa-check', true);
   await mvLoadFeeAgreements(clientId);
-  mvGenerateFeeAgreement(savedId);
 }
 
 async function mvGenerateFeeAgreement(id) {
@@ -2269,6 +2300,19 @@ async function mvGenerateFeeAgreement(id) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
   toast('İndirildi', 'fa-solid fa-check', true);
+}
+
+async function mvMarkFeePaymentPaid(paymentId) {
+  if (!confirm('Bu ödemeyi "ödendi" olarak işaretlemek istediğinize emin misiniz? Gelir-Gider\'e otomatik eklenecektir.')) return;
+  const res = await fetch('/api/fee-agreement-payments/' + paymentId + '/mark-paid', { method: 'POST' });
+  if (res.ok) {
+    toast('Ödeme kaydedildi, Gelir-Gider\'e eklendi', 'fa-solid fa-check', true);
+    if (typeof txRenderList === 'function') txRenderList();
+    if (mvSelectedId) mvLoadFeeAgreements(mvSelectedId);
+  } else {
+    const data = await res.json();
+    toast(data.error || 'İşaretlenemedi', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvDeleteFeeAgreement(clientId, id) {

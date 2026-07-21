@@ -21,6 +21,50 @@ export type FeeAgreementClient = {
 
 export type Installment = { tutar: number; tarih: string };
 
+// "GG.AA.YYYY" formatındaki bir tarihi gerçek bir Date'e çevirir —
+// geçersiz/boşsa null döner (o taksit için henüz tarih girilmemiş demektir).
+export function parseTrDate(s?: string | null): Date | null {
+  if (!s) return null;
+  const m = s.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!m) return null;
+  const d = new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10), 9, 0, 0);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// Bir ücret sözleşmesinin TÜM ödeme takvimini (peşin/taksit/peşinat+taksit
+// fark etmeksizin) tek, düz bir listeye çevirir — takvime/bildirime
+// eklemek ve "Ödendi" olarak işaretlemek için kullanılır.
+export function computePaymentSchedule(agreement: {
+  odemeSekli: string;
+  sabitUcret: number | null;
+  pesinTarihi: Date | string | null;
+  pesinatTutar: number | null;
+  taksitler: Installment[] | null;
+}): { tutar: number; vadeTarihi: Date }[] {
+  const out: { tutar: number; vadeTarihi: Date }[] = [];
+  const pesinDate = agreement.pesinTarihi ? new Date(agreement.pesinTarihi) : null;
+
+  if (agreement.odemeSekli === "pesin") {
+    if (agreement.sabitUcret != null && pesinDate) {
+      out.push({ tutar: agreement.sabitUcret, vadeTarihi: pesinDate });
+    }
+  } else if (agreement.odemeSekli === "pesin_taksit") {
+    if (agreement.pesinatTutar != null && pesinDate) {
+      out.push({ tutar: agreement.pesinatTutar, vadeTarihi: pesinDate });
+    }
+    (agreement.taksitler || []).forEach((t) => {
+      const d = parseTrDate(t.tarih);
+      if (d && t.tutar > 0) out.push({ tutar: t.tutar, vadeTarihi: d });
+    });
+  } else {
+    (agreement.taksitler || []).forEach((t) => {
+      const d = parseTrDate(t.tarih);
+      if (d && t.tutar > 0) out.push({ tutar: t.tutar, vadeTarihi: d });
+    });
+  }
+  return out;
+}
+
 function v(val?: string | null, fallback = "……………"): string {
   if (!val || !val.trim()) return fallback;
   // Değer içinde yanlışlıkla bir sekme (\t) karakteri varsa temizle —
@@ -38,10 +82,11 @@ export function buildFeeSentence(
   sabitUcret: number | null,
   yuzdeVarMi: boolean,
   yuzdeOrani: number | null,
-  odemeSekli: "pesin" | "taksit",
+  odemeSekli: "pesin" | "taksit" | "pesin_taksit",
   pesinTarihi: string | null,
   taksitler: Installment[] | null,
-  harcMasrafDahil: boolean
+  harcMasrafDahil: boolean,
+  pesinatTutar?: number | null
 ): string {
   const ucretParcasi = `Avukatlık ücreti olarak ${sabitUcret != null ? fmtTL(sabitUcret) : "……………"}${
     yuzdeVarMi ? ` + dava bedelinin %${yuzdeOrani ?? "…"}'i` : ""
@@ -50,6 +95,18 @@ export function buildFeeSentence(
   let odemeParcasi = "";
   if (odemeSekli === "pesin") {
     odemeParcasi = `bu ücretin ${v(pesinTarihi)} tarihinde ödeneceği`;
+  } else if (odemeSekli === "pesin_taksit") {
+    const list = taksitler && taksitler.length ? taksitler : [];
+    const parcalar = list.map((t) => `${fmtTL(t.tutar)}'sinin ${v(t.tarih)} tarihinde`);
+    const taksitCumlesi =
+      parcalar.length === 0
+        ? "kalan kısmın kararlaştırılan taksitler halinde"
+        : parcalar.length === 1
+        ? `kalan kısmın, ${parcalar[0]}`
+        : `kalan kısmın, ${parcalar.slice(0, -1).join(", ")} ve ${parcalar[parcalar.length - 1]}`;
+    odemeParcasi = `bu miktarın ${pesinatTutar != null ? fmtTL(pesinatTutar) : "……………"}'sinin ${v(
+      pesinTarihi
+    )} tarihinde peşin olarak, ${taksitCumlesi} ödeneceği`;
   } else {
     const list = taksitler && taksitler.length ? taksitler : [];
     const parcalar = list.map((t) => `${fmtTL(t.tutar)}'sinin ${v(t.tarih)} tarihinde`);

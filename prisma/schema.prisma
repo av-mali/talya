@@ -166,9 +166,10 @@ model FeeAgreement {
   sabitUcret     Float?
   yuzdeVarMi     Boolean  @default(false)
   yuzdeOrani     Float?   // dava değeri üzerinden % oranı
-  odemeSekli     String   @default("pesin") // "pesin" | "taksit"
-  pesinTarihi    DateTime?
-  taksitler      Json?    // [{ tutar: number, tarih: "GG.AA.YYYY" }] — taksitli ise
+  odemeSekli     String   @default("pesin") // "pesin" | "taksit" | "pesin_taksit"
+  pesinTarihi    DateTime? // "pesin" modunda tüm ücretin, "pesin_taksit" modunda peşinatın tarihi
+  pesinatTutar   Float?    // "pesin_taksit" modunda peşin ödenecek kısmın tutarı
+  taksitler      Json?    // [{ tutar: number, tarih: "GG.AA.YYYY" }] — taksitli/peşinat+taksitli ise
   harcMasrafDahil Boolean @default(true) // "Dava harç, masraf vb. giderler iş sahibine aittir." cümlesi eklensin mi
   yetkiYeri      String?  // "Antalya" gibi — uyuşmazlık çözüm yeri maddesinde kullanılır
   sozlesmeTarihi DateTime @default(now())
@@ -176,6 +177,21 @@ model FeeAgreement {
   updatedAt      DateTime @updatedAt
   client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId       String
+  payments       FeeAgreementPayment[]
+}
+
+// Bir ücret sözleşmesindeki HER BİR ödeme (peşin tek ödeme, ya da her
+// taksit ayrı ayrı) — takvim/bildirim, ödendi işaretleme ve Bekleyen
+// Alacaklar entegrasyonu için.
+model FeeAgreementPayment {
+  id          String   @id @default(cuid())
+  tutar       Float
+  vadeTarihi  DateTime
+  odendiMi    Boolean  @default(false)
+  odemeTarihi DateTime? // gerçekte ne zaman ödendiği (Gelir-Gider'e işlendiği an)
+  createdAt   DateTime @default(now())
+  agreement   FeeAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  agreementId String
 }
 
 model ClientPortalMessage {

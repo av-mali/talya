@@ -11,7 +11,7 @@ export async function GET() {
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const restricted = await shouldRestrictToOwnItems(ws.userId);
 
-  const [events, tasks, mediationCases] = await Promise.all([
+  const [events, tasks, mediationCases, feePayments] = await Promise.all([
     prisma.clientEvent.findMany({
       where: {
         case: {
@@ -39,6 +39,11 @@ export async function GET() {
         userId: ws.userId,
         OR: [{ ilkOturumTarihi: { not: null } }, { sonTutanakTarihi: { not: null } }],
       },
+    }),
+    // Avukatlık Ücret Sözleşmesi'ndeki henüz ödenmemiş ödeme tarihleri.
+    prisma.feeAgreementPayment.findMany({
+      where: { odendiMi: false, agreement: { client: { workspaceId: ws.workspaceId } } },
+      include: { agreement: { include: { client: true } } },
     }),
   ]);
 
@@ -87,7 +92,16 @@ export async function GET() {
     }
   });
 
-  const out = [...eventItems, ...taskItems, ...mediationItems].sort(
+  const feePaymentItems = feePayments.map((p) => ({
+    id: "fee-" + p.id,
+    type: "odeme",
+    title: `Avukatlık Ücreti — ${new Intl.NumberFormat("tr-TR").format(p.tutar)} TL`,
+    dueDate: p.vadeTarihi,
+    clientId: p.agreement.clientId,
+    clientName: `${p.agreement.client.name} — Vekâlet Ücreti`,
+  }));
+
+  const out = [...eventItems, ...taskItems, ...mediationItems, ...feePaymentItems].sort(
     (a, b) => new Date(a.dueDate as any).getTime() - new Date(b.dueDate as any).getTime()
   );
 
