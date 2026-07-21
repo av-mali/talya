@@ -111,6 +111,14 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--t0);background:va
 .notif-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;background:var(--danger);border-radius:50%;font-family:'JetBrains Mono',monospace;font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid var(--card);font-weight:700;}
 .notif-badge.hidden{display:none;}
 
+/* Genel amaçlı popup/modal — herhangi bir formu ekranın ortasında,
+   kartın dışında, büyük ve odaklanmış şekilde göstermek için. */
+.talya-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;animation:talyaModalFade .15s ease;}
+@keyframes talyaModalFade{from{opacity:0;}to{opacity:1;}}
+.talya-modal-box{background:var(--card);border-radius:16px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.talya-modal-close{position:absolute;top:16px;right:16px;cursor:pointer;color:var(--t3);font-size:16px;}
+.talya-modal-close:hover{color:var(--t0);}
+
 .notif-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:360px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-lg);box-shadow:0 16px 48px rgba(0,0,0,.14);z-index:600;display:none;flex-direction:column;overflow:hidden;animation:notif-in .16s var(--ease);}
 .notif-dropdown.open{display:flex;}
 @keyframes notif-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}

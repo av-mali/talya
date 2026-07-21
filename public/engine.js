@@ -242,6 +242,28 @@ function localDateTimeToISO(dateStr, timeStr) {
   return new Date(y, mo - 1, d, hh, mm, 0).toISOString();
 }
 
+// ── GENEL AMAÇLI POPUP/MODAL ──
+// Herhangi bir formu (ör. Avukatlık Ücret Sözleşmesi) ekranın ortasında,
+// diğer içerikten ayrı, odaklanmış bir pencerede göstermek için.
+function openTalyaModal(innerHtml) {
+  closeTalyaModal(); // varsa öncekini kapat
+  const overlay = document.createElement('div');
+  overlay.className = 'talya-modal-overlay';
+  overlay.id = 'talyaModalOverlay';
+  overlay.onclick = (e) => { if (e.target === overlay) closeTalyaModal(); };
+  overlay.innerHTML = `
+    <div class="talya-modal-box">
+      <span class="talya-modal-close" onclick="closeTalyaModal()"><i class="fa-solid fa-xmark"></i></span>
+      ${innerHtml}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+function closeTalyaModal() {
+  const el = document.getElementById('talyaModalOverlay');
+  if (el) el.remove();
+}
+
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
 // Bir tarihi gösterirken, eğer anlamlı bir saat bilgisi varsa (tam gece

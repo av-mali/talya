@@ -2090,7 +2090,6 @@ function mvRenderFeeAgreements(clientId) {
       </div>
     `).join('')}
     <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvShowFeeForm('${clientId}')"><i class="fa-solid fa-plus"></i><span>Yeni Sözleşme Oluştur</span></button>
-    <div id="mv-fee-form"></div>
   `;
 }
 
@@ -2100,13 +2099,12 @@ function mvShowFeeForm(clientId, existing) {
     ? existing.taksitler.map(t => ({ tutar: t.tutar, tarih: t.tarih }))
     : [];
 
-  const formEl = document.getElementById('mv-fee-form');
   const todayISO = new Date().toISOString().slice(0, 10);
-  formEl.innerHTML = `
-    <div class="ic" style="margin:12px 0 10px;"><div class="ic-t">${existing ? 'Sözleşmeyi Düzenle' : 'Yeni Ücret Sözleşmesi'}</div></div>
+  openTalyaModal(`
+    <div class="ic" style="margin-bottom:14px;"><div class="ic-t">${existing ? 'Sözleşmeyi Düzenle' : 'Yeni Ücret Sözleşmesi'}</div></div>
     <div class="fg"><div class="fl">Sözleşme Konusu İş</div><textarea id="fee-konu" rows="3" placeholder="ör. Antalya 3. Aile Mahkemesi 2025/222 Esas numaralı dosya kapsamındaki işler.">${existing ? (existing.konu||'') : ''}</textarea></div>
 
-    <div class="fg"><div class="fl">Sabit Ücret (TL)</div><input type="number" id="fee-sabit" value="${existing && existing.sabitUcret != null ? existing.sabitUcret : ''}" placeholder="200000"></div>
+    <div class="fg"><div class="fl">Sabit Ücret (TL)</div><input type="text" class="tl-amount" id="fee-sabit" value="${existing && existing.sabitUcret != null ? new Intl.NumberFormat('tr-TR').format(existing.sabitUcret) : ''}" placeholder="200.000"></div>
 
     <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
       <input type="checkbox" id="fee-yuzde-var" ${existing && existing.yuzdeVarMi ? 'checked' : ''} onchange="document.getElementById('fee-yuzde-oran-wrap').style.display=this.checked?'':'none'">
@@ -2139,7 +2137,7 @@ function mvShowFeeForm(clientId, existing) {
     <div class="fg"><div class="fl">Sözleşme Tarihi</div><input type="date" id="fee-sozlesme-tarih" value="${existing && existing.sozlesmeTarihi ? new Date(existing.sozlesmeTarihi).toISOString().slice(0,10) : todayISO}"></div>
 
     <button class="pop-cta-btn g" style="width:100%;margin-top:6px;" onclick="mvSaveFeeAgreement('${clientId}')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>${existing ? 'Güncelle ve Word Oluştur' : 'Kaydet ve Word Oluştur'}</span></button>
-  `;
+  `);
   mvRenderTaksitRows();
 }
 
@@ -2150,7 +2148,7 @@ function mvToggleOdemeSekli() {
 }
 
 function mvCalcTaksit() {
-  const sabit = parseFloat(document.getElementById('fee-sabit').value) || 0;
+  const sabit = parseFloat(tlParseValue(document.getElementById('fee-sabit').value)) || 0;
   const sayi = parseInt(document.getElementById('fee-taksit-sayisi').value, 10) || 0;
   if (sayi < 1 || sabit <= 0) { toast('Önce sabit ücreti ve taksit sayısını girin', 'fa-solid fa-triangle-exclamation'); return; }
   const parcaTutar = Math.round((sabit / sayi) * 100) / 100;
@@ -2164,11 +2162,34 @@ function mvRenderTaksitRows() {
   el.innerHTML = mvTaksitRows.map((t, i) => `
     <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;">
       <span style="font-size:11px;color:var(--t3);width:16px;">${i+1}.</span>
-      <input type="number" value="${t.tutar}" oninput="mvTaksitRows[${i}].tutar=parseFloat(this.value)||0" placeholder="Tutar" style="flex:1;">
+      <input type="text" class="tl-amount" id="fee-taksit-tutar-${i}" value="${new Intl.NumberFormat('tr-TR').format(t.tutar||0)}" oninput="mvOnTaksitInput(${i}, this.value)" placeholder="Tutar" style="flex:1;">
       <input type="date" value="${t.tarih && t.tarih.includes('.') ? '' : (t.tarih||'')}" onchange="mvTaksitRows[${i}].tarih=this.value.split('-').reverse().join('.')" style="flex:1;">
       <span style="cursor:pointer;color:var(--t3);" onclick="mvRemoveTaksitRow(${i})"><i class="fa-solid fa-xmark"></i></span>
     </div>
   `).join('') + `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="mvAddTaksitRow()"><i class="fa-solid fa-plus"></i> Taksit Ekle</span>`;
+}
+
+// Bir taksit satırı elle değiştirildiğinde, TOPLAM ücreti aşmayacak
+// şekilde KALAN diğer taksitlere otomatik ve EŞİT olarak dağıtır — ör.
+// 20.000 TL / 4 taksit iken ilk taksiti 10.000 yaparsan, kalan 10.000,
+// diğer 3 taksite otomatik bölünür. NOT: aktif yazdığın kutuyu YENİDEN
+// ÇİZMİYORUZ (tüm listeyi yeniden oluşturmak imleci/odağı kaybettirirdi)
+// — sadece DİĞER kutuların değerini doğrudan güncelliyoruz.
+function mvOnTaksitInput(editedIndex, rawValue) {
+  const newVal = parseFloat(tlParseValue(rawValue).replace(/[^\d.]/g, '')) || 0;
+  mvTaksitRows[editedIndex].tutar = newVal;
+
+  const sabit = parseFloat(tlParseValue(document.getElementById('fee-sabit').value)) || 0;
+  const digerIndeksler = mvTaksitRows.map((_, i) => i).filter(i => i !== editedIndex);
+  if (sabit > 0 && digerIndeksler.length > 0) {
+    const kalan = Math.max(0, sabit - newVal);
+    const parcaTutar = Math.round((kalan / digerIndeksler.length) * 100) / 100;
+    digerIndeksler.forEach(i => {
+      mvTaksitRows[i].tutar = parcaTutar;
+      const inp = document.getElementById('fee-taksit-tutar-' + i);
+      if (inp) inp.value = tlFormatValue(String(Math.round(parcaTutar)));
+    });
+  }
 }
 
 function mvAddTaksitRow() {
@@ -2191,7 +2212,7 @@ async function mvSaveFeeAgreement(clientId) {
   const odemeSekli = document.getElementById('fee-odeme-sekli').value;
   const body = {
     konu: document.getElementById('fee-konu').value,
-    sabitUcret: document.getElementById('fee-sabit').value || null,
+    sabitUcret: document.getElementById('fee-sabit').value ? tlParseValue(document.getElementById('fee-sabit').value) : null,
     yuzdeVarMi: document.getElementById('fee-yuzde-var').checked,
     yuzdeOrani: document.getElementById('fee-yuzde-oran').value || null,
     odemeSekli,
@@ -2209,6 +2230,7 @@ async function mvSaveFeeAgreement(clientId) {
   if (!res.ok) { toast('Kaydedilemedi', 'fa-solid fa-triangle-exclamation'); return; }
   const data = await res.json();
   const savedId = data.agreement.id;
+  closeTalyaModal();
   toast('Sözleşme kaydedildi', 'fa-solid fa-check', true);
   await mvLoadFeeAgreements(clientId);
   mvGenerateFeeAgreement(savedId);

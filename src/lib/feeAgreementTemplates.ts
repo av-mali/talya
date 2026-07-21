@@ -98,23 +98,23 @@ export function buildFeeAgreementDocx(
 
 **İş Sahibi (Müvekkil)**\t: ${v(musteri.name)}${musteri.tcMersis ? ` – TC.${musteri.tcMersis}` : ""}
 **Tebligat Adresi**\t: ${v(musteri.address)}
-**Telefon**\t\t: ${v(musteri.phone)}
+**Telefon**\t: ${v(musteri.phone)}
 
 **__Avukat (Vekil) Bilgileri__**\t
 
-**Adı Soyadı**\t\t: ${v(avukat.name)}
-**Adres**\t\t\t: ${v(avukat.officeAddress)}
-**Telefon**\t\t: ${v(avukat.phone)}
+**Adı Soyadı**\t: ${v(avukat.name)}
+**Adres**\t: ${v(avukat.officeAddress)}
+**Telefon**\t: ${v(avukat.phone)}
 
 **__Sözleşme Konusu İş__**\t: 
 
 ${v(konu)}
 
-**__Vekâlet Ücreti__**\t\t: ${feeSentence}
+**__Vekâlet Ücreti__**\t: ${feeSentence}
 
 **__Diğer Hükümler__**\t: Yukarıda adları yazılı avukat ile iş sahibi arasında belirtilen konuda ve anılan ücretlerle Avukatlık Kanunu uyarınca aşağıdaki şartlarla bir sözleşme yapılmıştır.
 
 ${diger}
 
-**__Sözleşme Tarihi__**\t\t: ${v(sozlesmeTarihi)}`;
+**__Sözleşme Tarihi__**\t: ${v(sozlesmeTarihi)}`;
 }

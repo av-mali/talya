@@ -53,7 +53,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
       // hizada başlasın diye sabit bir sekme noktası tanımlıyoruz —
       // etiket uzunluğu farklı olsa bile (ör. "TELFON" ile "TOPLANTI
       // YERİ") hizalama artık bozulmuyor.
-      tabStops: [{ type: TabStopType.LEFT, position: 2600 }],
+      tabStops: [{ type: TabStopType.LEFT, position: 3200 }],
     });
   });
 
