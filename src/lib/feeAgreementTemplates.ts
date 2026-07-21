@@ -22,7 +22,11 @@ export type FeeAgreementClient = {
 export type Installment = { tutar: number; tarih: string };
 
 function v(val?: string | null, fallback = "……………"): string {
-  return val && val.trim() ? val.trim() : fallback;
+  if (!val || !val.trim()) return fallback;
+  // Değer içinde yanlışlıkla bir sekme (\t) karakteri varsa temizle —
+  // aksi halde etiket:değer hizalamasını bozan fazladan bir sekme atlaması
+  // oluşturabilir.
+  return val.trim().replace(/\t/g, " ").replace(/\s+/g, " ");
 }
 
 function fmtTL(n: number): string {
@@ -119,7 +123,7 @@ ${diger}
 **__Sözleşme Tarihi__**\t: ${v(sozlesmeTarihi)}
 
 
-[[S]]\t${v(musteri.name)}\t${v(avukat.name)}
+[[S]]\t**${v(musteri.name)}**\t**${v(avukat.name)}**
 [[S]]\tİş Sahibi\tAvukat
 [[S]]\t¸\t¸`;
 }

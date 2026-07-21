@@ -77,14 +77,14 @@ export async function generateDocx(text: string): Promise<Buffer> {
           reference: "n1-list",
           levels: [{
             level: 0, format: LevelFormat.DECIMAL, text: "%1-", alignment: AlignmentType.START,
-            style: { paragraph: { indent: { left: 500, hanging: 300 } } },
+            style: { paragraph: { indent: { left: 500, hanging: 300 } }, run: { bold: true } },
           }],
         },
         {
           reference: "n2-list",
           levels: [{
             level: 0, format: LevelFormat.DECIMAL, text: "%1-", alignment: AlignmentType.START,
-            style: { paragraph: { indent: { left: 500, hanging: 300 } } },
+            style: { paragraph: { indent: { left: 500, hanging: 300 } }, run: { bold: true } },
           }],
         },
       ],
