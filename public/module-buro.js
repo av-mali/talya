@@ -2192,8 +2192,15 @@ function mvToggleOdemeSekli() {
 function mvCalcTaksit() {
   const sabit = parseFloat(tlParseValue(document.getElementById('fee-sabit').value)) || 0;
   const sayi = parseInt(document.getElementById('fee-taksit-sayisi').value, 10) || 0;
+  const odemeSekli = document.getElementById('fee-odeme-sekli').value;
+  const pesinat = odemeSekli === 'pesin_taksit'
+    ? (parseFloat(tlParseValue(document.getElementById('fee-pesinat-tutar').value)) || 0)
+    : 0;
   if (sayi < 1 || sabit <= 0) { toast('Önce sabit ücreti ve taksit sayısını girin', 'fa-solid fa-triangle-exclamation'); return; }
-  const parcaTutar = Math.round((sabit / sayi) * 100) / 100;
+  if (odemeSekli === 'pesin_taksit' && pesinat <= 0) { toast('Önce peşinat tutarını girin', 'fa-solid fa-triangle-exclamation'); return; }
+  if (odemeSekli === 'pesin_taksit' && pesinat >= sabit) { toast('Peşinat, toplam tutardan küçük olmalı', 'fa-solid fa-triangle-exclamation'); return; }
+  const kalan = sabit - pesinat; // Peşinat+Taksitli modunda taksitler SADECE kalan tutara bölünür
+  const parcaTutar = Math.round((kalan / sayi) * 100) / 100;
   mvTaksitRows = Array.from({ length: sayi }).map(() => ({ tutar: parcaTutar, tarih: '' }));
   mvTaksitPinned = Array.from({ length: sayi }).map(() => false); // baştan hesaplandı, hiçbiri sabit değil
   mvRenderTaksitRows();
@@ -2224,11 +2231,16 @@ function mvOnTaksitInput(editedIndex, rawValue) {
   mvTaksitPinned[editedIndex] = true;
 
   const sabit = parseFloat(tlParseValue(document.getElementById('fee-sabit').value)) || 0;
+  const odemeSekli = document.getElementById('fee-odeme-sekli').value;
+  const pesinat = odemeSekli === 'pesin_taksit'
+    ? (parseFloat(tlParseValue(document.getElementById('fee-pesinat-tutar').value)) || 0)
+    : 0;
+  const hedefToplam = sabit - pesinat; // Peşinat+Taksitli modunda taksitlerin toplamı SADECE kalan tutar olmalı
   const sabitlenenToplam = mvTaksitRows.reduce((sum, t, i) => sum + (mvTaksitPinned[i] ? t.tutar : 0), 0);
   const digerIndeksler = mvTaksitRows.map((_, i) => i).filter(i => !mvTaksitPinned[i]);
 
-  if (sabit > 0 && digerIndeksler.length > 0) {
-    const kalan = Math.max(0, sabit - sabitlenenToplam);
+  if (hedefToplam > 0 && digerIndeksler.length > 0) {
+    const kalan = Math.max(0, hedefToplam - sabitlenenToplam);
     const parcaTutar = Math.round((kalan / digerIndeksler.length) * 100) / 100;
     digerIndeksler.forEach(i => {
       mvTaksitRows[i].tutar = parcaTutar;
@@ -2258,6 +2270,22 @@ function mvEditFeeAgreement(id) {
 
 async function mvSaveFeeAgreement(clientId) {
   const odemeSekli = document.getElementById('fee-odeme-sekli').value;
+
+  // Tarih girilmeyen taksitler takvime/bildirime/Bekleyen Alacaklar'a HİÇ
+  // düşmez (takip edilemez) — kullanıcı bunu bilmeden kaydetmesin diye uyar.
+  if (odemeSekli === 'taksit' || odemeSekli === 'pesin_taksit') {
+    const eksikTarihli = mvTaksitRows.some(t => !t.tarih);
+    if (eksikTarihli && !confirm('Bazı taksitlerde tarih girilmemiş — bu taksitler takvime/bildirime eklenemeyecek ve "Ödendi" olarak işaretlenemeyecek. Yine de kaydedilsin mi?')) {
+      return;
+    }
+  }
+  if (odemeSekli === 'pesin' && !document.getElementById('fee-pesin-tarih').value) {
+    if (!confirm('Ödeme tarihi girilmedi — bu ödeme takvime/bildirime eklenemeyecek. Yine de kaydedilsin mi?')) return;
+  }
+  if (odemeSekli === 'pesin_taksit' && !document.getElementById('fee-pesinat-tarih').value) {
+    if (!confirm('Peşinat tarihi girilmedi — peşinat takvime/bildirime eklenemeyecek. Yine de kaydedilsin mi?')) return;
+  }
+
   const body = {
     konu: document.getElementById('fee-konu').value,
     sabitUcret: document.getElementById('fee-sabit').value ? tlParseValue(document.getElementById('fee-sabit').value) : null,
