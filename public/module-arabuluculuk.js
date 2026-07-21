@@ -121,19 +121,111 @@ async function arLoadCases() {
   }
 }
 
-function arRenderCaseList() {
-  const pane = arGetPane();
-  pane.innerHTML = `
-    <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Kayıtlı Dosyalar (${arCasesCache.length})</div>
-      ${arCasesCache.length ? arCasesCache.map((c, i) => `
-        <div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick="arSelectCase(${i})">
-          <span class="ico"><i class="fa-solid fa-folder"></i></span>
-          <span style="flex:1;">${c.dosyaNo || 'Dosya No yok'} — ${c.basvurucuAd || '?'} / ${c.uyusmazlikTuru || '?'}</span>
-        </div>
-      `).join('') : emptyState('fa-handshake', 'Henüz dosya yok', 'Soldaki formdan bir başvuru evrakı yükleyip veya elle doldurup ilk dosyanızı oluşturun.')}
+let arKapaliYilAcik = null; // kapalı dosyalar arasında hangi yıl grubunun açık olduğu (tek seferde bir tane)
+
+function arGetYear(dosyaNo) {
+  if (!dosyaNo) return 'Diğer';
+  const m = String(dosyaNo).match(/^(\d{4})/);
+  return m ? m[1] : 'Diğer';
+}
+
+function arCaseCardHtml(c) {
+  const idx = arCasesCache.indexOf(c);
+  return `
+    <div class="kanban-card" draggable="true"
+         ondragstart="event.dataTransfer.setData('text/plain','${c.id}')"
+         onclick="arSelectCase(${idx})"
+         style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
+      <div style="font-size:12.5px;">${c.dosyaNo || 'Dosya No yok'}</div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:2px;">${c.basvurucuAd || '?'} / ${c.uyusmazlikTuru || '?'}</div>
     </div>
   `;
+}
+
+function arRenderCaseList() {
+  const pane = arGetPane();
+
+  if (!arCasesCache.length) {
+    pane.innerHTML = `
+      <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
+        ${emptyState('fa-handshake', 'Henüz dosya yok', 'Soldaki formdan bir başvuru evrakı yükleyip veya elle doldurup ilk dosyanızı oluşturun.')}
+      </div>
+    `;
+    return;
+  }
+
+  const acikDosyalar = arCasesCache.filter(c => (c.durum || 'acik') === 'acik');
+  const kapaliDosyalar = arCasesCache.filter(c => c.durum === 'kapali');
+
+  // Kapalı dosyaları, dosya numarasının başındaki yıla göre grupluyoruz
+  // (ör. "2026/1329" -> 2026 grubu). Yeni yıl üstte olacak şekilde sıralı.
+  const yilGruplari = {};
+  kapaliDosyalar.forEach(c => {
+    const yil = arGetYear(c.dosyaNo);
+    (yilGruplari[yil] = yilGruplari[yil] || []).push(c);
+  });
+  const yillar = Object.keys(yilGruplari).sort((a, b) => b.localeCompare(a));
+
+  pane.innerHTML = `
+    <div style="padding:20px 24px;overflow-x:auto;height:100%;box-sizing:border-box;">
+      <div style="display:flex;gap:14px;height:100%;min-width:600px;">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;"
+             ondragover="event.preventDefault()" ondrop="arDropOnColumn(event, 'acik')">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--success);"></span>
+            <span style="font-size:12px;font-weight:600;">Açık Dosyalar</span>
+            <span style="font-size:11px;color:var(--t3);">(${acikDosyalar.length})</span>
+          </div>
+          <div style="flex:1;overflow-y:auto;">
+            ${acikDosyalar.length ? acikDosyalar.map(arCaseCardHtml).join('') : `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Açık dosya yok.</div>`}
+          </div>
+        </div>
+
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;"
+             ondragover="event.preventDefault()" ondrop="arDropOnColumn(event, 'kapali')">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--t3);"></span>
+            <span style="font-size:12px;font-weight:600;">Kapalı Dosyalar</span>
+            <span style="font-size:11px;color:var(--t3);">(${kapaliDosyalar.length})</span>
+          </div>
+          <div style="flex:1;overflow-y:auto;">
+            ${yillar.length ? yillar.map(yil => `
+              <div style="margin-bottom:6px;">
+                <div style="font-weight:600;cursor:pointer;padding:8px 10px;display:flex;align-items:center;gap:8px;background:var(--bg2);border-radius:var(--r);" onclick="arToggleYilGrup('${yil}')">
+                  <i class="fa-solid ${arKapaliYilAcik === yil ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:10px;"></i>
+                  <span style="font-size:12px;">${yil}</span>
+                  <span style="font-size:10.5px;color:var(--t3);margin-left:auto;">(${yilGruplari[yil].length})</span>
+                </div>
+                ${arKapaliYilAcik === yil ? `<div style="padding:8px 4px 0;">${yilGruplari[yil].map(arCaseCardHtml).join('')}</div>` : ''}
+              </div>
+            `).join('') : `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Kapalı dosya yok.</div>`}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function arToggleYilGrup(yil) {
+  arKapaliYilAcik = (arKapaliYilAcik === yil) ? null : yil;
+  arRenderCaseList();
+}
+
+function arDropOnColumn(event, durum) {
+  event.preventDefault();
+  const id = event.dataTransfer.getData('text/plain');
+  if (id) arMoveDurum(id, durum);
+}
+
+async function arMoveDurum(id, durum) {
+  await fetch('/api/mediation/cases/' + id, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ durum })
+  });
+  const c = arCasesCache.find(x => x.id === id);
+  if (c) c.durum = durum;
+  toast(durum === 'kapali' ? 'Dosya kapalı dosyalara taşındı' : 'Dosya açık dosyalara taşındı', 'fa-solid fa-check', true);
+  arRenderCaseList();
 }
 
 async function arSelectCase(index) {

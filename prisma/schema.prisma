@@ -367,6 +367,7 @@ model SupportMessage {
 // kullanılan dosya bilgileri.
 model MediationCase {
   id                    String   @id @default(cuid())
+  durum                 String   @default("acik") // "acik" | "kapali" — sürükle-bırakla değiştirilir
   dosyaNo               String?
   basvurucuAd           String?
   basvurucuAdres        String?

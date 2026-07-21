@@ -53,6 +53,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   // İlk Oturum / Son Tutanak tarihleri — belge oluşturmadan BAĞIMSIZ
   // olarak, doğrudan buradan da girilip silinebilir.
+  if (body.durum !== undefined) data.durum = body.durum === "kapali" ? "kapali" : "acik";
   if (body.ilkOturumTarihi !== undefined) {
     data.ilkOturumTarihi = body.ilkOturumTarihi ? new Date(body.ilkOturumTarihi) : null;
   }
