@@ -58,15 +58,27 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
     if (!clientId) continue;
 
-    // Aynı isimde açık bir dosya varsa onu kullan, yoksa yeni dosya aç.
+    // Dosyayı eşleştir: ÖNCE dosya numarasına bak (varsa) — bu, farklı
+    // yollardan (ör. Sözleşme'den elle, UYAP'tan otomatik) açılmış ama
+    // aslında AYNI gerçek dosyayı temsil eden kayıtların mükerrer
+    // açılmasını engeller. Numara yoksa/eşleşmezse başlığa göre dene,
+    // o da yoksa yeni dosya aç.
     const caseTitle = (item.caseTitle || "Genel Dosya").trim();
-    let targetCase = await prisma.case.findFirst({
-      where: { clientId, title: caseTitle },
-    });
+    const caseNumber = (item.caseNumber || "").trim();
+    let targetCase = null;
+    if (caseNumber) {
+      targetCase = await prisma.case.findFirst({ where: { clientId, caseNumber } });
+    }
+    if (!targetCase) {
+      targetCase = await prisma.case.findFirst({ where: { clientId, title: caseTitle } });
+    }
     if (!targetCase) {
       targetCase = await prisma.case.create({
-        data: { title: caseTitle, clientId },
+        data: { title: caseTitle, caseNumber: caseNumber || null, clientId },
       });
+    } else if (caseNumber && !targetCase.caseNumber) {
+      // Eşleşen dosyada numara eksikse, şimdi öğrendiğimiz numarayı işle.
+      await prisma.case.update({ where: { id: targetCase.id }, data: { caseNumber } });
     }
 
     // MÜKERRER KAYIT KONTROLÜ: Aynı dosyada, aynı tarih/saatte zaten bir

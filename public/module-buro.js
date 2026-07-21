@@ -414,7 +414,8 @@ function mvRenderClientView() {
         </div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz dosya eklenmedi.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-        <input type="text" id="mv-case-title" placeholder="Yeni dosya adı (ör. Boşanma Davası)…" style="flex:1;min-width:220px;">
+        <input type="text" id="mv-case-title" placeholder="Yeni dosya adı (ör. Boşanma Davası)…" style="flex:2;min-width:200px;">
+        <input type="text" id="mv-case-number" placeholder="Dosya No (varsa, sonradan da girilebilir)" style="flex:1;min-width:160px;">
         <button class="pop-cta-btn p" style="padding:6px 12px;" onclick="mvAddCase()"><span>Ekle</span></button>
       </div>
 
@@ -447,12 +448,56 @@ function mvRenderClientView() {
 async function mvAddCase() {
   if (!mvSelectedId) return;
   const title = document.getElementById('mv-case-title').value.trim();
+  const caseNumber = document.getElementById('mv-case-number').value.trim();
   if (!title) { toast('Dosya adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
   await fetch('/api/clients/' + mvSelectedId + '/cases', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title })
+    body: JSON.stringify({ title, caseNumber })
   });
   toast('Dosya eklendi', 'fa-solid fa-check', true);
+  mvSelect(mvSelectedId);
+}
+
+async function mvSaveCaseNumber(caseId) {
+  const caseNumber = document.getElementById('mv-case-number-edit').value.trim();
+  await fetch('/api/cases/' + caseId, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ caseNumber })
+  });
+  toast('Dosya numarası kaydedildi', 'fa-solid fa-check', true);
+}
+
+function mvShowMergeForm(caseId) {
+  const digerDosyalar = (mvClientCache.cases || []).filter(cs => cs.id !== caseId);
+  if (!digerDosyalar.length) {
+    toast('Bu müvekkilin birleştirilebilecek başka dosyası yok', 'fa-solid fa-triangle-exclamation');
+    return;
+  }
+  openTalyaModal(`
+    <div class="ic" style="margin-bottom:14px;"><div class="ic-t"><i class="fa-solid fa-code-merge"></i> Dosyaları Birleştir</div>
+      <p>Bu dosyadaki tüm kayıtlar (duruşma/ödeme tarihleri, faturalar, ücret sözleşmesi) seçtiğin dosyaya taşınır, bu dosya silinir. Geri alınamaz.</p>
+    </div>
+    <div class="fg"><div class="fl">Hangi dosyayla birleştirilsin?</div>
+      <select id="mv-merge-target">
+        ${digerDosyalar.map(cs => `<option value="${cs.id}">${cs.title}${cs.caseNumber ? ' — ' + cs.caseNumber : ''}</option>`).join('')}
+      </select>
+    </div>
+    <button class="pop-cta-btn g" style="width:100%;" onclick="mvMergeCase('${caseId}')"><i class="fa-solid fa-code-merge"></i><span>Birleştir</span></button>
+  `);
+}
+
+async function mvMergeCase(caseId) {
+  const targetCaseId = document.getElementById('mv-merge-target').value;
+  const ok = await talyaConfirm('Bu iki dosyayı birleştirmek istediğinize emin misiniz?<br><span style="font-size:12px;color:var(--t3);">Bu işlem geri alınamaz.</span>', 'Evet, Birleştir', 'danger');
+  if (!ok) return;
+  const res = await fetch('/api/cases/' + caseId + '/merge', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetCaseId })
+  });
+  const data = await res.json();
+  if (!res.ok) { toast(data.error || 'Birleştirilemedi', 'fa-solid fa-triangle-exclamation'); return; }
+  closeTalyaModal();
+  toast('Dosyalar birleştirildi', 'fa-solid fa-check', true);
   mvSelect(mvSelectedId);
 }
 
@@ -488,8 +533,14 @@ async function mvOpenCase(caseId) {
             <option value="acik" ${cs.status==='acik'?'selected':''}>Açık</option>
             <option value="kapali" ${cs.status==='kapali'?'selected':''}>Kapalı</option>
           </select>
+          <button class="pop-cta-btn" style="width:auto;padding:5px 10px;font-size:11px;background:var(--bg2);color:var(--t2);" onclick="mvShowMergeForm('${cs.id}')"><i class="fa-solid fa-code-merge"></i> Birleştir</button>
           <button class="pop-cta-btn" style="padding:5px 10px;background:var(--danger);" onclick="mvDeleteCase('${cs.id}')"><i class="fa-solid fa-trash"></i></button>
         </div>
+      </div>
+
+      <div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
+        <input type="text" id="mv-case-number-edit" value="${cs.caseNumber || ''}" placeholder="Dosya No (ör. 2026/1329) — sonradan girilebilir" style="flex:1;font-size:12px;">
+        <button class="pop-cta-btn b" style="width:auto;padding:6px 10px;" onclick="mvSaveCaseNumber('${cs.id}')"><i class="fa-solid fa-check"></i></button>
       </div>
 
       ${members.length > 1 ? `

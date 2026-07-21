@@ -222,6 +222,7 @@ model ClientLog {
 model Case {
   id         String    @id @default(cuid())
   title      String    // ör. "Boşanma Davası", "Tazminat Davası"
+  caseNumber String?   // "2026/1329" gibi — dava açıldıktan/UYAP'a düştükten sonra sonradan da girilebilir
   status     String    @default("acik") // "acik" | "kapali"
   agreedFee  Float?    // müvekkille anlaşılan toplam ücret (varsa)
   paymentDueDate DateTime? // ücretin vade tarihi (varsa) — Bekleyen Alacaklar'da "vadesi geçmiş/gelmemiş" ayrımı için

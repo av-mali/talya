@@ -142,6 +142,7 @@ function parseIcsCalendar(raw: string) {
       items.push({
         clientName: "",
         caseTitle,
+        caseNumber: dosyaNo,
         type,
         title: islem,
         dueDate: dueDate.toISOString(),
@@ -152,6 +153,7 @@ function parseIcsCalendar(raw: string) {
         items.push({
           clientName: name,
           caseTitle,
+          caseNumber: dosyaNo,
           type,
           title: islem,
           dueDate: dueDate.toISOString(),
