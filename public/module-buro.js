@@ -1424,7 +1424,7 @@ async function txRenderList() {
               <span style="cursor:pointer;flex:1;min-width:0;" onclick="mvSelect('${r.clientId}')">${r.overdue ? '<span style="color:var(--danger);font-size:10px;font-weight:600;margin-right:6px;">VADESİ GEÇTİ</span>' : ''}${r.clientName} — ${r.caseTitle}</span>
               <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <span style="font-family:'JetBrains Mono',monospace;color:${r.overdue ? 'var(--danger)' : 'var(--warn)'};">${fmtTL(r.remaining)}</span>
-                ${r.feeAgreementPaymentId ? `<button class="pop-cta-btn" style="width:auto;padding:6px 12px;font-size:11px;background:var(--success);color:#fff;" onclick="event.stopPropagation();mvMarkFeePaymentPaid('${r.feeAgreementPaymentId}')"><i class="fa-solid fa-check"></i> Ödendi</button>` : ''}
+                ${r.feeAgreementPaymentId ? `<button class="pop-cta-btn" style="width:auto;padding:6px 12px;font-size:11px;background:var(--danger);color:#fff;" onclick="event.stopPropagation();mvMarkFeePaymentPaid('${r.feeAgreementPaymentId}')"><i class="fa-solid fa-xmark"></i> Ödenmedi</button>` : ''}
               </span>
             </div>
           `).join('')}
@@ -2104,7 +2104,7 @@ function mvRenderFeeAgreements(clientId) {
                   ${new Date(p.vadeTarihi).toLocaleDateString('tr-TR')} — ${new Intl.NumberFormat('tr-TR').format(p.tutar)} TL
                   ${p.odendiMi ? ' ✓ Ödendi' : (new Date(p.vadeTarihi) < new Date() ? ' — Vadesi Geçti' : '')}
                 </span>
-                ${!p.odendiMi ? `<button class="pop-cta-btn" style="width:auto;padding:6px 12px;font-size:11px;background:var(--success);color:#fff;flex-shrink:0;" onclick="mvMarkFeePaymentPaid('${p.id}')"><i class="fa-solid fa-check"></i> Ödendi</button>` : ''}
+                ${!p.odendiMi ? `<button class="pop-cta-btn" style="width:auto;padding:6px 12px;font-size:11px;background:var(--danger);color:#fff;flex-shrink:0;" onclick="mvMarkFeePaymentPaid('${p.id}')"><i class="fa-solid fa-xmark"></i> Ödenmedi</button>` : ''}
               </div>
             `).join('')}
           </div>
