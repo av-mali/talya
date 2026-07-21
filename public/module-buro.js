@@ -72,6 +72,7 @@ window.CURRENT_MODULE = {
         </div>
         <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-n-name" placeholder="Müvekkil adı…"></div>
         <div class="fg"><div class="fl">TC Kimlik / Mersis No <span class="opt">(opsiyonel)</span></div><input type="text" id="mv-n-tc" placeholder="12345678901"></div>
+        <div class="fg"><div class="fl">Adres <span class="opt">(sözleşmede tebligat adresi olarak kullanılır)</span></div><input type="text" id="mv-n-address" placeholder="Mahalle, cadde, no…"></div>
         <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-n-phone" placeholder="05__ ___ __ __"></div>
         <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-n-email" placeholder="mail@ornek.com"></div>
         <div class="fg"><div class="fl">Dava Konusu / Not</div><textarea id="mv-n-note" rows="2" placeholder="Kısa not…"></textarea></div>
@@ -322,6 +323,7 @@ async function mvSaveNew() {
   const email = document.getElementById('mv-n-email').value;
   const notes = document.getElementById('mv-n-note').value;
   const tcMersis = document.getElementById('mv-n-tc').value;
+  const address = document.getElementById('mv-n-address').value;
 
   // Kaydetmeden önce aynı isimde zaten kayıtlı bir müvekkil var mı kontrol et.
   try {
@@ -336,13 +338,14 @@ async function mvSaveNew() {
 
   const res = await fetch('/api/clients', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, phone, email, notes, tcMersis })
+    body: JSON.stringify({ name, phone, email, notes, tcMersis, address })
   });
   const data = await res.json();
   if (data.client) {
     toast('Müvekkil eklendi', 'fa-solid fa-check', true);
     document.getElementById('mv-n-name').value = '';
     document.getElementById('mv-n-tc').value = '';
+    document.getElementById('mv-n-address').value = '';
     document.getElementById('mv-n-phone').value = '';
     document.getElementById('mv-n-email').value = '';
     document.getElementById('mv-n-note').value = '';

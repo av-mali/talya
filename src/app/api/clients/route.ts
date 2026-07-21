@@ -81,13 +81,13 @@ export async function POST(req: Request) {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
-  const { name, phone, email, notes, tcMersis } = await req.json();
+  const { name, phone, email, notes, tcMersis, address } = await req.json();
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "Müvekkil adı gerekli." }, { status: 400 });
   }
 
   const client = await prisma.client.create({
-    data: { name: name.trim(), phone, email, notes, tcMersis, workspaceId: ws.workspaceId },
+    data: { name: name.trim(), phone, email, notes, tcMersis, address, workspaceId: ws.workspaceId },
   });
 
   return NextResponse.json({ client });

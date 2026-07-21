@@ -35,10 +35,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     agreement.sabitUcret,
     agreement.yuzdeVarMi,
     agreement.yuzdeOrani,
-    agreement.odemeSekli === "taksit" ? "taksit" : "pesin",
+    (agreement.odemeSekli === "taksit" || agreement.odemeSekli === "pesin_taksit") ? (agreement.odemeSekli as "taksit" | "pesin_taksit") : "pesin",
     agreement.pesinTarihi ? new Date(agreement.pesinTarihi).toLocaleDateString("tr-TR") : null,
     (agreement.taksitler as any) || null,
-    agreement.harcMasrafDahil
+    agreement.harcMasrafDahil,
+    agreement.pesinatTutar
   );
 
   const finalText = buildFeeAgreementDocx(
