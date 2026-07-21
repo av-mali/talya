@@ -157,8 +157,9 @@ async function renderAppSidebar() {
 }
 
 function toggleSidebarGroup(key) {
-  if (sidebarExpanded.has(key)) sidebarExpanded.delete(key);
-  else sidebarExpanded.add(key);
+  const wasOpen = sidebarExpanded.has(key);
+  sidebarExpanded.clear(); // önce hepsini kapat
+  if (!wasOpen) sidebarExpanded.add(key); // kapalıysa aç, açıksa (tıklanan zaten açıksa) kapalı kalsın
   renderAppSidebar();
 }
 
