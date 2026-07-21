@@ -28,6 +28,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       odemeSekli: body.odemeSekli === "taksit" ? "taksit" : "pesin",
       pesinTarihi: body.pesinTarihi ? new Date(body.pesinTarihi) : null,
       taksitler: Array.isArray(body.taksitler) ? body.taksitler : undefined,
+      harcMasrafDahil: body.harcMasrafDahil !== undefined ? !!body.harcMasrafDahil : true,
       yetkiYeri: body.yetkiYeri || null,
       sozlesmeTarihi: body.sozlesmeTarihi ? new Date(body.sozlesmeTarihi) : new Date(),
     },

@@ -9,6 +9,10 @@
 //   satırın EN BAŞINDA "[[R]]" -> o paragraf SAĞA YASLI olur (ör. imza alanı)
 //   satırın EN BAŞINDA "[[S]]" -> o paragraf bir İMZA SATIRIDIR (dar,
 //     3 sütuna sığacak şekilde ÖZEL bir sekme düzeni kullanır)
+//   satırın EN BAŞINDA "[[N1]]" / "[[N2]]" -> o paragraf NUMARALI bir
+//     liste öğesidir ("1-", "2-" şeklinde) — N1 ve N2 birbirinden
+//     BAĞIMSIZ iki ayrı liste (biri 1'den, diğeri de kendi başına 1'den
+//     başlar), gerçek Word "numaralı liste" özelliğiyle (görünüşte değil)
 //   satırın EN BAŞINDA "[[B]]" -> o paragraf gerçek bir MADDE (liste
 //     öğesi) olarak işaretlenir — sadece görünüş değil, dosyanın kendi
 //     yapısında da gerçek bir liste öğesi (orijinal örnek belgelerde
@@ -19,12 +23,13 @@
 
 export type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
 
-export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean } {
+export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; numbered: 1 | 2 | 0 } {
   let line = rawLine;
   let centered = false;
   let right = false;
   let bulleted = false;
   let sigRow = false;
+  let numbered: 1 | 2 | 0 = 0;
   if (line.startsWith("[[C]]")) {
     centered = true;
     line = line.slice(5);
@@ -36,6 +41,13 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
   if (line.startsWith("[[S]]")) {
     sigRow = true;
     line = line.slice(5);
+  }
+  if (line.startsWith("[[N1]]")) {
+    numbered = 1;
+    line = line.slice(6);
+  } else if (line.startsWith("[[N2]]")) {
+    numbered = 2;
+    line = line.slice(6);
   }
   if (line.startsWith("[[B]]")) {
     bulleted = true;
@@ -79,7 +91,7 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
     out += line[i];
     i++;
   }
-  return { text: out, runs, centered, right, bulleted, sigRow };
+  return { text: out, runs, centered, right, bulleted, sigRow, numbered };
 }
 
 export function stripMarkup(text: string): string {
@@ -90,6 +102,8 @@ export function stripMarkup(text: string): string {
         .replace(/^\[\[C\]\]/, "")
         .replace(/^\[\[R\]\]/, "")
         .replace(/^\[\[S\]\]/, "")
+        .replace(/^\[\[N1\]\]/, "")
+        .replace(/^\[\[N2\]\]/, "")
         .replace(/^\[\[B\]\]/, "• ")
         .replace(/\*\*__(.+?)__\*\*/g, "$1")
         .replace(/\*\*(.+?)\*\*/g, "$1")

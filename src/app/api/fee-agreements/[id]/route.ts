@@ -15,6 +15,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   if (body.odemeSekli !== undefined) data.odemeSekli = body.odemeSekli === "taksit" ? "taksit" : "pesin";
   if (body.pesinTarihi !== undefined) data.pesinTarihi = body.pesinTarihi ? new Date(body.pesinTarihi) : null;
   if (body.taksitler !== undefined) data.taksitler = body.taksitler;
+  if (body.harcMasrafDahil !== undefined) data.harcMasrafDahil = !!body.harcMasrafDahil;
   if (body.yetkiYeri !== undefined) data.yetkiYeri = body.yetkiYeri || null;
   if (body.sozlesmeTarihi !== undefined) data.sozlesmeTarihi = body.sozlesmeTarihi ? new Date(body.sozlesmeTarihi) : new Date();
 

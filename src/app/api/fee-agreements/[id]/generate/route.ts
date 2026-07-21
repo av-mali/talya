@@ -37,7 +37,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     agreement.yuzdeOrani,
     agreement.odemeSekli === "taksit" ? "taksit" : "pesin",
     agreement.pesinTarihi ? new Date(agreement.pesinTarihi).toLocaleDateString("tr-TR") : null,
-    (agreement.taksitler as any) || null
+    (agreement.taksitler as any) || null,
+    agreement.harcMasrafDahil
   );
 
   const finalText = buildFeeAgreementDocx(

@@ -169,6 +169,7 @@ model FeeAgreement {
   odemeSekli     String   @default("pesin") // "pesin" | "taksit"
   pesinTarihi    DateTime?
   taksitler      Json?    // [{ tutar: number, tarih: "GG.AA.YYYY" }] — taksitli ise
+  harcMasrafDahil Boolean @default(true) // "Dava harç, masraf vb. giderler iş sahibine aittir." cümlesi eklensin mi
   yetkiYeri      String?  // "Antalya" gibi — uyuşmazlık çözüm yeri maddesinde kullanılır
   sozlesmeTarihi DateTime @default(now())
   createdAt      DateTime @default(now())

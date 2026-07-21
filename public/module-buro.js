@@ -2058,6 +2058,7 @@ async function mvSendPortalMessage(clientId) {
 // ══════════════════════════════════════════════════════
 let mvFeeAgreementsCache = [];
 let mvTaksitRows = [];
+let mvTaksitPinned = []; // hangi taksitlerin elle sabitlendiğini (artık otomatik değişmeyeceğini) takip eder
 let mvFeeEditingId = null;
 
 async function mvLoadFeeAgreements(clientId) {
@@ -2098,6 +2099,11 @@ function mvShowFeeForm(clientId, existing) {
   mvTaksitRows = (existing && existing.taksitler && existing.taksitler.length)
     ? existing.taksitler.map(t => ({ tutar: t.tutar, tarih: t.tarih }))
     : [];
+  // Var olan bir sözleşmeyi düzenlerken, kayıtlı taksitler zaten bilinçli
+  // girilmiş değerler — hepsini "sabit" say (biri değişince diğerlerini
+  // otomatik değiştirme). Yeni oluşturulan taksitler ise "Hesapla" ile
+  // gelir, hepsi başta sabit DEĞİLDİR (otomatik yeniden bölünebilir).
+  mvTaksitPinned = mvTaksitRows.map(() => !!existing);
 
   const todayISO = new Date().toISOString().slice(0, 10);
   openTalyaModal(`
@@ -2113,6 +2119,11 @@ function mvShowFeeForm(clientId, existing) {
     <div class="fg" id="fee-yuzde-oran-wrap" style="display:${existing && existing.yuzdeVarMi ? '' : 'none'};">
       <div class="fl">Yüzde Oranı</div><input type="number" id="fee-yuzde-oran" value="${existing && existing.yuzdeOrani != null ? existing.yuzdeOrani : ''}" placeholder="15">
     </div>
+
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
+      <input type="checkbox" id="fee-harc-masraf" ${!existing || existing.harcMasrafDahil !== false ? 'checked' : ''}>
+      <span style="font-size:12.5px;">Dava harç, masraf vb. giderler dahil</span>
+    </label>
 
     <div class="fg"><div class="fl">Ödeme Şekli</div>
       <select id="fee-odeme-sekli" onchange="mvToggleOdemeSekli()">
@@ -2153,6 +2164,7 @@ function mvCalcTaksit() {
   if (sayi < 1 || sabit <= 0) { toast('Önce sabit ücreti ve taksit sayısını girin', 'fa-solid fa-triangle-exclamation'); return; }
   const parcaTutar = Math.round((sabit / sayi) * 100) / 100;
   mvTaksitRows = Array.from({ length: sayi }).map(() => ({ tutar: parcaTutar, tarih: '' }));
+  mvTaksitPinned = Array.from({ length: sayi }).map(() => false); // baştan hesaplandı, hiçbiri sabit değil
   mvRenderTaksitRows();
 }
 
@@ -2169,20 +2181,23 @@ function mvRenderTaksitRows() {
   `).join('') + `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="mvAddTaksitRow()"><i class="fa-solid fa-plus"></i> Taksit Ekle</span>`;
 }
 
-// Bir taksit satırı elle değiştirildiğinde, TOPLAM ücreti aşmayacak
-// şekilde KALAN diğer taksitlere otomatik ve EŞİT olarak dağıtır — ör.
-// 20.000 TL / 4 taksit iken ilk taksiti 10.000 yaparsan, kalan 10.000,
-// diğer 3 taksite otomatik bölünür. NOT: aktif yazdığın kutuyu YENİDEN
-// ÇİZMİYORUZ (tüm listeyi yeniden oluşturmak imleci/odağı kaybettirirdi)
-// — sadece DİĞER kutuların değerini doğrudan güncelliyoruz.
+// Bir taksit satırı elle değiştirildiğinde, o satırı "sabit/kilitli"
+// olarak işaretler ve TOPLAM ücreti aşmayacak şekilde, HENÜZ SABİTLENMEMİŞ
+// diğer taksitlere kalan tutarı eşit dağıtır. Önceden sabitlenmiş
+// taksitler bir daha OTOMATİK değişmez — ör. önce 1. taksiti 150.000
+// yapıp sonra 2. taksiti 50.000 yaparsan, 1. taksit 150.000'de kalır,
+// sadece kalan taksitler yeniden hesaplanır.
 function mvOnTaksitInput(editedIndex, rawValue) {
   const newVal = parseFloat(tlParseValue(rawValue).replace(/[^\d.]/g, '')) || 0;
   mvTaksitRows[editedIndex].tutar = newVal;
+  mvTaksitPinned[editedIndex] = true;
 
   const sabit = parseFloat(tlParseValue(document.getElementById('fee-sabit').value)) || 0;
-  const digerIndeksler = mvTaksitRows.map((_, i) => i).filter(i => i !== editedIndex);
+  const sabitlenenToplam = mvTaksitRows.reduce((sum, t, i) => sum + (mvTaksitPinned[i] ? t.tutar : 0), 0);
+  const digerIndeksler = mvTaksitRows.map((_, i) => i).filter(i => !mvTaksitPinned[i]);
+
   if (sabit > 0 && digerIndeksler.length > 0) {
-    const kalan = Math.max(0, sabit - newVal);
+    const kalan = Math.max(0, sabit - sabitlenenToplam);
     const parcaTutar = Math.round((kalan / digerIndeksler.length) * 100) / 100;
     digerIndeksler.forEach(i => {
       mvTaksitRows[i].tutar = parcaTutar;
@@ -2194,11 +2209,13 @@ function mvOnTaksitInput(editedIndex, rawValue) {
 
 function mvAddTaksitRow() {
   mvTaksitRows.push({ tutar: 0, tarih: '' });
+  mvTaksitPinned.push(false);
   mvRenderTaksitRows();
 }
 
 function mvRemoveTaksitRow(i) {
   mvTaksitRows.splice(i, 1);
+  mvTaksitPinned.splice(i, 1);
   mvRenderTaksitRows();
 }
 
@@ -2214,6 +2231,7 @@ async function mvSaveFeeAgreement(clientId) {
     konu: document.getElementById('fee-konu').value,
     sabitUcret: document.getElementById('fee-sabit').value ? tlParseValue(document.getElementById('fee-sabit').value) : null,
     yuzdeVarMi: document.getElementById('fee-yuzde-var').checked,
+    harcMasrafDahil: document.getElementById('fee-harc-masraf').checked,
     yuzdeOrani: document.getElementById('fee-yuzde-oran').value || null,
     odemeSekli,
     pesinTarihi: odemeSekli === 'pesin' ? document.getElementById('fee-pesin-tarih').value : null,

@@ -36,7 +36,8 @@ export function buildFeeSentence(
   yuzdeOrani: number | null,
   odemeSekli: "pesin" | "taksit",
   pesinTarihi: string | null,
-  taksitler: Installment[] | null
+  taksitler: Installment[] | null,
+  harcMasrafDahil: boolean
 ): string {
   const ucretParcasi = `Avukatlık ücreti olarak ${sabitUcret != null ? fmtTL(sabitUcret) : "……………"}${
     yuzdeVarMi ? ` + dava bedelinin %${yuzdeOrani ?? "…"}'i` : ""
@@ -59,28 +60,29 @@ export function buildFeeSentence(
     }
   }
 
-  return `${ucretParcasi}${odemeParcasi} hususunda anlaşmaya varılmıştır. Dava harç, masraf vb. giderler iş sahibine aittir.`;
+  const harcCumlesi = harcMasrafDahil ? " Dava harç, masraf vb. giderler iş sahibine aittir." : "";
+  return `${ucretParcasi}${odemeParcasi} hususunda anlaşmaya varılmıştır.${harcCumlesi}`;
 }
 
 // "Diğer Hükümler" başlığından sonra gelen, HİÇ DEĞİŞMEYEN 9 madde —
 // örnek belgeden birebir alınmıştır.
-export const DIGER_HUKUMLER_MADDELER = `\tAvukata verilen işten ötürü yukarıda belirlenen ücret ödenecektir. Ödemelerin belirtilen zamanda yapılmaması halinde geciken zaman için yasal faiz uygulanacaktır.
+export const DIGER_HUKUMLER_MADDELER = `[[N2]]Avukata verilen işten ötürü yukarıda belirlenen ücret ödenecektir. Ödemelerin belirtilen zamanda yapılmaması halinde geciken zaman için yasal faiz uygulanacaktır.
 
-\tBu ücret yalnız bu işler içindir. Bu işle ilgili olsa da bundan doğacak herhangi bir başka işi kapsamına almayacaktır. Karşılık dava açılması ve başkaca bu işle ilgili uyuşmazlıklar ve kovuşturma işleri çıkması halinde avukata ayrıca ücret ödenmesi gerekecektir. Yargıtay'da, Danıştay'da ve başkaca anlaşmazlıklar çözen mercilerde yapılacak duruşmalarda da anlaşmaya; anlaşma yapılmamışsa Avukatlık Ücret Tarifesine göre, ayrı ücret ödenecektir. Mahkeme tarafından hükmedilecek karşı vekalet ücreti Avukata aittir.
+[[N2]]Bu ücret yalnız bu işler içindir. Bu işle ilgili olsa da bundan doğacak herhangi bir başka işi kapsamına almayacaktır. Karşılık dava açılması ve başkaca bu işle ilgili uyuşmazlıklar ve kovuşturma işleri çıkması halinde avukata ayrıca ücret ödenmesi gerekecektir. Yargıtay'da, Danıştay'da ve başkaca anlaşmazlıklar çözen mercilerde yapılacak duruşmalarda da anlaşmaya; anlaşma yapılmamışsa Avukatlık Ücret Tarifesine göre, ayrı ücret ödenecektir. Mahkeme tarafından hükmedilecek karşı vekalet ücreti Avukata aittir.
 
-\tAvukat işi yasalar ve meslek kuralları uyarınca sonuna kadar kovuşturacaktır. Bu görevi kendisi yapacağı gibi gözetimi altında başka avukatlarla iş birliği yaparak onları da kovuşturma ve savunmasına alabilecektir. Ancak bu durumda iş sahibinden ek ücret istemeyecektir.
+[[N2]]Avukat işi yasalar ve meslek kuralları uyarınca sonuna kadar kovuşturacaktır. Bu görevi kendisi yapacağı gibi gözetimi altında başka avukatlarla iş birliği yaparak onları da kovuşturma ve savunmasına alabilecektir. Ancak bu durumda iş sahibinden ek ücret istemeyecektir.
 
-\tİş sahibi, avukatın yazılı olurunu almadan bu iş için başkasına vekâlet veremeyecektir. Tersine davranılması halinde avukata ücretin tamamı ödenecektir.
+[[N2]]İş sahibi, avukatın yazılı olurunu almadan bu iş için başkasına vekâlet veremeyecektir. Tersine davranılması halinde avukata ücretin tamamı ödenecektir.
 
-\tİş sahibi işten feragat eder ya da avukata iş kovuşturma olanağı vermezse yahut sözleşmeyle üstlendiği yükümlülüklerden birini yerine getirmezse, avukat kalan ücretin tamamını isteme hakkını kazanır.
+[[N2]]İş sahibi işten feragat eder ya da avukata iş kovuşturma olanağı vermezse yahut sözleşmeyle üstlendiği yükümlülüklerden birini yerine getirmezse, avukat kalan ücretin tamamını isteme hakkını kazanır.
 
-\tİş sahibi, vekâletnamedeki adresi konut kabul etmiştir. Avukatın kendisine yapacağı her türlü bildirim bu adrese gönderilecektir. Adres değişikliğinin avukata bildirilmesi zorunlu olup, adres değişikliği nedeniyle iş sahibine ulaşmayan bildirimler nedeniyle avukata sorumluluk yüklenemez.
+[[N2]]İş sahibi, vekâletnamedeki adresi konut kabul etmiştir. Avukatın kendisine yapacağı her türlü bildirim bu adrese gönderilecektir. Adres değişikliğinin avukata bildirilmesi zorunlu olup, adres değişikliği nedeniyle iş sahibine ulaşmayan bildirimler nedeniyle avukata sorumluluk yüklenemez.
 
-\tSözleşme iş sahibince tek taraflı olarak haklı bir neden olmadan feshedilirse, avukat ücretin tamamını isteme hakkını kazanır.
+[[N2]]Sözleşme iş sahibince tek taraflı olarak haklı bir neden olmadan feshedilirse, avukat ücretin tamamını isteme hakkını kazanır.
 
-\tBu sözleşmede aksine bir hüküm bulunmadığı takdirde yürürlükteki Avukatlık Kanunu hükümleri uygulanır.
+[[N2]]Bu sözleşmede aksine bir hüküm bulunmadığı takdirde yürürlükteki Avukatlık Kanunu hükümleri uygulanır.
 
-\tBu sözleşmeden doğan uyuşmazlıkların çözümünde ${"{{YETKI_YERI}}"} Mahkemeleri ve İcra Daireleri yetkilidir.`;
+[[N2]]Bu sözleşmeden doğan uyuşmazlıkların çözümünde ${"{{YETKI_YERI}}"} Mahkemeleri ve İcra Daireleri yetkilidir.`;
 
 export function buildFeeAgreementDocx(
   avukat: FeeAgreementParty,
@@ -106,9 +108,7 @@ export function buildFeeAgreementDocx(
 **Adres**\t: ${v(avukat.officeAddress)}
 **Telefon**\t: ${v(avukat.phone)}
 
-**__Sözleşme Konusu İş__**\t: 
-
-${v(konu)}
+**__Sözleşme Konusu İş__**\t: ${v(konu)}
 
 **__Vekâlet Ücreti__**\t: ${feeSentence}
 
