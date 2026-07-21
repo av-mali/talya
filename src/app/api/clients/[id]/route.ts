@@ -62,6 +62,22 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const existing = await prisma.client.findFirst({ where: { id: params.id, workspaceId: ws.workspaceId } });
   if (!existing) return NextResponse.json({ error: "Müvekkil bulunamadı." }, { status: 404 });
 
+  // Müvekkil silinince dosyaları/faturaları Prisma otomatik (cascade)
+  // siler — ama Gelir-Gider'deki KARŞILIK GELEN gelir kayıtları
+  // (Transaction), faturaya sadece gevşek bir "sourceInvoiceId" metniyle
+  // bağlı olduğu için bu otomatik silmeye dahil olmuyor ve yetim kalıyor.
+  // Bu yüzden faturaları bulup, önce onlara bağlı Transaction'ları elle
+  // temizliyoruz.
+  const invoiceIds = (
+    await prisma.invoice.findMany({
+      where: { case: { clientId: params.id } },
+      select: { id: true },
+    })
+  ).map((i) => i.id);
+  if (invoiceIds.length) {
+    await prisma.transaction.deleteMany({ where: { sourceInvoiceId: { in: invoiceIds } } });
+  }
+
   await prisma.client.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }

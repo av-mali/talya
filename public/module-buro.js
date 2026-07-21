@@ -654,7 +654,8 @@ async function mvSaveEdit() {
 
 async function mvDeleteClient() {
   if (!mvSelectedId) return;
-  if (!confirm('Bu müvekkili ve tüm dosyalarını silmek istediğinize emin misiniz?')) return;
+  const ok = await talyaConfirm('Bu müvekkili ve <strong>tüm dosyalarını</strong> silmek istediğinize emin misiniz?<br><span style="font-size:12px;color:var(--t3);">Bu işlem geri alınamaz.</span>', 'Evet, Sil', 'danger');
+  if (!ok) return;
   await fetch('/api/clients/' + mvSelectedId, { method: 'DELETE' });
   toast('Müvekkil silindi', 'fa-solid fa-trash');
   mvSelectedId = null;
@@ -1533,6 +1534,14 @@ async function tblToggleArchive(id, archive) {
   tblLoad();
 }
 
+async function tblDeleteClient(id) {
+  const ok = await talyaConfirm('Bu müvekkili ve <strong>tüm dosyalarını</strong> silmek istediğinize emin misiniz?<br><span style="font-size:12px;color:var(--t3);">Bu işlem geri alınamaz.</span>', 'Evet, Sil', 'danger');
+  if (!ok) return;
+  await fetch('/api/clients/' + id, { method: 'DELETE' });
+  toast('Müvekkil silindi', 'fa-solid fa-trash');
+  tblLoad();
+}
+
 function tblRender(rows) {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `
@@ -1568,10 +1577,13 @@ function tblRender(rows) {
               <td style="padding:8px 10px;font-family:'JetBrains Mono',monospace;">${r.totalInvoiced ? fmtTL(r.totalInvoiced) : '—'}</td>
               <td style="padding:8px 10px;color:var(--t2);">${r.nextEventDate ? new Date(r.nextEventDate).toLocaleDateString('tr-TR') : '—'}</td>
               <td style="padding:8px 10px;">
-                ${tblShowArchived
-                  ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="tblToggleArchive('${r.id}', false)">Aktife Al</span>`
-                  : `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="tblToggleArchive('${r.id}', true)">Arşivle</span>`
-                }
+                <div style="display:flex;gap:10px;">
+                  ${tblShowArchived
+                    ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="tblToggleArchive('${r.id}', false)">Aktife Al</span>`
+                    : `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="tblToggleArchive('${r.id}', true)">Arşivle</span>`
+                  }
+                  <span style="cursor:pointer;color:var(--danger);font-size:11px;" onclick="tblDeleteClient('${r.id}')">Sil</span>
+                </div>
               </td>
             </tr>
           `).join('')}

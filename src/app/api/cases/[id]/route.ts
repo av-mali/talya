@@ -49,6 +49,14 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const ok = await requireOwnedCase(params.id);
   if (!ok) return NextResponse.json({ error: "Yetkisiz veya dosya bulunamadı." }, { status: 401 });
 
+  // Dosya silinince faturaları Prisma otomatik siler — ama Gelir-Gider'deki
+  // karşılık gelen gelir kayıtları (sourceInvoiceId ile gevşek bağlı)
+  // otomatik silinmeye dahil olmuyor, elle temizliyoruz.
+  const invoiceIds = (await prisma.invoice.findMany({ where: { caseId: params.id }, select: { id: true } })).map((i) => i.id);
+  if (invoiceIds.length) {
+    await prisma.transaction.deleteMany({ where: { sourceInvoiceId: { in: invoiceIds } } });
+  }
+
   await prisma.case.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }
