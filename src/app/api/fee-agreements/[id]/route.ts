@@ -72,6 +72,19 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const ok = await requireOwnedFeeAgreement(params.id);
   if (!ok) return NextResponse.json({ error: "Yetkisiz veya sözleşme bulunamadı." }, { status: 401 });
 
+  // Bu sözleşmenin ödemelerinden otomatik oluşmuş faturalar varsa,
+  // onların Gelir-Gider kaydını da (sourceInvoiceId ile eşleşen
+  // Transaction) temizliyoruz — yoksa "yetim" bir gelir kaydı olarak
+  // Gelir-Gider'de kalırlardı. Fatura ve ödeme kayıtlarının kendisi,
+  // sözleşme silinince zincirleme (cascade) olarak zaten silinir.
+  const invoices = await prisma.invoice.findMany({
+    where: { feeAgreementPayment: { agreementId: params.id } },
+    select: { id: true },
+  });
+  if (invoices.length) {
+    await prisma.transaction.deleteMany({ where: { sourceInvoiceId: { in: invoices.map((i) => i.id) } } });
+  }
+
   await prisma.feeAgreement.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }

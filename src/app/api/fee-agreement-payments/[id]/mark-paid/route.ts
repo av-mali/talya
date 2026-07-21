@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (payment.agreement.caseId) {
     // Dosyaya bağlı — Fatura & Tahsilat'a gerçek bir fatura düşülür.
     const invoice = await prisma.invoice.create({
-      data: { amount: payment.tutar, note: desc, caseId: payment.agreement.caseId },
+      data: { amount: payment.tutar, note: desc, caseId: payment.agreement.caseId, feeAgreementPaymentId: payment.id },
     });
     ops.push(
       prisma.transaction.create({

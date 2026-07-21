@@ -523,6 +523,16 @@ async function mvOpenCase(caseId) {
       </div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-handshake"></i> Anlaşılan Ücret</div>
+      ${cs.feeAgreements && cs.feeAgreements.length ? `
+        <div style="background:var(--gold-lo);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--gold-hi);">
+          <i class="fa-solid fa-file-signature"></i> Bu dosya bir <strong>Avukatlık Ücret Sözleşmesi</strong>'ne bağlı — ücret ve ödeme takvimi elle değil, o sözleşme üzerinden yönetiliyor (müvekkil sayfasından).
+        </div>
+        ${cs.feeAgreements.map(a => (a.payments || []).map(p => `
+          <div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);">
+            <span style="color:${p.odendiMi ? 'var(--success)' : (new Date(p.vadeTarihi) < new Date() ? 'var(--danger)' : 'var(--t2)')};">${new Date(p.vadeTarihi).toLocaleDateString('tr-TR')} — ${fmtTL(p.tutar)}${p.odendiMi ? ' ✓ Ödendi' : (new Date(p.vadeTarihi) < new Date() ? ' — Vadesi Geçti' : '')}</span>
+          </div>
+        `).join('')).join('')}
+      ` : `
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
         <input type="text" id="mv-agreed-fee" class="tl-amount" placeholder="Anlaşılan toplam tutar (TL)" value="${cs.agreedFee ? cs.agreedFee : ''}" style="flex:1;min-width:0;">
       </div>
@@ -545,14 +555,17 @@ async function mvOpenCase(caseId) {
           <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${remaining > 0 ? 'var(--warn)' : 'var(--success)'};">${fmtTL(remaining)}</span>
         </div>`;
       })() : ''}
+      `}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Faturalar</div>
-      <div id="mv-invoices">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span><span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
+      <div id="mv-invoices">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span>${inv.feeAgreementPaymentId ? '' : `<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>`}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
+      ${!(cs.feeAgreements && cs.feeAgreements.length) ? `
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <input type="text" id="mv-inv-amount" class="tl-amount" placeholder="Tutar (TL)" style="width:120px;">
         <input type="text" id="mv-inv-note" placeholder="Açıklama…" style="flex:1;min-width:160px;">
         <button class="pop-cta-btn g" style="padding:6px 12px;" onclick="mvAddInvoice()"><span>Fatura Oluştur</span></button>
       </div>
+      ` : ''}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-stopwatch"></i> Zaman Takibi</div>
       <div style="display:flex;gap:14px;margin-bottom:8px;font-size:12px;color:var(--t2);flex-wrap:wrap;">
@@ -956,6 +969,7 @@ async function fatSelectCase(clientId, caseId) {
 
 function fatRenderPane(cs) {
   const dp = document.getElementById('detailPane');
+  const linked = cs.feeAgreements && cs.feeAgreements.length;
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="fatSelect('${cs.client.id}')">
@@ -963,12 +977,23 @@ function fatRenderPane(cs) {
       </div>
       <div style="font-family:'Instrument Serif',serif;font-size:19px;">${cs.client.name}</div>
       <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">Dosya: ${cs.title}</div>
+      ${linked ? `
+        <div style="background:var(--gold-lo);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:var(--gold-hi);">
+          <i class="fa-solid fa-file-signature"></i> Bu dosya bir <strong>Avukatlık Ücret Sözleşmesi</strong>'ne bağlı — fatura elle oluşturulmuyor, aşağıdaki ödeme takvimi sözleşmeden otomatik geliyor. Ödeme almanı işaretlemek için müvekkilin sayfasındaki sözleşme bölümünü kullan.
+        </div>
+        ${cs.feeAgreements.map(a => (a.payments || []).map(p => `
+          <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="color:${p.odendiMi ? 'var(--success)' : (new Date(p.vadeTarihi) < new Date() ? 'var(--danger)' : 'var(--t2)')};">${new Date(p.vadeTarihi).toLocaleDateString('tr-TR')} — ${fmtTL(p.tutar)}${p.odendiMi ? ' ✓ Ödendi' : (new Date(p.vadeTarihi) < new Date() ? ' — Vadesi Geçti' : '')}</span>
+          </div>
+        `).join('')).join('')}
+      ` : `
       <div class="fg"><div class="fl">Tutar (TL)</div><input type="text" id="fat-amount" placeholder="15000"></div>
       <div class="fg"><div class="fl">Açıklama (opsiyonel)</div><input type="text" id="fat-note" placeholder="Vekâlet ücreti…"></div>
       <button class="pop-cta-btn g" style="width:100%;" onclick="fatCreate('${cs.id}')">
         <i class="fa-solid fa-file-invoice-dollar"></i><span>Fatura Oluştur</span>
       </button>
       <div id="fat-preview" style="margin-top:20px;"></div>
+      `}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 6px;"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Faturalar</div>
       <div id="fat-history">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>

@@ -20,6 +20,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
           events: { orderBy: { dueDate: "asc" } },
           invoices: { orderBy: { createdAt: "desc" } },
           timeEntries: { orderBy: { date: "desc" } },
+          feeAgreements: { include: { payments: { orderBy: { vadeTarihi: "asc" } } } },
         },
       },
     },
