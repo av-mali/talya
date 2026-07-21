@@ -1588,10 +1588,8 @@ function tblRenderRowsOnly(rows) {
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Ad Soyad</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">TC/Mersis</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Telefon</th>
-            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">E-posta</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Dosya</th>
             <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Toplam Fatura</th>
-            <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Yaklaşan Tarih</th>
             <th style="padding:8px 10px;"></th>
           </tr>
         </thead>
@@ -1601,10 +1599,8 @@ function tblRenderRowsOnly(rows) {
               <td style="padding:8px 10px;cursor:pointer;" onclick="mvSelect('${r.id}')">${r.name}</td>
               <td style="padding:8px 10px;color:var(--t2);font-family:'JetBrains Mono',monospace;font-size:11px;">${r.tcMersis || '—'}</td>
               <td style="padding:8px 10px;color:var(--t2);">${r.phone || '—'}</td>
-              <td style="padding:8px 10px;color:var(--t2);">${r.email || '—'}</td>
               <td style="padding:8px 10px;text-align:center;">${r.caseCount}</td>
               <td style="padding:8px 10px;font-family:'JetBrains Mono',monospace;">${r.totalInvoiced ? fmtTL(r.totalInvoiced) : '—'}</td>
-              <td style="padding:8px 10px;color:var(--t2);">${r.nextEventDate ? new Date(r.nextEventDate).toLocaleDateString('tr-TR') : '—'}</td>
               <td style="padding:8px 10px;">
                 <div style="display:flex;gap:10px;">
                   <span style="cursor:pointer;color:var(--t2);font-size:11px;" onclick="rpSelect('${r.id}')">Rapor</span>
