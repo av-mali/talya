@@ -93,6 +93,7 @@ async function initModulePage() {
 const MODULE_ICONS = {
   belge: 'fa-scroll',
   buro: 'fa-briefcase',
+  arabuluculuk: 'fa-handshake',
   uyap: 'fa-building-columns',
   hesap: 'fa-calculator',
   uyelik: 'fa-user-circle',
