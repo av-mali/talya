@@ -2259,7 +2259,7 @@ function mvRenderTaksitRows() {
     <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;">
       <span style="font-size:11px;color:var(--t3);width:16px;">${i+1}.</span>
       <input type="text" class="tl-amount" id="fee-taksit-tutar-${i}" value="${new Intl.NumberFormat('tr-TR').format(t.tutar||0)}" oninput="mvOnTaksitInput(${i}, this.value)" placeholder="Tutar" style="flex:1;">
-      <input type="date" value="${t.tarih && t.tarih.includes('.') ? '' : (t.tarih||'')}" onchange="mvTaksitRows[${i}].tarih=this.value.split('-').reverse().join('.')" style="flex:1;">
+      <input type="date" id="fee-taksit-tarih-${i}" value="${t.tarih && t.tarih.includes('.') ? '' : (t.tarih||'')}" onchange="mvTaksitRows[${i}].tarih=this.value.split('-').reverse().join('.'); if(${i}===0) mvAutoFillTaksitTarihleri();" style="flex:1;">
       <span style="cursor:pointer;color:var(--t3);" onclick="mvRemoveTaksitRow(${i})"><i class="fa-solid fa-xmark"></i></span>
     </div>
   `).join('') + `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="mvAddTaksitRow()"><i class="fa-solid fa-plus"></i> Taksit Ekle</span>`;
@@ -2296,15 +2296,89 @@ function mvOnTaksitInput(editedIndex, rawValue) {
   }
 }
 
+// Sabit ücretten (peşinat + taksit modundaysa peşinat düşülerek) hedef
+// taksit toplamını hesaplar — mvCalcTaksit, mvAddTaksitRow ve
+// mvRemoveTaksitRow'un ortak kullandığı yardımcı.
+function mvTaksitHedefToplam() {
+  const sabit = parseFloat(tlParseValue(document.getElementById('fee-sabit').value)) || 0;
+  const odemeSekli = document.getElementById('fee-odeme-sekli').value;
+  const pesinat = odemeSekli === 'pesin_taksit'
+    ? (parseFloat(tlParseValue(document.getElementById('fee-pesinat-tutar').value)) || 0)
+    : 0;
+  return sabit - pesinat;
+}
+
+// Bir tarihe N ay ekler — hedef ayın günü yetersizse (ör. 30 Ocak + 1 ay
+// = Şubat'ta 28/29 gün var) ay sonuna "yapışır" ve bir daha o günden
+// devam ETMEZ, sonraki aylarda da hep AY SONU takip eder (30 Ocak -> 28
+// Şubat -> 31 Mart -> 30 Nisan gibi — taksit takvimlerinde yaygın
+// kullanılan bir yöntem). Gün hiçbir ayda taşmıyorsa (ör. 5'i), normal
+// şekilde her ay aynı gün olarak devam eder (5 Haziran -> 5 Temmuz -> ...).
+function mvAddMonthsSticky(startDate, monthsToAdd, isEndOfMonthState) {
+  const originalDay = startDate.getDate();
+  let stuckToEnd = isEndOfMonthState.value;
+  const target = new Date(startDate.getFullYear(), startDate.getMonth() + monthsToAdd, 1);
+  const daysInTargetMonth = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  let day;
+  if (stuckToEnd) {
+    day = daysInTargetMonth;
+  } else if (originalDay > daysInTargetMonth) {
+    day = daysInTargetMonth;
+    isEndOfMonthState.value = true; // bundan sonraki taksitler de ay sonunu takip etsin
+  } else {
+    day = originalDay;
+  }
+  target.setDate(day);
+  return target;
+}
+
+// İlk taksitin tarihi girildiğinde, geri kalan taksitlerin tarihini
+// otomatik olarak (birer ay eklenerek) doldurur. Kullanıcı sonradan
+// herhangi bir taksitin tarihini elle değiştirirse, o satır bu otomatik
+// doldurmadan etkilenmez (zaten sadece BOŞ satırlar dolduruluyor).
+function mvAutoFillTaksitTarihleri() {
+  if (!mvTaksitRows.length || !mvTaksitRows[0].tarih) return;
+  const ilkTarihStr = mvTaksitRows[0].tarih; // "GG.AA.YYYY"
+  const parts = ilkTarihStr.split('.');
+  if (parts.length !== 3) return;
+  const ilkTarih = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+  if (isNaN(ilkTarih.getTime())) return;
+
+  const state = { value: false };
+  for (let i = 1; i < mvTaksitRows.length; i++) {
+    const yeniTarih = mvAddMonthsSticky(ilkTarih, i, state);
+    const gg = String(yeniTarih.getDate()).padStart(2, '0');
+    const aa = String(yeniTarih.getMonth() + 1).padStart(2, '0');
+    const yyyy = yeniTarih.getFullYear();
+    mvTaksitRows[i].tarih = `${gg}.${aa}.${yyyy}`;
+  }
+  mvRenderTaksitRows();
+}
+
 function mvAddTaksitRow() {
   mvTaksitRows.push({ tutar: 0, tarih: '' });
   mvTaksitPinned.push(false);
-  mvRenderTaksitRows();
+  mvRedistribuFreshTaksitler();
 }
 
 function mvRemoveTaksitRow(i) {
   mvTaksitRows.splice(i, 1);
   mvTaksitPinned.splice(i, 1);
+  mvRedistribuFreshTaksitler();
+}
+
+// Bir taksit eklendiğinde/silindiğinde, kalan hedef tutarı TÜM
+// taksitlere yeniden ve eşit olarak dağıtır (hepsi "sabit" olmaktan
+// çıkar) — kullanıcı isterse tekrar tek tek elle değiştirebilir.
+function mvRedistribuFreshTaksitler() {
+  const hedef = mvTaksitHedefToplam();
+  const n = mvTaksitRows.length;
+  if (hedef > 0 && n > 0) {
+    const parcaTutar = Math.round((hedef / n) * 100) / 100;
+    mvTaksitRows.forEach(t => { t.tutar = parcaTutar; });
+  }
+  mvTaksitPinned = mvTaksitRows.map(() => false);
+  mvAutoFillTaksitTarihleri();
   mvRenderTaksitRows();
 }
 
