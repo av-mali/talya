@@ -9,9 +9,7 @@ window.CURRENT_MODULE = {
   items: [
     {"id": "globalarama", "icon": "fa-magnifying-glass", "name": "Global Arama"},
     {"id": "ekip", "icon": "fa-people-group", "name": "Ekip Yönetimi"},
-    {"id": "muvekkilekle", "icon": "fa-user-plus", "name": "Müvekkil Ekle", "group": "Müvekkil Yönetimi"},
-    {"id": "tablo", "icon": "fa-table-list", "name": "Müvekkil Tablosu", "group": "Müvekkil Yönetimi"},
-    {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu", "group": "Müvekkil Yönetimi"},
+    {"id": "muvekkilyonetimi", "icon": "fa-user-group", "name": "Müvekkil Yönetimi"},
     {"id": "sure", "icon": "fa-calendar-xmark", "name": "Süre & Takvim"},
     {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"},
     {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
@@ -58,10 +56,10 @@ window.CURRENT_MODULE = {
       prompt: () => ''
     },
     // ── MÜVEKKİL YÖNETİMİ ── orta: arama+liste, sağ: seçilen müvekkilin detayı
-    muvekkilekle: {
-      badge: 'b', badgeText: 'Büro CRM · Canlı Veri', titleHtml: 'Müvekkil <em class="b">Ekle</em>',
-      desc: 'Yeni bir müvekkil kaydı oluşturun.',
-      btnClass: 'b', btnIco: 'fa-user-plus', btnLbl: '', hideCta: true,
+    muvekkilyonetimi: {
+      badge: 'b', badgeText: 'Büro CRM · Canlı Veri', titleHtml: 'Müvekkil <em class="b">Yönetimi</em>',
+      desc: 'Yeni bir müvekkil ekleyin — sağda tüm müvekkillerinizi arayıp yönetebilirsiniz.',
+      btnClass: 'b', btnIco: 'fa-user-group', btnLbl: '', hideCta: true,
       body: `
         <div class="ic" style="margin-bottom:14px;">
           <div class="ic-t"><i class="fa-solid fa-wand-magic-sparkles"></i> Belgeden Otomatik Doldur</div>
@@ -77,9 +75,8 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-n-email" placeholder="mail@ornek.com"></div>
         <div class="fg"><div class="fl">Dava Konusu / Not</div><textarea id="mv-n-note" rows="2" placeholder="Kısa not…"></textarea></div>
         <button class="pop-cta-btn b" style="width:100%;" onclick="mvSaveNew()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
-        <div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-top:10px;">Kaydettikten sonra müvekkilin detayı sağ panelde açılır. Tüm müvekkilleri görmek için <strong>Müvekkil Tablosu</strong>'nu kullanın.</div>
       `,
-      onOpen: () => mvEkleOnOpen(),
+      onOpen: () => tblOnOpen(),
       prompt: () => ''
     },
     // ── SÜRE & TAKVİM ── orta: özet açıklama, sağ: tam takvim
@@ -89,18 +86,6 @@ window.CURRENT_MODULE = {
       btnClass: 'b', btnIco: 'fa-clock-rotate-left', btnLbl: '', hideCta: true,
       body: `<div id="sure-summary" style="font-size:12.5px;color:var(--t2);">Yükleniyor…</div>`,
       onOpen: () => calOnOpen(),
-      prompt: () => ''
-    },
-    // ── MÜVEKKİL RAPORU ── orta: arama+liste, sağ: seçilen müvekkilin özeti
-    rapor: {
-      badge: 'b', badgeText: 'Özet Görünüm', titleHtml: 'Müvekkil <em class="b">Raporu</em>',
-      desc: 'Bir müvekkil seçin; özet raporu sağda görünsün.',
-      btnClass: 'b', btnIco: 'fa-file-circle-check', btnLbl: '', hideCta: true,
-      body: `
-        <div class="fg"><input type="text" id="rp-search" placeholder="Müvekkil ara…" oninput="rpSearch()"></div>
-        <div id="rp-list"></div>
-      `,
-      onOpen: () => rpOnOpen(),
       prompt: () => ''
     },
     // ── FATURA & TAHSİLAT ── orta: arama+liste, sağ: fatura oluştur + yazdır
@@ -165,19 +150,6 @@ window.CURRENT_MODULE = {
       onOpen: () => txOnOpen(),
       prompt: () => ''
     },
-    // ── MÜVEKKİL TABLOSU ── tüm müvekkilleri tablo halinde göster, filtrele, Excel'e aktar
-    tablo: {
-      badge: 'b', badgeText: 'Rapor Görünümü', titleHtml: 'Müvekkil <em class="b">Tablosu</em>',
-      desc: 'Tüm müvekkillerinizi tablo halinde görün, arayın, Excel\'e aktarın.',
-      btnClass: 'b', btnIco: 'fa-table-list', btnLbl: '', hideCta: true,
-      body: `
-        <div class="fg"><input type="text" id="tbl-search" placeholder="Müvekkil ara…" oninput="tblFilter()"></div>
-        <button class="pop-cta-btn g" style="width:100%;" onclick="tblExportCsv()"><i class="fa-solid fa-file-csv"></i><span>Excel'e Aktar (CSV)</span></button>
-        <div style="font-size:11px;color:var(--t3);margin-top:10px;">Tam tablo sağ panelde görünür.</div>
-      `,
-      onOpen: () => tblOnOpen(),
-      prompt: () => ''
-    }
   }
 };
 
@@ -356,7 +328,7 @@ async function mvSaveNew() {
 function mvBackToList() {
   mvSelectedId = null;
   // "Listeye Dön" artık Müvekkil Tablosu'na döner.
-  openPopup('tablo');
+  openPopup('muvekkilyonetimi');
 }
 
 async function mvSelect(id) {
@@ -710,7 +682,7 @@ async function mvDeleteClient() {
   await fetch('/api/clients/' + mvSelectedId, { method: 'DELETE' });
   toast('Müvekkil silindi', 'fa-solid fa-trash');
   mvSelectedId = null;
-  openPopup('tablo');
+  openPopup('muvekkilyonetimi');
 }
 
 async function mvAddEvent() {
@@ -898,21 +870,7 @@ function calSelectDay(day) {
 // ══════════════════════════════════════════════════════
 // MÜVEKKİL RAPORU — sağ panelde özet
 // ══════════════════════════════════════════════════════
-let rpSelectedId = null;
-
-function rpOnOpen() {
-  rpSelectedId = null;
-  loadClientList('rp-list', '', 'rpSelect');
-}
-
-function rpSearch() {
-  const q = document.getElementById('rp-search').value.trim();
-  loadClientList('rp-list', q, 'rpSelect', rpSelectedId);
-}
-
 async function rpSelect(id) {
-  rpSelectedId = id;
-  loadClientList('rp-list', document.getElementById('rp-search')?.value || '', 'rpSelect', id);
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   const res = await fetch('/api/clients/' + id);
@@ -930,6 +888,9 @@ async function rpSelect(id) {
 
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+      <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="tblLoad()">
+        <i class="fa-solid fa-arrow-left"></i> Tabloya Dön
+      </div>
       <div style="font-family:'Instrument Serif',serif;font-size:20px;">${c.name}</div>
       <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">${c.phone||'—'}${c.email?(' · '+c.email):''}</div>
 
@@ -1573,7 +1534,7 @@ function tblSwitchTab(archived) {
 function tblFilter() {
   const q = (document.getElementById('tbl-search')?.value || '').toLowerCase();
   const filtered = q ? tblAllRows.filter(r => r.name.toLowerCase().includes(q)) : tblAllRows;
-  tblRender(filtered);
+  tblRenderRowsOnly(filtered);
 }
 
 async function tblToggleArchive(id, archive) {
@@ -1601,6 +1562,23 @@ function tblRender(rows) {
         <button class="pop-cta-btn ${!tblShowArchived ? 'b' : ''}" style="width:auto;padding:6px 14px;${tblShowArchived ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab(false)"><i class="fa-solid fa-users"></i><span>Aktif Müvekkiller</span></button>
         <button class="pop-cta-btn ${tblShowArchived ? 'b' : ''}" style="width:auto;padding:6px 14px;${!tblShowArchived ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab(true)"><i class="fa-solid fa-box-archive"></i><span>Arşivlenenler</span></button>
       </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <input type="text" id="tbl-search" placeholder="Müvekkil ara…" oninput="tblFilter()" style="flex:1;">
+        <button class="pop-cta-btn" style="width:auto;padding:6px 14px;background:var(--bg2);color:var(--t2);" onclick="tblExportCsv()"><i class="fa-solid fa-file-csv"></i><span>Excel'e Aktar</span></button>
+      </div>
+      <div id="tbl-rows-area"></div>
+    </div>
+  `;
+  tblRenderRowsOnly(rows);
+}
+
+// SADECE satırları (arama sonucu değiştikçe) yeniden çizer — arama
+// kutusunun kendisi yeniden oluşturulmadığı için yazarken imleç/odak
+// kaybolmaz.
+function tblRenderRowsOnly(rows) {
+  const area = document.getElementById('tbl-rows-area');
+  if (!area) return;
+  area.innerHTML = `
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">
         Toplam ${rows.length} müvekkil
       </div>
@@ -1629,6 +1607,7 @@ function tblRender(rows) {
               <td style="padding:8px 10px;color:var(--t2);">${r.nextEventDate ? new Date(r.nextEventDate).toLocaleDateString('tr-TR') : '—'}</td>
               <td style="padding:8px 10px;">
                 <div style="display:flex;gap:10px;">
+                  <span style="cursor:pointer;color:var(--t2);font-size:11px;" onclick="rpSelect('${r.id}')">Rapor</span>
                   ${tblShowArchived
                     ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="tblToggleArchive('${r.id}', false)">Aktife Al</span>`
                     : `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="tblToggleArchive('${r.id}', true)">Arşivle</span>`
@@ -1641,7 +1620,6 @@ function tblRender(rows) {
         </tbody>
       </table>
       ${!rows.length ? emptyState('fa-user-large', tblShowArchived ? 'Arşivde müvekkil yok' : 'Müvekkil bulunamadı', tblShowArchived ? 'Arşivlediğiniz müvekkiller burada listelenir.' : 'Arama teriminizi değiştirin ya da yeni bir müvekkil ekleyin.') : ''}
-    </div>
   `;
 }
 

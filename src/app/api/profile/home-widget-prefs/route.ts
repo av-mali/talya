@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 // gösterileceği — kullanıcı Üyelik & Hesap'tan istediği gibi değiştirebilir.
 const DEFAULT_PREFS = {
   hizliErisimTools: [
-    { mod: "buro", id: "muvekkilekle" },
+    { mod: "buro", id: "muvekkilyonetimi" },
     { mod: "belge", id: "wizard" },
     { mod: "buro", id: "gorevler" },
   ],

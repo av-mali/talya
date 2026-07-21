@@ -8,9 +8,7 @@ window.MODULES_INDEX = [
     "items": [
       {"id": "globalarama", "icon": "fa-magnifying-glass", "name": "Global Arama"},
       {"id": "ekip", "icon": "fa-people-group", "name": "Ekip Yönetimi"},
-      {"id": "muvekkilekle", "icon": "fa-user-plus", "name": "Müvekkil Ekle", "group": "Müvekkil Yönetimi"},
-      {"id": "tablo", "icon": "fa-table-list", "name": "Müvekkil Tablosu", "group": "Müvekkil Yönetimi"},
-      {"id": "rapor", "icon": "fa-file-circle-check", "name": "Müvekkil Raporu", "group": "Müvekkil Yönetimi"},
+      {"id": "muvekkilyonetimi", "icon": "fa-user-group", "name": "Müvekkil Yönetimi"},
       {"id": "sure", "icon": "fa-calendar-xmark", "name": "Süre & Takvim"},
       {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"},
       {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
