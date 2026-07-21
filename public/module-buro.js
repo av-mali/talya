@@ -2166,9 +2166,9 @@ function mvShowFeeForm(clientId, existing) {
   const todayISO = new Date().toISOString().slice(0, 10);
   openTalyaModal(`
     <div class="ic" style="margin-bottom:14px;"><div class="ic-t">${existing ? 'Sözleşmeyi Düzenle' : 'Yeni Ücret Sözleşmesi'}</div></div>
-    <div class="fg"><div class="fl">Hangi Dosyaya Bağlı? <span class="opt">(bağlarsan, o dosyanın Anlaşılan Ücreti ve vade tarihi buradan otomatik güncellenir)</span></div>
+    <div class="fg"><div class="fl">Hangi Dosyaya Bağlı? <span class="opt">(seçmezsen, "Sözleşme Konusu İş" ile otomatik yeni bir dosya oluşturulur)</span></div>
       <select id="fee-case">
-        <option value="">Genel / bir dosyaya bağlı değil</option>
+        <option value="">Yeni dosya oluştur (Sözleşme Konusu İş ile)</option>
         ${(mvClientCache.cases || []).map(cs => `<option value="${cs.id}" ${existing && existing.caseId === cs.id ? 'selected' : ''}>${cs.title}</option>`).join('')}
       </select>
     </div>

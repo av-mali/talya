@@ -44,13 +44,28 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const pesinatTutar = body.pesinatTutar != null && body.pesinatTutar !== "" ? parseFloat(body.pesinatTutar) : null;
   const pesinTarihi = body.pesinTarihi ? new Date(body.pesinTarihi) : null;
   const taksitler = Array.isArray(body.taksitler) ? body.taksitler : [];
-  const caseId = body.caseId || null;
+  const konu = body.konu || null;
+  let caseId = body.caseId || null;
+
+  // Kullanıcı bu sözleşmeyi mevcut bir dosyaya bağlamadıysa (ör. bu
+  // müvekkilin hiç dosyası yoksa), sözleşme konusuyla otomatik YENİ bir
+  // dosya oluşturup sözleşmeyi ona bağlıyoruz — böylece her sözleşme
+  // her zaman bir dosyanın altında, Fatura & Tahsilat'ta da görünür olur.
+  if (!caseId) {
+    const yeniDosya = await prisma.case.create({
+      data: {
+        clientId: params.id,
+        title: konu ? konu.slice(0, 120) : "Avukatlık Ücret Sözleşmesi",
+      },
+    });
+    caseId = yeniDosya.id;
+  }
 
   const agreement = await prisma.feeAgreement.create({
     data: {
       clientId: params.id,
       caseId,
-      konu: body.konu || null,
+      konu,
       sabitUcret,
       yuzdeVarMi: !!body.yuzdeVarMi,
       yuzdeOrani: body.yuzdeOrani != null && body.yuzdeOrani !== "" ? parseFloat(body.yuzdeOrani) : null,
