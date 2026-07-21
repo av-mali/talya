@@ -2129,6 +2129,12 @@ function mvShowFeeForm(clientId, existing) {
   const todayISO = new Date().toISOString().slice(0, 10);
   openTalyaModal(`
     <div class="ic" style="margin-bottom:14px;"><div class="ic-t">${existing ? 'Sözleşmeyi Düzenle' : 'Yeni Ücret Sözleşmesi'}</div></div>
+    <div class="fg"><div class="fl">Hangi Dosyaya Bağlı? <span class="opt">(bağlarsan, o dosyanın Anlaşılan Ücreti ve vade tarihi buradan otomatik güncellenir)</span></div>
+      <select id="fee-case">
+        <option value="">Genel / bir dosyaya bağlı değil</option>
+        ${(mvClientCache.cases || []).map(cs => `<option value="${cs.id}" ${existing && existing.caseId === cs.id ? 'selected' : ''}>${cs.title}</option>`).join('')}
+      </select>
+    </div>
     <div class="fg"><div class="fl">Sözleşme Konusu İş</div><textarea id="fee-konu" rows="3" placeholder="ör. Antalya 3. Aile Mahkemesi 2025/222 Esas numaralı dosya kapsamındaki işler.">${existing ? (existing.konu||'') : ''}</textarea></div>
 
     <div class="fg"><div class="fl">Sabit Ücret (TL)</div><input type="text" class="tl-amount" id="fee-sabit" value="${existing && existing.sabitUcret != null ? new Intl.NumberFormat('tr-TR').format(existing.sabitUcret) : ''}" placeholder="200.000"></div>
@@ -2290,6 +2296,7 @@ async function mvSaveFeeAgreement(clientId) {
   }
 
   const body = {
+    caseId: document.getElementById('fee-case').value || null,
     konu: document.getElementById('fee-konu').value,
     sabitUcret: document.getElementById('fee-sabit').value ? tlParseValue(document.getElementById('fee-sabit').value) : null,
     yuzdeVarMi: document.getElementById('fee-yuzde-var').checked,

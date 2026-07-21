@@ -372,7 +372,7 @@ async function renderHomeWidgets() {
   }
 
   box.innerHTML = resolved.map(t => `
-    <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--gold-rule)'" onmouseout="this.style.borderColor='var(--border)'" onclick="openModule('${t.mod}?open=${t.id}')">
+    <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer;width:140px;transition:all .2s cubic-bezier(.2,.8,.2,1);" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.1)';this.style.borderColor='var(--gold-rule)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)'" onclick="openModule('${t.mod}?open=${t.id}')">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
       <i class="fa-solid ${t.icon}" style="font-size:18px;color:var(--gold);"></i>
       <span style="font-size:12px;color:var(--t1);">${t.name}</span>
@@ -710,7 +710,7 @@ async function renderGelirGiderOzet() {
   try {
     const prefRes = await fetch('/api/profile/home-stats-prefs');
     const prefData = await prefRes.json();
-    const selected = prefData.selected || ['gelirgider'];
+    const selected = prefData.selected || ['gelirgider', 'muvekkil', 'dosya'];
 
     const statsRes = await fetch('/api/home-stats');
     if (statsRes.status === 403) { card.style.display = 'none'; return; }

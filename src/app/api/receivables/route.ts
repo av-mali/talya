@@ -13,10 +13,19 @@ export async function GET() {
   }
   const restricted = await shouldRestrictToOwnItems(ws.userId);
 
+  // Bir Dosya, bir Ücret Sözleşmesi'ne bağlıysa, o dosyanın "Anlaşılan
+  // Ücret"i zaten sözleşmeden geliyor — aşağıdaki feeRows bunu ZATEN daha
+  // ayrıntılı (taksit taksit) şekilde gösterecek. Aynı tutarı İKİ KEZ
+  // saymamak için, sözleşmeye bağlı dosyaları buradan hariç tutuyoruz.
+  const linkedCaseIds = new Set(
+    (await prisma.feeAgreement.findMany({ where: { caseId: { not: null } }, select: { caseId: true } })).map((a) => a.caseId)
+  );
+
   const cases = await prisma.case.findMany({
     where: {
       client: { workspaceId: ws.workspaceId },
       agreedFee: { not: null },
+      id: { notIn: Array.from(linkedCaseIds) as string[] },
       ...(restricted ? { assignedToId: ws.userId } : {}),
     },
     include: { client: true, invoices: true },

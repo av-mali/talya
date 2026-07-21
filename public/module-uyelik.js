@@ -263,7 +263,7 @@ const HOME_STATS_OPTIONS = [
   { key: 'muvekkil', label: 'Toplam Müvekkil Sayısı' },
   { key: 'dosya', label: 'Açık / Kapalı Dosya Sayısı' },
 ];
-const HOME_STATS_MAX = 2;
+const HOME_STATS_MAX = 3;
 
 async function homeStatsOnOpen() {
   const box = document.getElementById('homestats-box');
@@ -271,7 +271,7 @@ async function homeStatsOnOpen() {
   try {
     const res = await fetch('/api/profile/home-stats-prefs');
     const data = await res.json();
-    homeStatsRender(data.selected || ['gelirgider']);
+    homeStatsRender(data.selected || ['gelirgider', 'muvekkil', 'dosya']);
   } catch (e) {
     box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
   }
@@ -301,16 +301,19 @@ function homeWidgetsSettingsRender(selectedTools) {
       Ana sayfada kare kutular halinde görünecek araçları seçin — hangi modülden olduğu fark etmez.
     </div>
     ${modules.map(mod => `
-      <div style="margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px;">${mod.label}</div>
-        ${mod.items.map(item => {
-          const key = mod.key + ':' + item.id;
-          return `
-            <label style="display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer;">
-              <input type="checkbox" class="homewidgets-tool-cb" data-mod="${mod.key}" data-id="${item.id}" ${selectedKeys.has(key) ? 'checked' : ''} onchange="homeWidgetsToolsToggle()">
-              <span style="font-size:12.5px;"><i class="fa-solid ${item.icon}" style="width:14px;color:var(--t3);margin-right:4px;"></i>${item.name}</span>
-            </label>`;
-        }).join('')}
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px;">${mod.label}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${mod.items.map(item => {
+            const key = mod.key + ':' + item.id;
+            const checked = selectedKeys.has(key);
+            return `
+              <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:20px;border:1px solid ${checked ? 'var(--gold-rule)' : 'var(--border)'};background:${checked ? 'var(--gold-lo)' : 'transparent'};cursor:pointer;font-size:11.5px;color:${checked ? 'var(--gold-hi)' : 'var(--t2)'};white-space:nowrap;">
+                <input type="checkbox" class="homewidgets-tool-cb" data-mod="${mod.key}" data-id="${item.id}" ${checked ? 'checked' : ''} onchange="homeWidgetsToolsToggle()" style="display:none;">
+                <i class="fa-solid ${item.icon}" style="font-size:11px;"></i>${item.name}
+              </label>`;
+          }).join('')}
+        </div>
       </div>
     `).join('')}
     <div id="homewidgets-msg" style="font-size:11px;color:var(--t3);margin-top:4px;"></div>
@@ -323,12 +326,14 @@ function homeWidgetsToolsToggle() {
     .filter(cb => cb.checked)
     .map(cb => ({ mod: cb.dataset.mod, id: cb.dataset.id }));
 
+  homeWidgetsSettingsRender(tools); // pillerin görsel durumunu (renk/arka plan) hemen güncelle
+
   fetch('/api/profile/home-widget-prefs', {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prefs: { hizliErisimTools: tools } })
   }).then(() => {
-    document.getElementById('homewidgets-msg').textContent = 'Kaydedildi ✓';
-    setTimeout(() => { const m = document.getElementById('homewidgets-msg'); if (m) m.textContent = ''; }, 1500);
+    const m = document.getElementById('homewidgets-msg');
+    if (m) { m.textContent = 'Kaydedildi ✓'; setTimeout(() => { if (m) m.textContent = ''; }, 1500); }
   });
 }
 

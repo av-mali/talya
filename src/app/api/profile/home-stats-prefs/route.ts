@@ -11,7 +11,7 @@ export async function GET() {
   const userId = (session.user as any).id as string;
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { homeStatsPrefs: true } });
-  const prefs = (user?.homeStatsPrefs as string[] | null) || ["gelirgider"];
+  const prefs = (user?.homeStatsPrefs as string[] | null) || ["gelirgider", "muvekkil", "dosya"];
   return NextResponse.json({ selected: prefs });
 }
 

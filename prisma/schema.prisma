@@ -178,6 +178,8 @@ model FeeAgreement {
   updatedAt      DateTime @updatedAt
   client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId       String
+  case           Case?    @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  caseId         String?  // bağlıysa: bu dosyanın "Anlaşılan Ücret"i ve vade tarihi buradan otomatik senkronize edilir
   payments       FeeAgreementPayment[]
 }
 
@@ -230,6 +232,7 @@ model Case {
   events     ClientEvent[]
   invoices   Invoice[]
   timeEntries TimeEntry[]
+  feeAgreements FeeAgreement[]
 }
 
 model Invoice {

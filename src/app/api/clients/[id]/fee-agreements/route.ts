@@ -19,6 +19,21 @@ function normalizeOdemeSekli(v: any): string {
   return v === "taksit" || v === "pesin_taksit" ? v : "pesin";
 }
 
+// Sözleşme bir Dosya'ya (Case) bağlıysa, o dosyanın "Anlaşılan Ücret" ve
+// vade tarihini sözleşmedeki bilgiyle senkronize eder — aynı bilgiyi iki
+// yerde ayrı ayrı girmeye gerek kalmasın diye. Vade tarihi olarak, HENÜZ
+// ÖDENMEMİŞ en yakın taksidin tarihi kullanılır.
+async function syncCaseFromAgreement(caseId: string, sabitUcret: number | null, schedule: { tutar: number; vadeTarihi: Date }[]) {
+  const earliestUnpaid = schedule.length ? schedule.reduce((a, b) => (a.vadeTarihi < b.vadeTarihi ? a : b)) : null;
+  await prisma.case.update({
+    where: { id: caseId },
+    data: {
+      agreedFee: sabitUcret,
+      paymentDueDate: earliestUnpaid ? earliestUnpaid.vadeTarihi : null,
+    },
+  });
+}
+
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const ok = await requireOwnedClient(params.id);
   if (!ok) return NextResponse.json({ error: "Yetkisiz veya müvekkil bulunamadı." }, { status: 401 });
@@ -29,10 +44,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const pesinatTutar = body.pesinatTutar != null && body.pesinatTutar !== "" ? parseFloat(body.pesinatTutar) : null;
   const pesinTarihi = body.pesinTarihi ? new Date(body.pesinTarihi) : null;
   const taksitler = Array.isArray(body.taksitler) ? body.taksitler : [];
+  const caseId = body.caseId || null;
 
   const agreement = await prisma.feeAgreement.create({
     data: {
       clientId: params.id,
+      caseId,
       konu: body.konu || null,
       sabitUcret,
       yuzdeVarMi: !!body.yuzdeVarMi,
@@ -54,6 +71,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     await prisma.feeAgreementPayment.createMany({
       data: schedule.map((s) => ({ agreementId: agreement.id, tutar: s.tutar, vadeTarihi: s.vadeTarihi })),
     });
+  }
+
+  if (caseId) {
+    await syncCaseFromAgreement(caseId, sabitUcret, schedule);
   }
 
   const withPayments = await prisma.feeAgreement.findUnique({
