@@ -80,7 +80,7 @@
           <div class="pop-desc" id="popDesc"></div>
         </div>
         <div class="tool-panel-body" id="popBody"></div>
-        <div class="tool-panel-cta">
+        <div class="tool-panel-cta" id="popCtaWrap" style="display:none;">
           <button class="pop-cta-btn g" id="popBtn" onclick="submitPopup()">
             <i class="fa-solid fa-gears" id="popBtnIco"></i><span id="popBtnLbl">Dilekçeyi Taslakla</span>
           </button>
@@ -96,15 +96,9 @@
         </div>
 
         <div class="chat-msgs" id="chatMsgs">
-          <div class="chat-empty" id="chatEmpty">
-            <div class="chat-empty-ico"><i class="fa-solid fa-scale-balanced"></i></div>
-            <div class="chat-empty-title">Talya AI Hazır</div>
-            <div class="chat-empty-sub">Soldaki menüden bir araç seçin — ya da doğrudan sorunuzu yazın.</div>
-            <div class="qp-chips">
-              <div class="qp" onclick="sendQ('İşe iade davası dilekçesi taslağı oluştur')"><i class="fa-solid fa-scroll"></i> İşe iade dilekçesi</div>
-              <div class="qp" onclick="sendQ('Temyiz süresini hesapla, tebliğ tarihi bugün')"><i class="fa-solid fa-clock"></i> Temyiz süresi</div>
-              <div class="qp" onclick="sendQ('Kira alacağı ihtarnamesi örneği yaz')"><i class="fa-solid fa-file-lines"></i> Kira ihtarnamesi</div>
-            </div>
+          <div class="chat-empty" id="chatEmpty" style="opacity:.5;">
+            <div class="chat-empty-ico"><i class="fa-solid fa-spinner fa-spin"></i></div>
+            <div class="chat-empty-title">Yükleniyor…</div>
           </div>
         </div>
 
