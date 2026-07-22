@@ -73,7 +73,7 @@ async function initModulePage() {
   const requestedOpen = params.get('open');
   const openId = (requestedOpen && !blockedSet.has(requestedOpen)) ? requestedOpen : (allowedItems[0] ? allowedItems[0].id : null);
   if (openId) {
-    setTimeout(() => openPopup(openId), 150);
+    openPopup(openId);
   } else {
     const popBody = document.getElementById('popBody');
     if (popBody) popBody.innerHTML = `<div style="padding:20px;font-size:13px;color:var(--t3);">Bu modülde erişim yetkiniz olan bir araç bulunmuyor. Büro yöneticinizle iletişime geçin.</div>`;
