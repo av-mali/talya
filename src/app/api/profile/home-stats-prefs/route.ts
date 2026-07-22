@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const MAX_SELECTED = 2;
-
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
@@ -21,8 +19,8 @@ export async function PUT(req: Request) {
   const userId = (session.user as any).id as string;
 
   const { selected } = await req.json();
-  if (!Array.isArray(selected) || selected.length > MAX_SELECTED) {
-    return NextResponse.json({ error: `En fazla ${MAX_SELECTED} istatistik seçebilirsiniz.` }, { status: 400 });
+  if (!Array.isArray(selected)) {
+    return NextResponse.json({ error: "Geçersiz veri." }, { status: 400 });
   }
 
   await prisma.user.update({ where: { id: userId }, data: { homeStatsPrefs: selected } });

@@ -359,7 +359,14 @@ function homeStatsToggle() {
   fetch('/api/profile/home-stats-prefs', {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ selected })
-  }).then(() => toast('Kaydedildi', 'fa-solid fa-check', true));
+  }).then(async (res) => {
+    if (res.ok) {
+      toast('Kaydedildi', 'fa-solid fa-check', true);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast(data.error || 'Kaydedilemedi', 'fa-solid fa-triangle-exclamation');
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════════
