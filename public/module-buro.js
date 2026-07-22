@@ -359,8 +359,10 @@ function mvRenderClientView() {
           ${c.notes ? `<div style="font-size:12px;color:var(--t2);margin-top:4px;">${c.notes}</div>` : ''}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button class="pop-cta-btn b" style="padding:5px 10px;" onclick="mvEditToggle()"><i class="fa-solid fa-pen"></i></button>
-          <button class="pop-cta-btn" style="padding:5px 10px;background:var(--danger);" onclick="mvDeleteClient()"><i class="fa-solid fa-trash"></i></button>
+          <button class="pop-cta-btn b" style="width:auto;padding:5px 10px;" onclick="mvEditToggle()" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+          <button class="pop-cta-btn neutral" style="width:auto;padding:5px 10px;" onclick="rpSelect('${c.id}')" title="Rapor"><i class="fa-solid fa-file-circle-check"></i></button>
+          <button class="pop-cta-btn neutral" style="width:auto;padding:5px 10px;" onclick="tblToggleArchive('${c.id}', ${!c.archived}); mvBackToList();" title="${c.archived ? 'Aktife Al' : 'Arşivle'}"><i class="fa-solid fa-box-archive"></i></button>
+          <button class="pop-cta-btn danger" style="width:auto;padding:5px 10px;" onclick="mvDeleteClient()" title="Sil"><i class="fa-solid fa-trash"></i></button>
         </div>
       </div>
       <div id="mv-edit-form" style="display:none;margin-top:10px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);">

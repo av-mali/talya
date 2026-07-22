@@ -311,6 +311,10 @@ textarea{resize:none;line-height:1.6;}
 .pop-cta-btn.t:hover{background:var(--teal-hi);transform:translateY(-1px);box-shadow:0 6px 18px rgba(30,107,80,.25);}
 .pop-cta-btn.p{background:var(--purple);color:#fff;}
 .pop-cta-btn.p:hover{background:var(--purple-hi);transform:translateY(-1px);box-shadow:0 6px 18px rgba(107,75,176,.25);}
+.pop-cta-btn.danger{background:var(--danger);color:#fff;}
+.pop-cta-btn.danger:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(200,60,60,.25);filter:brightness(1.1);}
+.pop-cta-btn.neutral{background:var(--bg2);color:var(--t2);}
+.pop-cta-btn.neutral:hover{background:var(--border);transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.08);}
 .pop-cta-btn i{font-size:12px;}
 
 .divider{display:flex;align-items:center;gap:7px;margin:12px 0 10px;}
