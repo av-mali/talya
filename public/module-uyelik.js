@@ -11,7 +11,7 @@ window.CURRENT_MODULE = {
     {"id": "profil", "icon": "fa-user-circle", "name": "Profil Bilgileri"},
     {"id": "guvenlik", "icon": "fa-shield-halved", "name": "Güvenlik & Şifre"},
     {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"},
-    {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa İstatistikleri"},
+    {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa Ayarları"},
     {"id": "telegrambaglanti", "icon": "fa-paper-plane", "name": "Talya Asistan (Telegram)"},
     {"id": "destek", "icon": "fa-headset", "name": "Destek / Öneri"}
   ],
@@ -80,8 +80,8 @@ window.CURRENT_MODULE = {
       prompt: () => ''
     },
     anasayfaistatistik: {
-      badge: 'g', badgeText: 'Ana Sayfa', titleHtml: 'Ana Sayfa <em class="g">İstatistikleri</em>',
-      desc: 'Ana sayfada hangi istatistiklerin gösterileceğini seçin (en fazla 2).',
+      badge: 'g', badgeText: 'Ana Sayfa', titleHtml: 'Ana Sayfa <em class="g">Ayarları</em>',
+      desc: 'Ana sayfada hangi istatistiklerin ve araçların gösterileceğini seçin.',
       btnClass: 'g', btnIco: 'fa-chart-simple', btnLbl: '', hideCta: true,
       body: `<div id="homestats-box"></div><div id="homewidgets-box" style="margin-top:20px;"></div>`,
       onOpen: () => homeStatsOnOpen(),
@@ -263,8 +263,6 @@ const HOME_STATS_OPTIONS = [
   { key: 'muvekkil', label: 'Toplam Müvekkil Sayısı' },
   { key: 'dosya', label: 'Açık / Kapalı Dosya Sayısı' },
 ];
-const HOME_STATS_MAX = 3;
-
 async function homeStatsOnOpen() {
   const box = document.getElementById('homestats-box');
   box.innerHTML = skeletonLines(3);
@@ -341,7 +339,7 @@ function homeStatsRender(selected) {
   const box = document.getElementById('homestats-box');
   box.innerHTML = `
     <div style="font-size:11.5px;color:var(--t3);line-height:1.6;margin-bottom:14px;">
-      Ana sayfadaki istatistik kutusunun büyümemesi için en fazla <strong>${HOME_STATS_MAX}</strong> tanesini seçebilirsiniz.
+      Ana sayfada gösterilecek istatistikleri seçin.
     </div>
     ${HOME_STATS_OPTIONS.map(opt => `
       <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
@@ -349,25 +347,11 @@ function homeStatsRender(selected) {
         <span style="font-size:13px;">${opt.label}</span>
       </label>
     `).join('')}
-    <div id="homestats-msg" style="font-size:11px;color:var(--warn);margin-top:8px;"></div>
   `;
   box.dataset.selected = JSON.stringify(selected);
 }
 
 function homeStatsToggle() {
-  const checkboxes = document.querySelectorAll('.homestats-cb');
-  const checked = Array.from(checkboxes).filter(cb => cb.checked);
-  const msg = document.getElementById('homestats-msg');
-
-  if (checked.length > HOME_STATS_MAX) {
-    // Son işaretleneni geri al, limiti aş­tırma.
-    const last = checked[checked.length - 1];
-    last.checked = false;
-    msg.textContent = `En fazla ${HOME_STATS_MAX} istatistik seçebilirsiniz.`;
-    return;
-  }
-  msg.textContent = '';
-
   const selected = Array.from(document.querySelectorAll('.homestats-cb'))
     .filter(cb => cb.checked)
     .map(cb => cb.value);

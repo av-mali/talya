@@ -1988,6 +1988,14 @@ async function ekipShowMemberCases(memberId, memberName) {
   }
 }
 
+function ekipTogglePermPill(checkboxEl) {
+  const label = checkboxEl.closest('label');
+  const checked = checkboxEl.checked;
+  label.style.border = `1px solid ${checked ? 'var(--gold-rule)' : 'var(--border)'}`;
+  label.style.background = checked ? 'var(--gold-lo)' : 'transparent';
+  label.style.color = checked ? 'var(--gold-hi)' : 'var(--t3)';
+}
+
 function ekipShowPermissions(memberId) {
   const member = ekipMembersCache.find(m => m.id === memberId);
   if (!member) return;
@@ -2010,13 +2018,17 @@ function ekipShowPermissions(memberId) {
     </label>
 
     ${modules.map(mod => `
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:10px 0 4px;">${mod.label}</div>
-      ${mod.items.map(item => `
-        <label style="display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;">
-          <input type="checkbox" class="ekip-perm-tool" value="${item.id}" ${blocked.has(item.id) ? '' : 'checked'}>
-          <span style="font-size:12px;">${item.name}</span>
-        </label>
-      `).join('')}
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:10px 0 6px;">${mod.label}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+        ${mod.items.map(item => {
+          const checked = !blocked.has(item.id);
+          return `
+            <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:20px;border:1px solid ${checked ? 'var(--gold-rule)' : 'var(--border)'};background:${checked ? 'var(--gold-lo)' : 'transparent'};cursor:pointer;font-size:11.5px;color:${checked ? 'var(--gold-hi)' : 'var(--t3)'};white-space:nowrap;">
+              <input type="checkbox" class="ekip-perm-tool" value="${item.id}" ${checked ? 'checked' : ''} onchange="ekipTogglePermPill(this)" style="display:none;">
+              <i class="fa-solid ${item.icon}" style="font-size:11px;"></i>${item.name}
+            </label>`;
+        }).join('')}
+      </div>
     `).join('')}
 
     <button class="pop-cta-btn b" style="width:100%;margin-top:14px;" onclick="ekipSavePermissions('${memberId}')"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>

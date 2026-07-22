@@ -76,7 +76,7 @@ window.MODULES_INDEX = [
       {"id": "profil", "icon": "fa-user-circle", "name": "Profil Bilgileri"},
       {"id": "guvenlik", "icon": "fa-shield-halved", "name": "Güvenlik & Şifre"},
       {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"},
-      {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa İstatistikleri"},
+      {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa Ayarları"},
       {"id": "telegrambaglanti", "icon": "fa-paper-plane", "name": "Talya Asistan (Telegram)"},
       {"id": "destek", "icon": "fa-headset", "name": "Destek / Öneri"}
     ]
