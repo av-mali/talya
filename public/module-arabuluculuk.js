@@ -176,8 +176,8 @@ function arRenderCaseList() {
             <span style="font-size:12px;font-weight:600;">Açık Dosyalar</span>
             <span style="font-size:11px;color:var(--t3);">(${acikDosyalar.length})</span>
           </div>
-          <div style="flex:1;overflow-y:auto;">
-            ${acikDosyalar.length ? acikDosyalar.map(arCaseCardHtml).join('') : `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Açık dosya yok.</div>`}
+          <div style="background:var(--bg2);border-radius:var(--r);padding:8px;flex:1;min-height:200px;overflow-y:auto;">
+            ${acikDosyalar.length ? acikDosyalar.map(arCaseCardHtml).join('') : `<div style="font-size:11.5px;color:var(--t3);text-align:center;padding:20px 8px;">Boş</div>`}
           </div>
         </div>
 
@@ -188,17 +188,17 @@ function arRenderCaseList() {
             <span style="font-size:12px;font-weight:600;">Kapalı Dosyalar</span>
             <span style="font-size:11px;color:var(--t3);">(${kapaliDosyalar.length})</span>
           </div>
-          <div style="flex:1;overflow-y:auto;">
+          <div style="background:var(--bg2);border-radius:var(--r);padding:8px;flex:1;min-height:200px;overflow-y:auto;">
             ${yillar.length ? yillar.map(yil => `
               <div style="margin-bottom:6px;">
-                <div style="font-weight:600;cursor:pointer;padding:8px 10px;display:flex;align-items:center;gap:8px;background:var(--bg2);border-radius:var(--r);" onclick="arToggleYilGrup('${yil}')">
+                <div style="font-weight:600;cursor:pointer;padding:8px 10px;display:flex;align-items:center;gap:8px;background:var(--card);border-radius:var(--r);" onclick="arToggleYilGrup('${yil}')">
                   <i class="fa-solid ${arKapaliYilAcik === yil ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:10px;"></i>
                   <span style="font-size:12px;">${yil}</span>
                   <span style="font-size:10.5px;color:var(--t3);margin-left:auto;">(${yilGruplari[yil].length})</span>
                 </div>
                 ${arKapaliYilAcik === yil ? `<div style="padding:8px 4px 0;">${yilGruplari[yil].map(arCaseCardHtml).join('')}</div>` : ''}
               </div>
-            `).join('') : `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Kapalı dosya yok.</div>`}
+            `).join('') : `<div style="font-size:11.5px;color:var(--t3);text-align:center;padding:20px 8px;">Boş</div>`}
           </div>
         </div>
       </div>
