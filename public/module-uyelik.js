@@ -154,9 +154,9 @@ async function profilOnOpen() {
 // Renk paleti seçici — 4 kart, her biri küçük bir renk önizlemesiyle.
 const PALETTE_OPTIONS = [
   { key: 'varsayilan', label: 'Varsayılan (Altın)', colors: ['#F7F5F1', '#B8922A', '#3A5F96'] },
-  { key: 'aytasi', label: 'Ay Taşı', colors: ['#EDEFF6', '#5C6FA3', '#B99B6B'] },
-  { key: 'kehribar', label: 'Kehribar', colors: ['#FBF1DD', '#C2660C', '#6B4423'] },
-  { key: 'yesim', label: 'Yeşim', colors: ['#E7EFE9', '#3C8C6E', '#6E8C7A'] },
+  { key: 'aytasi', label: 'Ay Taşı', colors: ['#D6DDF5', '#3546A0', '#B99B6B'] },
+  { key: 'kehribar', label: 'Kehribar', colors: ['#F5DFB5', '#B0570A', '#6B4423'] },
+  { key: 'yesim', label: 'Yeşim', colors: ['#CBE2D3', '#1F7A56', '#6E8C7A'] },
 ];
 
 function renderPalettePicker() {

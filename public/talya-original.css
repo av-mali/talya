@@ -27,8 +27,8 @@
 /* 1) Ay Taşı — açık: soğuk, ışıltılı, gümüşi-lavanta bir zemin üzerinde
    yumuşak bir mavimsi-gri parıltı (ay taşının "adularescence" hissi) */
 [data-palette="aytasi"]{
-  --bg:#EDEFF6;--bg2:#E0E4F1;--bg3:#CFD6EA;--card:#FBFBFE;--border:rgba(50,60,110,.14);--border2:rgba(50,60,110,.22);
-  --gold:#5C6FA3;--gold-hi:#454F80;--gold-lo:rgba(92,111,163,.10);--gold-mid:rgba(92,111,163,.20);--gold-rule:rgba(92,111,163,.34);
+  --bg:#D6DDF5;--bg2:#C3CDEE;--bg3:#A9B7E4;--card:#FFFFFF;--border:rgba(30,40,110,.20);--border2:rgba(30,40,110,.30);
+  --gold:#3546A0;--gold-hi:#232F78;--gold-lo:rgba(53,70,160,.12);--gold-mid:rgba(53,70,160,.24);--gold-rule:rgba(53,70,160,.40);
   --blue:#B99B6B;--blue-lo:rgba(185,155,107,.10);--blue-hi:#957A4E;
   --t0:#171A2E;--t1:#2E324E;--t2:#5A5F82;--t3:#9298BC;
   --success:#3E8C6E;--danger:#B5364A;--warn:#B0812E;
@@ -45,8 +45,8 @@
 /* 2) Kehribar — açık: reçineden gelen sıcak bal-turuncu zemin, derin
    kehribar vurgusu (altından farklı — daha turuncu, daha derin) */
 [data-palette="kehribar"]{
-  --bg:#FBF1DD;--bg2:#F6E2BC;--bg3:#EECC8C;--card:#FFFCF6;--border:rgba(120,60,10,.16);--border2:rgba(120,60,10,.24);
-  --gold:#C2660C;--gold-hi:#924C08;--gold-lo:rgba(194,102,12,.12);--gold-mid:rgba(194,102,12,.22);--gold-rule:rgba(194,102,12,.36);
+  --bg:#F5DFB5;--bg2:#EFCB8C;--bg3:#E5B360;--card:#FFFFFF;--border:rgba(120,60,10,.22);--border2:rgba(120,60,10,.32);
+  --gold:#B0570A;--gold-hi:#7E3E06;--gold-lo:rgba(176,87,10,.13);--gold-mid:rgba(176,87,10,.25);--gold-rule:rgba(176,87,10,.42);
   --blue:#6B4423;--blue-lo:rgba(107,68,35,.10);--blue-hi:#4A2E18;
   --t0:#2A1608;--t1:#4E2E14;--t2:#83593A;--t3:#BB9370;
   --success:#4E7A1E;--danger:#B5301E;--warn:#C2660C;
@@ -63,8 +63,8 @@
 /* 3) Yeşim — açık: sütlü, sakin, hafif griye çalan yeşim zemini —
    zümrüt gibi keskin değil, taşın kendi yumuşak/donuk hissi */
 [data-palette="yesim"]{
-  --bg:#E7EFE9;--bg2:#D8E5DC;--bg3:#C2D6C8;--card:#F6FBF7;--border:rgba(15,60,40,.15);--border2:rgba(15,60,40,.23);
-  --gold:#3C8C6E;--gold-hi:#2C6B52;--gold-lo:rgba(60,140,110,.11);--gold-mid:rgba(60,140,110,.21);--gold-rule:rgba(60,140,110,.35);
+  --bg:#CBE2D3;--bg2:#B2D3BC;--bg3:#93C0A0;--card:#FFFFFF;--border:rgba(15,70,45,.20);--border2:rgba(15,70,45,.30);
+  --gold:#1F7A56;--gold-hi:#155C40;--gold-lo:rgba(31,122,86,.13);--gold-mid:rgba(31,122,86,.25);--gold-rule:rgba(31,122,86,.42);
   --blue:#6E8C7A;--blue-lo:rgba(110,140,122,.10);--blue-hi:#516B5C;
   --t0:#0F1E16;--t1:#22392C;--t2:#4C6357;--t3:#87A093;
   --success:#3C8C6E;--danger:#B5364A;--warn:#B0812E;
