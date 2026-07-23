@@ -15,6 +15,7 @@ export async function GET() {
   const userId = (session.user as any).id as string;
   const ws = await requireWorkspace();
   const restricted = ws ? await shouldRestrictToOwnItems(ws.userId) : false;
+  const currentUser = await prisma.user.findUnique({ where: { id: userId }, select: { tevkilAlmaAcik: true } });
 
   const now = new Date();
   // Bildirim zili artık sadece ACİL (2 gün ve altı) kayıtları gösterir —
@@ -41,7 +42,7 @@ export async function GET() {
     return `${base} · ${clock}`;
   }
 
-  const [events, tasks, readRows, clientMessages, mediationCases, feePayments] = await Promise.all([
+  const [events, tasks, readRows, clientMessages, mediationCases, feePayments, tevkilTalepleri] = await Promise.all([
     ws ? prisma.clientEvent.findMany({
       where: {
         case: {
@@ -86,6 +87,16 @@ export async function GET() {
       },
       include: { agreement: { include: { client: true } } },
     }) : Promise.resolve([]),
+    // Tevkil Menüsü — BÜRO SINIRI YOK, "Tevkil Alma" açıksa sistemdeki
+    // TÜM açık taleplerden bildirim alır.
+    currentUser?.tevkilAlmaAcik
+      ? prisma.tevkilTalebi.findMany({
+          where: { durum: "acik", requesterId: { not: userId } },
+          include: { requester: { select: { name: true } } },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        })
+      : Promise.resolve([]),
   ]);
 
   const readIds = new Set(readRows.map((r) => r.notifId));
@@ -187,7 +198,23 @@ export async function GET() {
     };
   });
 
-  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs, ...mediationNotifs, ...feePaymentNotifs].sort(
+  const tevkilNotifs = tevkilTalepleri.map((t) => {
+    const sortDate = t.tarih || t.createdAt;
+    const id = "tevkil-" + t.id;
+    return {
+      id,
+      type: "sistem",
+      ico: "fa-people-arrows",
+      level: "info",
+      label: "Tevkil Talebi",
+      text: `${t.requester.name || "Bir avukat"} — ${t.sehir || t.mahkeme || "yeni tevkil talebi"}`,
+      time: t.tarih ? new Date(t.tarih).toLocaleDateString("tr-TR") : "Tarih belirtilmemiş",
+      dueDate: sortDate,
+      read: readIds.has(id),
+    };
+  });
+
+  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs, ...mediationNotifs, ...feePaymentNotifs, ...tevkilNotifs].sort(
     (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   );
 

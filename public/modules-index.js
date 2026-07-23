@@ -40,6 +40,14 @@ window.MODULES_INDEX = [
     ]
   },
   {
+    "key": "tevkil",
+    "label": "Tevkil Menüsü",
+    "color": "p",
+    "items": [
+      {"id": "tevkil", "icon": "fa-people-arrows", "name": "Tevkil Panosu"}
+    ]
+  },
+  {
     "key": "uyap",
     "label": "UYAP Entegrasyonu",
     "color": "t",

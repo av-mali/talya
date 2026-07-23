@@ -94,6 +94,7 @@ const MODULE_ICONS = {
   belge: 'fa-scroll',
   buro: 'fa-briefcase',
   arabuluculuk: 'fa-handshake',
+  tevkil: 'fa-people-arrows',
   uyap: 'fa-building-columns',
   hesap: 'fa-calculator',
   uyelik: 'fa-user-circle',

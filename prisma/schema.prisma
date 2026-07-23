@@ -27,6 +27,9 @@ model User {
   kvkkChecklist Json?
   homeStatsPrefs Json?
   homeWidgetPrefs Json? // ana sayfada hangi ek widget'ların (Bekleyen Alacaklar, Hızlı Erişim, Bugün, Son Müvekkil Aktivitesi) gösterileceği
+  tevkilAlmaAcik Boolean @default(false) // açıksa, sistemdeki HERKESİN tevkil taleplerinden bildirim alır (büro sınırı yok)
+  tevkilTalepleri TevkilTalebi[] @relation("TevkilRequester")
+  tevkilKabuller  TevkilTalebi[] @relation("TevkilAcceptor")
   createdAt    DateTime  @default(now())
   messages     Message[]
   clients      Client[] // ESKİ ilişki — göç sonrası kullanılmayacak ama veri kaybı olmasın diye duruyor
@@ -196,6 +199,28 @@ model FeeAgreementPayment {
   agreement   FeeAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
   agreementId String
   invoice     Invoice?
+}
+
+// Tevkil Menüsü — büro sınırı olmadan, SİSTEMDEKİ TÜM avukatlar arasında
+// çalışan bir talep/kabul panosu (ör. "Ankara'da X tarihinde beni temsil
+// edecek biri lazım"). "Tevkil Alma" açık olan herkese bildirim gider,
+// ilk kabul eden alır, talep o an kapanır.
+model TevkilTalebi {
+  id            String   @id @default(cuid())
+  sehir         String?
+  mahkeme       String?
+  tarih         DateTime?
+  durusmaTuru   String?
+  ucretTeklifi  String?
+  aciklama      String?  @db.Text
+  telefon       String?  // talep sahibinin iletişim bilgisi — SADECE kabul edildikten sonra gösterilir
+  durum         String   @default("acik") // "acik" | "kapali"
+  createdAt     DateTime @default(now())
+  requesterId   String
+  requester     User     @relation("TevkilRequester", fields: [requesterId], references: [id])
+  acceptedById  String?
+  acceptedBy    User?    @relation("TevkilAcceptor", fields: [acceptedById], references: [id])
+  acceptedAt    DateTime?
 }
 
 model ClientPortalMessage {
