@@ -108,8 +108,7 @@ window.CURRENT_MODULE = {
       badge: 'g', badgeText: 'Yardım', titleHtml: 'Kullanım <em class="g">Kılavuzu</em>',
       desc: 'Talya\'daki tüm araçların nasıl kullanılacağını adım adım anlatan kılavuz.',
       btnClass: 'g', btnIco: 'fa-book', btnLbl: '', hideCta: true, hideChatInput: true,
-      body: `<div style="font-size:12px;color:var(--t3);line-height:1.6;">Tam kılavuz sağ panelde açılır. Aşağıdaki bağlantıdan indirebilirsiniz de.</div>
-        <a href="/talya-kullanim-kilavuzu.md" download class="pop-cta-btn b" style="width:100%;margin-top:10px;text-decoration:none;"><i class="fa-solid fa-download"></i><span>Markdown Olarak İndir</span></a>`,
+      body: `<div id="kilavuz-box"></div>`,
       onOpen: () => kilavuzOnOpen(),
       prompt: () => ''
     }
@@ -572,17 +571,19 @@ async function destekSendReply(ticketId) {
 // KULLANIM KILAVUZU
 // ══════════════════════════════════════════════════════
 function kilavuzOnOpen() {
-  const dp = document.getElementById('detailPane');
-  if (!dp) return;
+  const box = document.getElementById('kilavuz-box');
+  if (!box) return;
   const html = window.KILAVUZ_HTML || '<p>Kılavuz yüklenemedi.</p>';
-  dp.innerHTML = `
-    <div id="kilavuz-content" style="padding:28px 32px;overflow-y:auto;height:100%;max-width:760px;margin:0 auto;line-height:1.7;font-size:13.5px;color:var(--t1);">
+  box.innerHTML = `
+    <a href="/talya-kullanim-kilavuzu.md" download class="pop-cta-btn b" style="width:100%;margin-bottom:18px;text-decoration:none;"><i class="fa-solid fa-download"></i><span>Markdown Olarak İndir</span></a>
+    <div id="kilavuz-content" style="line-height:1.7;font-size:13.5px;color:var(--t1);">
       ${html}
     </div>
     <style>
-      #kilavuz-content h1{font-family:'Instrument Serif',serif;font-size:26px;margin-bottom:6px;}
-      #kilavuz-content h2{font-family:'Instrument Serif',serif;font-size:20px;margin-top:28px;padding-top:14px;border-top:1px solid var(--border);color:var(--gold-hi);}
-      #kilavuz-content h3{font-size:15px;font-weight:700;margin-top:18px;color:var(--t0);}
+      #kilavuz-content h1{display:none;}
+      #kilavuz-content h2:first-of-type{margin-top:0;}
+      #kilavuz-content h2{font-family:'Instrument Serif',serif;font-size:19px;margin-top:26px;padding-top:14px;border-top:1px solid var(--border);color:var(--gold-hi);}
+      #kilavuz-content h3{font-size:14px;font-weight:700;margin-top:16px;color:var(--t0);}
       #kilavuz-content p{margin:8px 0;color:var(--t2);}
       #kilavuz-content ul,#kilavuz-content ol{margin:8px 0;padding-left:22px;color:var(--t2);}
       #kilavuz-content li{margin:4px 0;}
