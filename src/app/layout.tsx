@@ -30,12 +30,12 @@ export default function RootLayout({
             stilsiz, sonra renkli" titremesi (hem açık hem koyu modda)
             ortadan kalkıyor. */}
         <link rel="stylesheet" href="/talya-original.css" />
-        {/* Karanlık mod titremesini (flash) önler — tema, sayfa içeriği
-            boyanmadan ÖNCE, senkron olarak uygulanır. engine.js'in geç
-            yüklenmesini beklemez. */}
+        {/* Karanlık mod VE renk paleti titremesini (flash) önler — ikisi
+            de sayfa içeriği boyanmadan ÖNCE, senkron olarak uygulanır.
+            engine.js'in geç yüklenmesini beklemezler. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('talya-theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('talya-theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}var p=localStorage.getItem('talya-palette');if(p&&p!=='varsayilan'){document.documentElement.setAttribute('data-palette',p);}}catch(e){}`,
           }}
         />
       </head>

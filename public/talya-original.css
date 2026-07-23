@@ -24,55 +24,55 @@
    sistemin geri kalanına hiç dokunmaya gerek kalmaz. Her paletin arka
    plan + metin + vurgu rengi BİRLİKTE değişir ki keskin bir fark olsun.*/
 
-/* 1) Lacivert & Pirinç — açık: soğuk, keskin beyaz zemin + koyu lacivert metin */
+/* 1) Lacivert & Pirinç — açık: doygun lacivert vurgu + net beyaz-mavi zemin */
 [data-palette="lacivert"]{
-  --bg:#EEF1F7;--bg2:#E1E6F0;--bg3:#D2D9E8;--card:#FFFFFF;--border:rgba(15,25,60,.12);--border2:rgba(15,25,60,.18);
-  --gold:#A97E1E;--gold-hi:#8A6414;--gold-lo:rgba(169,126,30,.10);--gold-mid:rgba(169,126,30,.20);--gold-rule:rgba(169,126,30,.32);
-  --blue:#0F1E4D;--blue-lo:rgba(15,30,77,.09);--blue-hi:#0A1636;
-  --t0:#0A1230;--t1:#28304F;--t2:#57608A;--t3:#8D96B8;
-  --success:#146B45;--danger:#B4222E;--warn:#9C5A0A;
+  --bg:#E4E9F5;--bg2:#D2DAF0;--bg3:#BCC8E8;--card:#FFFFFF;--border:rgba(10,20,70,.16);--border2:rgba(10,20,70,.24);
+  --gold:#B8860B;--gold-hi:#8F6800;--gold-lo:rgba(184,134,11,.12);--gold-mid:rgba(184,134,11,.24);--gold-rule:rgba(184,134,11,.38);
+  --blue:#0A1958;--blue-lo:rgba(10,25,88,.10);--blue-hi:#050D33;
+  --t0:#050B26;--t1:#1C2650;--t2:#4A5586;--t3:#8591BE;
+  --success:#0E7A45;--danger:#C41E2E;--warn:#B8600A;
 }
 /* Lacivert & Pirinç — koyu */
 [data-palette="lacivert"][data-theme="dark"]{
-  --bg:#0A0E1A;--bg2:#101627;--bg3:#161F35;--card:#0D1424;--border:rgba(160,180,255,.10);--border2:rgba(160,180,255,.16);
-  --gold:#E8C878;--gold-hi:#F5DA98;--gold-lo:rgba(232,200,120,.12);--gold-mid:rgba(232,200,120,.20);--gold-rule:rgba(232,200,120,.32);
-  --blue:#7C9CE8;--blue-lo:rgba(124,156,232,.10);--blue-hi:#9EB6F2;
-  --t0:#EAEFFC;--t1:#B6C1E4;--t2:#7885B8;--t3:#454F76;
-  --success:#3DC492;--danger:#E8646B;--warn:#E8A94C;
+  --bg:#050810;--bg2:#0B1020;--bg3:#121A34;--card:#080C1A;--border:rgba(140,170,255,.14);--border2:rgba(140,170,255,.22);
+  --gold:#FFCC4D;--gold-hi:#FFDE80;--gold-lo:rgba(255,204,77,.14);--gold-mid:rgba(255,204,77,.24);--gold-rule:rgba(255,204,77,.38);
+  --blue:#6690FF;--blue-lo:rgba(102,144,255,.12);--blue-hi:#93B4FF;
+  --t0:#F0F4FF;--t1:#AEBEEE;--t2:#6577AE;--t3:#333F66;
+  --success:#2FE08C;--danger:#FF5A64;--warn:#FFB84D;
 }
 
-/* 2) Bordo & Fildişi — açık: sıcak fildişi zemin + koyu bordo/kahve metin */
+/* 2) Bordo & Fildişi — açık: doygun şarap kırmızısı + sıcak fildişi zemin */
 [data-palette="bordo"]{
-  --bg:#F7EFE8;--bg2:#EEDFD5;--bg3:#E3CDBF;--card:#FFFCF9;--border:rgba(90,20,15,.13);--border2:rgba(90,20,15,.19);
-  --gold:#9C1F2E;--gold-hi:#7A1622;--gold-lo:rgba(156,31,46,.10);--gold-mid:rgba(156,31,46,.20);--gold-rule:rgba(156,31,46,.32);
-  --blue:#5C3A1E;--blue-lo:rgba(92,58,30,.09);--blue-hi:#432A15;
-  --t0:#2E1210;--t1:#513330;--t2:#815E58;--t3:#B99189;
-  --success:#3E7A2E;--danger:#9C1F2E;--warn:#A4601A;
+  --bg:#F3E4D6;--bg2:#E9CDB6;--bg3:#DCB595;--card:#FFFBF6;--border:rgba(110,15,10,.18);--border2:rgba(110,15,10,.26);
+  --gold:#B4102A;--gold-hi:#870A1F;--gold-lo:rgba(180,16,42,.12);--gold-mid:rgba(180,16,42,.24);--gold-rule:rgba(180,16,42,.38);
+  --blue:#3D2410;--blue-lo:rgba(61,36,16,.10);--blue-hi:#241408;
+  --t0:#1E0B08;--t1:#3E1F19;--t2:#744B41;--t3:#B0857A;
+  --success:#2E7A1E;--danger:#B4102A;--warn:#B8560A;
 }
 /* Bordo & Fildişi — koyu */
 [data-palette="bordo"][data-theme="dark"]{
-  --bg:#1C0F10;--bg2:#261416;--bg3:#331A1C;--card:#201112;--border:rgba(255,200,190,.10);--border2:rgba(255,200,190,.16);
-  --gold:#F0707E;--gold-hi:#F79BA6;--gold-lo:rgba(240,112,126,.12);--gold-mid:rgba(240,112,126,.20);--gold-rule:rgba(240,112,126,.32);
-  --blue:#D19A6B;--blue-lo:rgba(209,154,107,.10);--blue-hi:#E3B889;
-  --t0:#FBEFEA;--t1:#E0C4BE;--t2:#AE857D;--t3:#6E4C46;
-  --success:#5FBF4A;--danger:#F0707E;--warn:#E8A94C;
+  --bg:#0F0505;--bg2:#1A0B0B;--bg3:#280F0F;--card:#160808;--border:rgba(255,180,170,.14);--border2:rgba(255,180,170,.22);
+  --gold:#FF4D63;--gold-hi:#FF8090;--gold-lo:rgba(255,77,99,.14);--gold-mid:rgba(255,77,99,.24);--gold-rule:rgba(255,77,99,.38);
+  --blue:#E8A868;--blue-lo:rgba(232,168,104,.12);--blue-hi:#F5C696;
+  --t0:#FFEFE8;--t1:#E8BCB0;--t2:#A4746A;--t3:#5C3A34;
+  --success:#5FE04A;--danger:#FF4D63;--warn:#FFB84D;
 }
 
-/* 3) Antrasit & Zümrüt — açık: soğuk taş grisi zemin + koyu antrasit metin */
+/* 3) Antrasit & Zümrüt — açık: koyu antrasit zemin + parlak zümrüt vurgu (açık modda bile koyu, karakteristik bir görünüm) */
 [data-palette="antrasit"]{
-  --bg:#EAEEEC;--bg2:#DBE2DE;--bg3:#C9D3CD;--card:#FFFFFF;--border:rgba(5,35,30,.13);--border2:rgba(5,35,30,.19);
-  --gold:#0B7A62;--gold-hi:#075E4C;--gold-lo:rgba(11,122,98,.10);--gold-mid:rgba(11,122,98,.20);--gold-rule:rgba(11,122,98,.32);
-  --blue:#263238;--blue-lo:rgba(38,50,56,.09);--blue-hi:#151E22;
-  --t0:#101715;--t1:#2E3B37;--t2:#5C6D67;--t3:#95A6A0;
-  --success:#0B7A62;--danger:#B4222E;--warn:#9C6A0A;
+  --bg:#DCE4E1;--bg2:#C4D0CB;--bg3:#A9BAB3;--card:#F4F8F6;--border:rgba(0,40,30,.18);--border2:rgba(0,40,30,.26);
+  --gold:#00875F;--gold-hi:#00694A;--gold-lo:rgba(0,135,95,.12);--gold-mid:rgba(0,135,95,.24);--gold-rule:rgba(0,135,95,.38);
+  --blue:#16211E;--blue-lo:rgba(22,33,30,.09);--blue-hi:#0A100E;
+  --t0:#040A08;--t1:#1C2926;--t2:#4C605A;--t3:#87A199;
+  --success:#00875F;--danger:#C41E2E;--warn:#B87A0A;
 }
 /* Antrasit & Zümrüt — koyu */
 [data-palette="antrasit"][data-theme="dark"]{
-  --bg:#0D1211;--bg2:#131A18;--bg3:#1A2320;--card:#101715;--border:rgba(170,255,230,.09);--border2:rgba(170,255,230,.15);
-  --gold:#2FE0B8;--gold-hi:#5CEAC8;--gold-lo:rgba(47,224,184,.12);--gold-mid:rgba(47,224,184,.20);--gold-rule:rgba(47,224,184,.32);
-  --blue:#8FA8A0;--blue-lo:rgba(143,168,160,.09);--blue-hi:#B0C4BC;
-  --t0:#E8F5F1;--t1:#B4CEC6;--t2:#75948B;--t3:#3E524C;
-  --success:#2FE0B8;--danger:#E8646B;--warn:#E8B84C;
+  --bg:#050908;--bg2:#0A0F0D;--bg3:#101A16;--card:#080D0B;--border:rgba(140,255,215,.13);--border2:rgba(140,255,215,.21);
+  --gold:#00E8A0;--gold-hi:#4DFFC2;--gold-lo:rgba(0,232,160,.14);--gold-mid:rgba(0,232,160,.24);--gold-rule:rgba(0,232,160,.38);
+  --blue:#7FA89C;--blue-lo:rgba(127,168,156,.10);--blue-hi:#A6C9BE;
+  --t0:#E8FFF6;--t1:#A8D8C6;--t2:#5C8578;--t3:#2C433C;
+  --success:#00E8A0;--danger:#FF5A64;--warn:#FFC24D;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
