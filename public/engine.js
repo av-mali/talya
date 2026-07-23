@@ -901,6 +901,15 @@ async function loadRealNotifications() {
           playNotifSound();
         }
       }
+      // Tevkil Menüsü — yeni talep / onay / iptal bildirimleri de aynı
+      // şekilde sesli+popup uyarı versin (zilde birikip sessizce kalmasın).
+      if (typeof n.id === 'string' && n.id.indexOf('tevkil') === 0 && !seenMessageNotifIds.has(n.id)) {
+        seenMessageNotifIds.add(n.id);
+        if (!isFirstLoad) {
+          toast(n.text, 'fa-solid ' + (n.ico || 'fa-people-arrows'), true);
+          playNotifSound();
+        }
+      }
     });
     notifPollStarted = true;
 

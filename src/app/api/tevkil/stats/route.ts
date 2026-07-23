@@ -10,7 +10,7 @@ export async function GET() {
 
   const [talepSayisi, kabulSayisi] = await Promise.all([
     prisma.tevkilTalebi.count({ where: { requesterId: userId } }),
-    prisma.tevkilTalebi.count({ where: { acceptedById: userId } }),
+    prisma.tevkilBasvuru.count({ where: { applicantId: userId, durum: "onaylandi" } }),
   ]);
 
   return NextResponse.json({ talepSayisi, kabulSayisi });

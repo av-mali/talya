@@ -30,6 +30,7 @@ model User {
   tevkilAlmaAcik Boolean @default(false) // açıksa, sistemdeki HERKESİN tevkil taleplerinden bildirim alır (büro sınırı yok)
   tevkilTalepleri TevkilTalebi[] @relation("TevkilRequester")
   tevkilKabuller  TevkilTalebi[] @relation("TevkilAcceptor")
+  tevkilBasvurular TevkilBasvuru[] @relation("TevkilBasvuran")
   createdAt    DateTime  @default(now())
   messages     Message[]
   clients      Client[] // ESKİ ilişki — göç sonrası kullanılmayacak ama veri kaybı olmasın diye duruyor
@@ -202,9 +203,10 @@ model FeeAgreementPayment {
 }
 
 // Tevkil Menüsü — büro sınırı olmadan, SİSTEMDEKİ TÜM avukatlar arasında
-// çalışan bir talep/kabul panosu (ör. "Ankara'da X tarihinde beni temsil
-// edecek biri lazım"). "Tevkil Alma" açık olan herkese bildirim gider,
-// ilk kabul eden alır, talep o an kapanır.
+// çalışan bir talep/başvuru/onay panosu (ör. "Ankara'da X tarihinde beni
+// temsil edecek biri lazım"). "Tevkil Alma" açık olan herkese bildirim
+// gider; birden fazla kişi BAŞVURABİLİR, talep sahibi birini ONAYLAR,
+// onaylanan kişi sonradan vazgeçerse talep otomatik yeniden AÇILIR.
 model TevkilTalebi {
   id            String   @id @default(cuid())
   sehir         String?
@@ -213,14 +215,27 @@ model TevkilTalebi {
   durusmaTuru   String?
   ucretTeklifi  String?
   aciklama      String?  @db.Text
-  telefon       String?  // talep sahibinin iletişim bilgisi — SADECE kabul edildikten sonra gösterilir
-  durum         String   @default("acik") // "acik" | "kapali"
+  telefon       String?  // talep sahibinin iletişim bilgisi — SADECE onaylanan kişiye gösterilir
+  durum         String   @default("acik") // "acik" | "onaylandi"
   createdAt     DateTime @default(now())
   requesterId   String
   requester     User     @relation("TevkilRequester", fields: [requesterId], references: [id])
-  acceptedById  String?
+  acceptedById  String?  // durum="onaylandi" iken, onaylanan kişi
   acceptedBy    User?    @relation("TevkilAcceptor", fields: [acceptedById], references: [id])
   acceptedAt    DateTime?
+  basvurular    TevkilBasvuru[]
+}
+
+// Bir tevkil talebine yapılan TEK bir başvuru.
+model TevkilBasvuru {
+  id          String   @id @default(cuid())
+  durum       String   @default("bekliyor") // "bekliyor" | "onaylandi" | "reddedildi" | "iptal_edildi"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  talep       TevkilTalebi @relation(fields: [talepId], references: [id], onDelete: Cascade)
+  talepId     String
+  applicantId String
+  applicant   User     @relation("TevkilBasvuran", fields: [applicantId], references: [id])
 }
 
 model ClientPortalMessage {

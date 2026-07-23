@@ -42,7 +42,7 @@ export async function GET() {
     return `${base} · ${clock}`;
   }
 
-  const [events, tasks, readRows, clientMessages, mediationCases, feePayments, tevkilTalepleri] = await Promise.all([
+  const [events, tasks, readRows, clientMessages, mediationCases, feePayments, tevkilTalepleri, tevkilOnaylar, tevkilIptaller] = await Promise.all([
     ws ? prisma.clientEvent.findMany({
       where: {
         case: {
@@ -97,6 +97,22 @@ export async function GET() {
           take: 10,
         })
       : Promise.resolve([]),
+    // Ben BAŞVURAN olarak: talebim yakın zamanda onaylandıysa bildirim.
+    prisma.tevkilBasvuru.findMany({
+      where: { applicantId: userId, durum: "onaylandi", updatedAt: { gte: new Date(now.getTime() - 3 * 86400000) } },
+      include: { talep: { include: { requester: { select: { name: true } } } } },
+      orderBy: { updatedAt: "desc" },
+    }),
+    // Ben TALEP SAHİBİ olarak: onayladığım kişi vazgeçtiyse bildirim.
+    prisma.tevkilBasvuru.findMany({
+      where: {
+        durum: "iptal_edildi",
+        updatedAt: { gte: new Date(now.getTime() - 3 * 86400000) },
+        talep: { requesterId: userId },
+      },
+      include: { applicant: { select: { name: true } }, talep: true },
+      orderBy: { updatedAt: "desc" },
+    }),
   ]);
 
   const readIds = new Set(readRows.map((r) => r.notifId));
@@ -214,7 +230,37 @@ export async function GET() {
     };
   });
 
-  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs, ...mediationNotifs, ...feePaymentNotifs, ...tevkilNotifs].sort(
+  const tevkilOnayNotifs = tevkilOnaylar.map((b) => {
+    const id = "tevkil-onay-" + b.id;
+    return {
+      id,
+      type: "sistem",
+      ico: "fa-circle-check",
+      level: "info",
+      label: "Tevkil Onaylandı",
+      text: `${b.talep.requester.name || "Talep sahibi"} başvurunuzu onayladı — iletişim bilgileri artık görünür.`,
+      time: "Az önce",
+      dueDate: b.updatedAt,
+      read: readIds.has(id),
+    };
+  });
+
+  const tevkilIptalNotifs = tevkilIptaller.map((b) => {
+    const id = "tevkil-iptal-" + b.id;
+    return {
+      id,
+      type: "sistem",
+      ico: "fa-triangle-exclamation",
+      level: "warn",
+      label: "Tevkil İptal Edildi",
+      text: `${b.applicant.name || "Onayladığınız kişi"} tevkilden vazgeçti — talebiniz yeniden açıldı.`,
+      time: "Az önce",
+      dueDate: b.updatedAt,
+      read: readIds.has(id),
+    };
+  });
+
+  const notifs = [...eventNotifs, ...taskNotifs, ...messageNotifs, ...mediationNotifs, ...feePaymentNotifs, ...tevkilNotifs, ...tevkilOnayNotifs, ...tevkilIptalNotifs].sort(
     (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   );
 

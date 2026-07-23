@@ -12,10 +12,22 @@ export async function GET() {
 
   const talepler = await prisma.tevkilTalebi.findMany({
     where: { durum: "acik", requesterId: { not: userId } },
-    include: { requester: { select: { id: true, name: true } } },
+    include: {
+      requester: { select: { id: true, name: true } },
+      basvurular: { where: { applicantId: userId }, select: { id: true, durum: true } },
+    },
     orderBy: [{ tarih: "asc" }, { createdAt: "desc" }],
   });
-  return NextResponse.json({ talepler });
+
+  // Kullanıcının bu talebe zaten başvurup başvurmadığını (frontend'de
+  // "Başvur" yerine "Başvuruldu" göstermek için) ekliyoruz.
+  const withFlag = talepler.map((t) => ({
+    ...t,
+    benimBasvurum: t.basvurular[0] || null,
+    basvurular: undefined,
+  }));
+
+  return NextResponse.json({ talepler: withFlag });
 }
 
 export async function POST(req: Request) {

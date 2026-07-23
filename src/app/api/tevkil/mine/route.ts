@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// Kullanıcının KENDİ oluşturduğu talepler — kabul edilmişse, kabul eden
-// kişinin iletişim bilgisi (telefon/e-posta) burada görünür.
+// Kullanıcının KENDİ oluşturduğu talepler — açıksa kaç kişi başvurdu,
+// onaylandıysa onaylanan kişinin iletişim bilgisi burada görünür.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
@@ -12,8 +12,13 @@ export async function GET() {
 
   const talepler = await prisma.tevkilTalebi.findMany({
     where: { requesterId: userId },
-    include: { acceptedBy: { select: { id: true, name: true, phone: true, email: true } } },
+    include: {
+      acceptedBy: { select: { id: true, name: true, phone: true, email: true } },
+      basvurular: { where: { durum: "bekliyor" }, select: { id: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json({ talepler });
+
+  const withCount = talepler.map((t) => ({ ...t, bekleyenBasvuruSayisi: t.basvurular.length, basvurular: undefined }));
+  return NextResponse.json({ talepler: withCount });
 }
