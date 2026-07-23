@@ -29,7 +29,7 @@
 [data-palette="lacivert"]{
   --bg:#DCE4F7;--bg2:#C4D0F0;--bg3:#A8B9E8;--card:#FFFFFF;--border:rgba(10,20,90,.18);--border2:rgba(10,20,90,.26);
   --gold:#12266B;--gold-hi:#0A1848;--gold-lo:rgba(18,38,107,.10);--gold-mid:rgba(18,38,107,.20);--gold-rule:rgba(18,38,107,.34);
-  --blue:#A9720B;--blue-lo:rgba(169,114,11,.10);--blue-hi:#7A5306;
+  --blue:#2E5FD9;--blue-lo:rgba(46,95,217,.10);--blue-hi:#1E44A8;
   --t0:#040A22;--t1:#182046;--t2:#3F4A80;--t3:#7C88C0;
   --success:#0E7A45;--danger:#C41E2E;--warn:#B8600A;
 }
@@ -37,7 +37,7 @@
 [data-palette="lacivert"][data-theme="dark"]{
   --bg:#050814;--bg2:#0A1024;--bg3:#101B3C;--card:#080C1C;--border:rgba(140,170,255,.16);--border2:rgba(140,170,255,.24);
   --gold:#6E8FFF;--gold-hi:#9BB4FF;--gold-lo:rgba(110,143,255,.14);--gold-mid:rgba(110,143,255,.24);--gold-rule:rgba(110,143,255,.38);
-  --blue:#FFCC4D;--blue-lo:rgba(255,204,77,.12);--blue-hi:#FFDE80;
+  --blue:#7FA8F0;--blue-lo:rgba(127,168,240,.12);--blue-hi:#A6C4F5;
   --t0:#EEF2FF;--t1:#AEBEEE;--t2:#6577AE;--t3:#333F66;
   --success:#2FE08C;--danger:#FF5A64;--warn:#FFB84D;
 }
@@ -46,7 +46,7 @@
 [data-palette="bordo"]{
   --bg:#F0DCC8;--bg2:#E6C2A4;--bg3:#D8A57C;--card:#FFFBF6;--border:rgba(110,15,10,.20);--border2:rgba(110,15,10,.28);
   --gold:#A80E28;--gold-hi:#7C0A1D;--gold-lo:rgba(168,14,40,.12);--gold-mid:rgba(168,14,40,.24);--gold-rule:rgba(168,14,40,.40);
-  --blue:#2E1608;--blue-lo:rgba(46,22,8,.10);--blue-hi:#160A03;
+  --blue:#A85A2E;--blue-lo:rgba(168,90,46,.10);--blue-hi:#7A3F1E;
   --t0:#180705;--t1:#361714;--t2:#6A3E36;--t3:#A87165;
   --success:#2E7A1E;--danger:#A80E28;--warn:#B8560A;
 }
@@ -63,7 +63,7 @@
 [data-palette="antrasit"]{
   --bg:#CDDAD3;--bg2:#AFC2B7;--bg3:#8CA599;--card:#F2F8F5;--border:rgba(0,40,30,.22);--border2:rgba(0,40,30,.30);
   --gold:#00754F;--gold-hi:#00593B;--gold-lo:rgba(0,117,79,.12);--gold-mid:rgba(0,117,79,.24);--gold-rule:rgba(0,117,79,.40);
-  --blue:#101B17;--blue-lo:rgba(16,27,23,.09);--blue-hi:#050908;
+  --blue:#2E5C52;--blue-lo:rgba(46,92,82,.10);--blue-hi:#1C4239;
   --t0:#020604;--t1:#0F1815;--t2:#3C534A;--t3:#6E8A7D;
   --success:#00754F;--danger:#C41E2E;--warn:#B87A0A;
 }
