@@ -154,9 +154,9 @@ async function profilOnOpen() {
 // Renk paleti seçici — 4 kart, her biri küçük bir renk önizlemesiyle.
 const PALETTE_OPTIONS = [
   { key: 'varsayilan', label: 'Varsayılan', colors: ['#F7F5F1', '#B8922A', '#3A5F96'] },
-  { key: 'lacivert', label: 'Lacivert & Pirinç', colors: ['#DCE4F7', '#12266B', '#A9720B'] },
-  { key: 'bordo', label: 'Bordo & Fildişi', colors: ['#F0DCC8', '#A80E28', '#2E1608'] },
-  { key: 'antrasit', label: 'Antrasit & Zümrüt', colors: ['#CDDAD3', '#00754F', '#101B17'] },
+  { key: 'lacivert', label: 'Lacivert & Pirinç', colors: ['#F2F4FA', '#12266B', '#2E5FD9'] },
+  { key: 'bordo', label: 'Bordo & Fildişi', colors: ['#FAF4EE', '#A80E28', '#A85A2E'] },
+  { key: 'antrasit', label: 'Antrasit & Zümrüt', colors: ['#F0F5F3', '#00754F', '#2E5C52'] },
 ];
 
 function renderPalettePicker() {

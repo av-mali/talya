@@ -27,7 +27,7 @@
 /* 1) Lacivert & Pirinç — açık: ANA VURGU artık gerçek lacivert (altın
    ailesinden değil) — varsayılandan tamamen farklı bir renk ailesi. */
 [data-palette="lacivert"]{
-  --bg:#DCE4F7;--bg2:#C4D0F0;--bg3:#A8B9E8;--card:#FFFFFF;--border:rgba(10,20,90,.18);--border2:rgba(10,20,90,.26);
+  --bg:#F2F4FA;--bg2:#E6EAF5;--bg3:#D5DCF0;--card:#FFFFFF;--border:rgba(10,20,90,.14);--border2:rgba(10,20,90,.22);
   --gold:#12266B;--gold-hi:#0A1848;--gold-lo:rgba(18,38,107,.10);--gold-mid:rgba(18,38,107,.20);--gold-rule:rgba(18,38,107,.34);
   --blue:#2E5FD9;--blue-lo:rgba(46,95,217,.10);--blue-hi:#1E44A8;
   --t0:#040A22;--t1:#182046;--t2:#3F4A80;--t3:#7C88C0;
@@ -44,7 +44,7 @@
 
 /* 2) Bordo & Fildişi — açık: ANA VURGU gerçek şarap kırmızısı */
 [data-palette="bordo"]{
-  --bg:#F0DCC8;--bg2:#E6C2A4;--bg3:#D8A57C;--card:#FFFBF6;--border:rgba(110,15,10,.20);--border2:rgba(110,15,10,.28);
+  --bg:#FAF4EE;--bg2:#F3E8DC;--bg3:#E9D6C2;--card:#FFFFFF;--border:rgba(110,15,10,.14);--border2:rgba(110,15,10,.22);
   --gold:#A80E28;--gold-hi:#7C0A1D;--gold-lo:rgba(168,14,40,.12);--gold-mid:rgba(168,14,40,.24);--gold-rule:rgba(168,14,40,.40);
   --blue:#A85A2E;--blue-lo:rgba(168,90,46,.10);--blue-hi:#7A3F1E;
   --t0:#180705;--t1:#361714;--t2:#6A3E36;--t3:#A87165;
@@ -61,7 +61,7 @@
 
 /* 3) Antrasit & Zümrüt — açık: ANA VURGU canlı zümrüt yeşili, zemin koyu antrasit tonlu */
 [data-palette="antrasit"]{
-  --bg:#CDDAD3;--bg2:#AFC2B7;--bg3:#8CA599;--card:#F2F8F5;--border:rgba(0,40,30,.22);--border2:rgba(0,40,30,.30);
+  --bg:#F0F5F3;--bg2:#E2ECE7;--bg3:#CFDFD8;--card:#FFFFFF;--border:rgba(0,40,30,.14);--border2:rgba(0,40,30,.22);
   --gold:#00754F;--gold-hi:#00593B;--gold-lo:rgba(0,117,79,.12);--gold-mid:rgba(0,117,79,.24);--gold-rule:rgba(0,117,79,.40);
   --blue:#2E5C52;--blue-lo:rgba(46,92,82,.10);--blue-hi:#1C4239;
   --t0:#020604;--t1:#0F1815;--t2:#3C534A;--t3:#6E8A7D;
