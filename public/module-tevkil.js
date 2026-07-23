@@ -35,7 +35,7 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">Dosya/Duruşma Türü</div><input type="text" id="tv-tur" placeholder="ör. Tanık Dinleme, Ön İnceleme…"></div>
         <div class="fg"><div class="fl">Ücret Teklifi</div><input type="text" id="tv-ucret" placeholder="ör. 2.000 TL, pazarlık edilebilir…"></div>
         <div class="fg"><div class="fl">Açıklama</div><textarea id="tv-aciklama" rows="3" placeholder="Ek bilgi…"></textarea></div>
-        <div class="fg"><div class="fl">İletişim Telefonu <span class="opt">(sadece onayladığınız kişiye, onayladıktan sonra gösterilir)</span></div><input type="text" id="tv-telefon" placeholder="05__ ___ __ __"></div>
+        <div class="fg"><div class="fl">İletişim Telefonu <span class="opt">(profilinizden otomatik gelir, isterseniz değiştirin — sadece onayladığınız kişiye, onayladıktan sonra gösterilir)</span></div><input type="text" id="tv-telefon" placeholder="05__ ___ __ __"></div>
         <button class="pop-cta-btn p" style="width:100%;" onclick="tevkilCreate()"><i class="fa-solid fa-paper-plane"></i><span>Talebi Yayınla</span></button>
       `,
       onOpen: () => tevkilOnOpen(),
@@ -52,6 +52,10 @@ async function tevkilOnOpen() {
     const data = await res.json();
     const cb = document.getElementById('tevkil-alma-toggle');
     if (cb) cb.checked = !!(data.user && data.user.tevkilAlmaAcik);
+    // İletişim telefonu, profildeki numaradan otomatik gelir — isterseniz
+    // sadece bu talep için değiştirebilirsiniz.
+    const tel = document.getElementById('tv-telefon');
+    if (tel && data.user && data.user.phone) tel.value = data.user.phone;
   } catch (e) { /* sessiz geç */ }
 
   tevkilTab = 'acik';
@@ -133,6 +137,10 @@ async function tevkilRenderPane() {
             <div style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--purple);">${stats.kabulSayisi ?? 0}</div>
             <div style="font-size:10.5px;color:var(--t3);">Onaylandığım</div>
           </div>
+          <div style="flex:1;background:var(--bg2);border-radius:var(--r);padding:12px 14px;text-align:center;">
+            <div style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--t3);">${stats.reddedilenSayisi ?? 0}</div>
+            <div style="font-size:10.5px;color:var(--t3);">Reddedildiğim</div>
+          </div>
         </div>
 
         <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
@@ -200,27 +208,49 @@ async function tevkilBasvur(id) {
 // ── TALEPLERİM (talep sahibi olarak) ──
 function tevkilRenderBenimList(items) {
   if (!items.length) return emptyState('fa-people-arrows', 'Henüz talebiniz yok', 'Sol taraftan yeni bir tevkil talebi oluşturabilirsiniz.');
-  return items.map(t => `
-    <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;">
+  return items.map(t => {
+    const rozetMetin = t.durum === 'tamamlandi' ? 'Tamamlandı' : t.durum === 'onaylandi' ? 'Onaylandı' : 'Açık';
+    const rozetRenkBg = t.durum === 'tamamlandi' ? 'var(--bg2)' : t.durum === 'onaylandi' ? 'var(--gold-lo)' : 'var(--bg2)';
+    const rozetRenkFg = t.durum === 'tamamlandi' ? 'var(--success)' : t.durum === 'onaylandi' ? 'var(--gold-hi)' : 'var(--t3)';
+    return `
+    <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;${t.durum === 'tamamlandi' ? 'opacity:.8;' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="font-size:13px;font-weight:600;">${t.sehir || ''}${t.mahkeme ? ' — ' + t.mahkeme : ''}</div>
-        <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${t.durum === 'onaylandi' ? 'var(--gold-lo)' : 'var(--bg2)'};color:${t.durum === 'onaylandi' ? 'var(--gold-hi)' : 'var(--t3)'};">${t.durum === 'onaylandi' ? 'Onaylandı' : 'Açık'}</span>
+        <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${rozetRenkBg};color:${rozetRenkFg};">${rozetMetin}</span>
       </div>
       ${t.tarih ? `<div style="font-size:11px;color:var(--t3);margin-top:4px;">${new Date(t.tarih).toLocaleDateString('tr-TR')} ${new Date(t.tarih).toTimeString().slice(0,5)}</div>` : ''}
+      ${t.durusmaTuru ? `<div style="font-size:12px;color:var(--t2);margin-top:4px;"><i class="fa-solid fa-gavel" style="width:14px;color:var(--t3);"></i> ${t.durusmaTuru}</div>` : ''}
+      ${t.ucretTeklifi ? `<div style="font-size:12px;color:var(--t2);margin-top:2px;"><i class="fa-solid fa-turkish-lira-sign" style="width:14px;color:var(--t3);"></i> ${t.ucretTeklifi}</div>` : ''}
+      ${t.aciklama ? `<div style="font-size:11.5px;color:var(--t3);margin-top:6px;">${t.aciklama}</div>` : ''}
       ${t.acceptedBy ? `
         <div style="background:var(--gold-lo);border-radius:var(--r);padding:10px 12px;margin-top:8px;">
           <div style="font-size:11.5px;color:var(--gold-hi);font-weight:600;"><i class="fa-solid fa-circle-check"></i> ${t.acceptedBy.name} onaylandı</div>
           <div style="font-size:11.5px;color:var(--t2);margin-top:4px;">${t.acceptedBy.phone ? '<i class="fa-solid fa-phone"></i> ' + t.acceptedBy.phone : ''}${t.acceptedBy.email ? '<br><i class="fa-solid fa-envelope"></i> ' + t.acceptedBy.email : ''}</div>
         </div>
-      ` : `
+        ${t.durum === 'onaylandi' ? `<button class="pop-cta-btn g" style="width:100%;margin-top:8px;padding:7px;" onclick="tevkilTamamla('${t.id}')"><i class="fa-solid fa-flag-checkered"></i><span>Yerine Getirildi — Talebi Kapat</span></button>` : ''}
+      ` : t.durum === 'acik' ? `
         <div style="margin-top:8px;">
           <div style="font-size:11px;color:var(--t3);margin-bottom:6px;">${t.bekleyenBasvuruSayisi || 0} başvuru bekliyor</div>
           ${t.bekleyenBasvuruSayisi > 0 ? `<button class="pop-cta-btn b" style="width:100%;padding:7px;" onclick="tevkilShowBasvurular('${t.id}')"><i class="fa-solid fa-users"></i><span>Başvuranları Gör</span></button>` : ''}
           <span style="cursor:pointer;color:var(--danger);font-size:11px;display:inline-block;margin-top:8px;" onclick="tevkilDelete('${t.id}')"><i class="fa-solid fa-trash"></i> Talebi Kaldır</span>
         </div>
-      `}
+      ` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
+}
+
+async function tevkilTamamla(id) {
+  const ok = await talyaConfirm('Bu tevkil fiilen yerine getirildi mi? Onaylarsanız talep kapanacak.', 'Evet, Tamamlandı');
+  if (!ok) return;
+  const res = await fetch('/api/tevkil/' + id + '/tamamla', { method: 'POST' });
+  const data = await res.json();
+  if (res.ok) {
+    toast('Talep tamamlandı olarak kapatıldı', 'fa-solid fa-check', true);
+    tevkilRenderPane();
+  } else {
+    toast(data.error || 'İşlem yapılamadı', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function tevkilShowBasvurular(talepId) {
@@ -274,8 +304,9 @@ function tevkilRenderBasvurularimList(items) {
   if (!items.length) return emptyState('fa-hand', 'Henüz başvurunuz yok', '"Açık Talepler" sekmesinden bir tevkile başvurabilirsiniz.');
   return items.map(b => {
     const t = b.talep;
-    const durumEtiket = { bekliyor: 'Onay Bekliyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' }[b.durum] || b.durum;
-    const durumRenk = b.durum === 'onaylandi' ? 'var(--success)' : b.durum === 'reddedildi' ? 'var(--danger)' : 'var(--warn)';
+    const tamamlandi = t.durum === 'tamamlandi';
+    const durumEtiket = tamamlandi ? 'Tamamlandı' : { bekliyor: 'Onay Bekliyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' }[b.durum] || b.durum;
+    const durumRenk = tamamlandi ? 'var(--success)' : b.durum === 'onaylandi' ? 'var(--success)' : b.durum === 'reddedildi' ? 'var(--danger)' : 'var(--warn)';
     return `
     <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
@@ -283,12 +314,14 @@ function tevkilRenderBasvurularimList(items) {
         <span style="font-size:10.5px;color:${durumRenk};font-weight:600;">${durumEtiket}</span>
       </div>
       ${t.tarih ? `<div style="font-size:11px;color:var(--t3);margin-top:4px;">${new Date(t.tarih).toLocaleDateString('tr-TR')} ${new Date(t.tarih).toTimeString().slice(0,5)}</div>` : ''}
+      ${t.durusmaTuru ? `<div style="font-size:12px;color:var(--t2);margin-top:4px;"><i class="fa-solid fa-gavel" style="width:14px;color:var(--t3);"></i> ${t.durusmaTuru}</div>` : ''}
+      ${t.ucretTeklifi ? `<div style="font-size:12px;color:var(--t2);margin-top:2px;"><i class="fa-solid fa-turkish-lira-sign" style="width:14px;color:var(--t3);"></i> ${t.ucretTeklifi}</div>` : ''}
       ${b.durum === 'onaylandi' ? `
         <div style="background:var(--gold-lo);border-radius:var(--r);padding:10px 12px;margin-top:8px;">
           <div style="font-size:11.5px;color:var(--gold-hi);font-weight:600;">Talep Sahibi: ${t.requester.name}</div>
           <div style="font-size:11.5px;color:var(--t2);margin-top:4px;">${t.requester.phone ? '<i class="fa-solid fa-phone"></i> ' + t.requester.phone : ''}${t.requester.email ? '<br><i class="fa-solid fa-envelope"></i> ' + t.requester.email : ''}</div>
         </div>
-        <button class="pop-cta-btn" style="width:100%;margin-top:8px;padding:7px;background:var(--danger);color:#fff;" onclick="tevkilVazgec('${t.id}')"><i class="fa-solid fa-xmark"></i><span>Vazgeç</span></button>
+        ${!tamamlandi ? `<button class="pop-cta-btn" style="width:100%;margin-top:8px;padding:7px;background:var(--danger);color:#fff;" onclick="tevkilVazgec('${t.id}')"><i class="fa-solid fa-xmark"></i><span>Vazgeç</span></button>` : ''}
       ` : ''}
     </div>
   `;

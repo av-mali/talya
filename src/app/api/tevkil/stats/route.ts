@@ -8,10 +8,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
   const userId = (session.user as any).id as string;
 
-  const [talepSayisi, kabulSayisi] = await Promise.all([
+  const [talepSayisi, kabulSayisi, reddedilenSayisi] = await Promise.all([
     prisma.tevkilTalebi.count({ where: { requesterId: userId } }),
     prisma.tevkilBasvuru.count({ where: { applicantId: userId, durum: "onaylandi" } }),
+    prisma.tevkilBasvuru.count({ where: { applicantId: userId, durum: "reddedildi" } }),
   ]);
 
-  return NextResponse.json({ talepSayisi, kabulSayisi });
+  return NextResponse.json({ talepSayisi, kabulSayisi, reddedilenSayisi });
 }

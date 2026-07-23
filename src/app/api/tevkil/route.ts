@@ -14,7 +14,7 @@ export async function GET() {
     where: { durum: "acik", requesterId: { not: userId } },
     include: {
       requester: { select: { id: true, name: true } },
-      basvurular: { where: { applicantId: userId }, select: { id: true, durum: true } },
+      basvurular: { where: { applicantId: userId, durum: { in: ["bekliyor", "onaylandi"] } }, select: { id: true, durum: true } },
     },
     orderBy: [{ tarih: "asc" }, { createdAt: "desc" }],
   });
