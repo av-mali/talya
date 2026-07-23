@@ -126,6 +126,9 @@ async function profilOnOpen() {
     const data = await res.json();
     const u = data.user;
     box.innerHTML = `
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">Görünüm — Renk Paleti</div>
+      <div id="pf-palette-picker" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;"></div>
+
       <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="pf-name" value="${(u.name||'').replace(/"/g,'&quot;')}"></div>
       <div class="fg"><div class="fl">E-posta</div><input type="text" value="${u.email}" disabled style="opacity:.6;"></div>
       <div class="fg"><div class="fl">Telefon</div><input type="text" id="pf-phone" value="${(u.phone||'').replace(/"/g,'&quot;')}"></div>
@@ -142,9 +145,35 @@ async function profilOnOpen() {
       <button class="pop-cta-btn g" style="width:100%;" onclick="profilSave()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
       <div id="profil-msg" style="font-size:12px;margin-top:10px;"></div>
     `;
+    renderPalettePicker();
   } catch (e) {
     box.innerHTML = `<div style="color:var(--danger);font-size:13px;">Yüklenemedi.</div>`;
   }
+}
+
+// Renk paleti seçici — 4 kart, her biri küçük bir renk önizlemesiyle.
+const PALETTE_OPTIONS = [
+  { key: 'varsayilan', label: 'Varsayılan', colors: ['#F7F5F1', '#B8922A', '#3A5F96'] },
+  { key: 'lacivert', label: 'Lacivert & Pirinç', colors: ['#F5F6F9', '#8C6D3F', '#1B2A52'] },
+  { key: 'bordo', label: 'Bordo', colors: ['#FAF7F4', '#7A2430', '#7A2430'] },
+  { key: 'antrasit', label: 'Antrasit & Zümrüt', colors: ['#F3F6F5', '#0F6E5F', '#0F6E5F'] },
+];
+
+function renderPalettePicker() {
+  const box = document.getElementById('pf-palette-picker');
+  if (!box) return;
+  const current = localStorage.getItem('talya-palette') || 'varsayilan';
+  box.innerHTML = PALETTE_OPTIONS.map(opt => `
+    <div onclick="setPalette('${opt.key}'); renderPalettePicker();"
+         style="cursor:pointer;border:2px solid ${current === opt.key ? 'var(--gold)' : 'var(--border)'};border-radius:var(--r);padding:10px;width:110px;text-align:center;">
+      <div style="display:flex;height:28px;border-radius:4px;overflow:hidden;margin-bottom:8px;">
+        <div style="flex:1;background:${opt.colors[0]};"></div>
+        <div style="flex:1;background:${opt.colors[1]};"></div>
+        <div style="flex:1;background:${opt.colors[2]};"></div>
+      </div>
+      <div style="font-size:11px;color:${current === opt.key ? 'var(--gold)' : 'var(--t2)'};font-weight:${current === opt.key ? '600' : '400'};">${opt.label}</div>
+    </div>
+  `).join('');
 }
 
 async function profilSave() {

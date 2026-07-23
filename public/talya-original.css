@@ -18,6 +18,45 @@
   --t0:#E8EDF5;--t1:#B8C2D4;--t2:#7A8499;--t3:#4E5668;
   --success:#3DC492;--danger:#E05A54;--warn:#D4903C;
 }
+
+/* ── RENK PALETLERİ ── varsayılan dışında 3 seçenek daha. Değişken
+   ADLARI aynı kalır (--gold vb.), sadece DEĞERLERİ değişir — bu yüzden
+   sistemin geri kalanına hiç dokunmaya gerek kalmaz. */
+
+/* 1) Lacivert & Pirinç — açık */
+[data-palette="lacivert"]{
+  --bg:#F5F6F9;--bg2:#EAEDF2;--bg3:#DEE3EA;--card:#FFFFFF;--border:rgba(20,30,55,.08);--border2:rgba(20,30,55,.13);
+  --gold:#8C6D3F;--gold-hi:#6E5530;--gold-lo:rgba(140,109,63,.08);--gold-mid:rgba(140,109,63,.18);--gold-rule:rgba(140,109,63,.28);
+  --blue:#1B2A52;--blue-lo:rgba(27,42,82,.08);--blue-hi:#101B38;
+}
+/* Lacivert & Pirinç — koyu */
+[data-palette="lacivert"][data-theme="dark"]{
+  --bg:#0F1521;--bg2:#151C2C;--bg3:#1C2438;--card:#131A29;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.11);
+  --gold:#C9A96E;--gold-hi:#DBBF8C;--gold-lo:rgba(201,169,110,.10);--gold-mid:rgba(201,169,110,.17);--gold-rule:rgba(201,169,110,.28);
+  --blue:#5C7CC7;--blue-lo:rgba(92,124,199,.09);--blue-hi:#7C99DA;
+}
+
+/* 2) Bordo & Kağıt Beyazı — açık */
+[data-palette="bordo"]{
+  --bg:#FAF7F4;--bg2:#F1EBE6;--bg3:#E7DED6;--card:#FFFFFF;--border:rgba(70,20,25,.08);--border2:rgba(70,20,25,.12);
+  --gold:#7A2430;--gold-hi:#5E1C25;--gold-lo:rgba(122,36,48,.08);--gold-mid:rgba(122,36,48,.18);--gold-rule:rgba(122,36,48,.28);
+}
+/* Bordo & Kağıt Beyazı — koyu */
+[data-palette="bordo"][data-theme="dark"]{
+  --bg:#221417;--bg2:#2A1A1E;--bg3:#332025;--card:#271719;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.11);
+  --gold:#C65D6B;--gold-hi:#DD7E8A;--gold-lo:rgba(198,93,107,.10);--gold-mid:rgba(198,93,107,.17);--gold-rule:rgba(198,93,107,.28);
+}
+
+/* 3) Antrasit & Zümrüt — açık */
+[data-palette="antrasit"]{
+  --bg:#F3F6F5;--bg2:#E8EDEC;--bg3:#DCE4E2;--card:#FFFFFF;--border:rgba(10,45,40,.08);--border2:rgba(10,45,40,.12);
+  --gold:#0F6E5F;--gold-hi:#0B5449;--gold-lo:rgba(15,110,95,.08);--gold-mid:rgba(15,110,95,.18);--gold-rule:rgba(15,110,95,.28);
+}
+/* Antrasit & Zümrüt — koyu */
+[data-palette="antrasit"][data-theme="dark"]{
+  --bg:#161B1A;--bg2:#1C2322;--bg3:#232C2A;--card:#1A211F;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.11);
+  --gold:#2FBF9F;--gold-hi:#4FD8B8;--gold-lo:rgba(47,191,159,.10);--gold-mid:rgba(47,191,159,.17);--gold-rule:rgba(47,191,159,.28);
+}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
 body{font-family:'Inter',sans-serif;font-size:13px;color:var(--t0);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.5;}

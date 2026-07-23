@@ -1072,6 +1072,24 @@ function toggleDark() {
   const a = document.getElementById('dmIconApp'); if (a) a.className = 'fa-solid ' + icon;
   localStorage.setItem('talya-theme', isDark ? '' : 'dark');
 }
+
+// ── RENK PALETİ ── varsayılan + 3 seçenek (lacivert, bordo, antrasit).
+// Karanlık/aydınlık modla aynı şekilde tarayıcıda saklanır.
+function setPalette(name) {
+  if (name && name !== 'varsayilan') {
+    document.documentElement.setAttribute('data-palette', name);
+  } else {
+    document.documentElement.removeAttribute('data-palette');
+  }
+  localStorage.setItem('talya-palette', name || 'varsayilan');
+}
+(function () {
+  const savedPalette = localStorage.getItem('talya-palette');
+  if (savedPalette && savedPalette !== 'varsayilan') {
+    document.documentElement.setAttribute('data-palette', savedPalette);
+  }
+})();
+
 (function () {
   const saved = localStorage.getItem('talya-theme');
   if (saved === 'dark') {
