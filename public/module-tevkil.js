@@ -228,6 +228,7 @@ function tevkilRenderBenimList(items) {
           <div style="font-size:11.5px;color:var(--t2);margin-top:4px;">${t.acceptedBy.phone ? '<i class="fa-solid fa-phone"></i> ' + t.acceptedBy.phone : ''}${t.acceptedBy.email ? '<br><i class="fa-solid fa-envelope"></i> ' + t.acceptedBy.email : ''}</div>
         </div>
         ${t.durum === 'onaylandi' ? `<button class="pop-cta-btn g" style="width:100%;margin-top:8px;padding:7px;" onclick="tevkilTamamla('${t.id}')"><i class="fa-solid fa-flag-checkered"></i><span>Yerine Getirildi — Talebi Kapat</span></button>` : ''}
+        <span style="cursor:pointer;color:var(--danger);font-size:11px;display:inline-block;margin-top:8px;" onclick="tevkilDelete('${t.id}')"><i class="fa-solid fa-trash"></i> Talebi Kaldır</span>
       ` : t.durum === 'acik' ? `
         <div style="margin-top:8px;">
           <div style="font-size:11px;color:var(--t3);margin-bottom:6px;">${t.bekleyenBasvuruSayisi || 0} başvuru bekliyor</div>
