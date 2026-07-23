@@ -9,7 +9,7 @@ export default function UyelikModulu() {
   return (
     <TalyaShell
       bodyUrl="/module-body-noai.html"
-      scripts={["/module-uyelik.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
+      scripts={["/module-uyelik.js", "/kilavuz-content.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
     />
   );
 }
