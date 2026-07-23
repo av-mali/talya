@@ -21,41 +21,58 @@
 
 /* ── RENK PALETLERİ ── varsayılan dışında 3 seçenek daha. Değişken
    ADLARI aynı kalır (--gold vb.), sadece DEĞERLERİ değişir — bu yüzden
-   sistemin geri kalanına hiç dokunmaya gerek kalmaz. */
+   sistemin geri kalanına hiç dokunmaya gerek kalmaz. Her paletin arka
+   plan + metin + vurgu rengi BİRLİKTE değişir ki keskin bir fark olsun.*/
 
-/* 1) Lacivert & Pirinç — açık */
+/* 1) Lacivert & Pirinç — açık: soğuk, keskin beyaz zemin + koyu lacivert metin */
 [data-palette="lacivert"]{
-  --bg:#F5F6F9;--bg2:#EAEDF2;--bg3:#DEE3EA;--card:#FFFFFF;--border:rgba(20,30,55,.08);--border2:rgba(20,30,55,.13);
-  --gold:#8C6D3F;--gold-hi:#6E5530;--gold-lo:rgba(140,109,63,.08);--gold-mid:rgba(140,109,63,.18);--gold-rule:rgba(140,109,63,.28);
-  --blue:#1B2A52;--blue-lo:rgba(27,42,82,.08);--blue-hi:#101B38;
+  --bg:#EEF1F7;--bg2:#E1E6F0;--bg3:#D2D9E8;--card:#FFFFFF;--border:rgba(15,25,60,.12);--border2:rgba(15,25,60,.18);
+  --gold:#A97E1E;--gold-hi:#8A6414;--gold-lo:rgba(169,126,30,.10);--gold-mid:rgba(169,126,30,.20);--gold-rule:rgba(169,126,30,.32);
+  --blue:#0F1E4D;--blue-lo:rgba(15,30,77,.09);--blue-hi:#0A1636;
+  --t0:#0A1230;--t1:#28304F;--t2:#57608A;--t3:#8D96B8;
+  --success:#146B45;--danger:#B4222E;--warn:#9C5A0A;
 }
 /* Lacivert & Pirinç — koyu */
 [data-palette="lacivert"][data-theme="dark"]{
-  --bg:#0F1521;--bg2:#151C2C;--bg3:#1C2438;--card:#131A29;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.11);
-  --gold:#C9A96E;--gold-hi:#DBBF8C;--gold-lo:rgba(201,169,110,.10);--gold-mid:rgba(201,169,110,.17);--gold-rule:rgba(201,169,110,.28);
-  --blue:#5C7CC7;--blue-lo:rgba(92,124,199,.09);--blue-hi:#7C99DA;
+  --bg:#0A0E1A;--bg2:#101627;--bg3:#161F35;--card:#0D1424;--border:rgba(160,180,255,.10);--border2:rgba(160,180,255,.16);
+  --gold:#E8C878;--gold-hi:#F5DA98;--gold-lo:rgba(232,200,120,.12);--gold-mid:rgba(232,200,120,.20);--gold-rule:rgba(232,200,120,.32);
+  --blue:#7C9CE8;--blue-lo:rgba(124,156,232,.10);--blue-hi:#9EB6F2;
+  --t0:#EAEFFC;--t1:#B6C1E4;--t2:#7885B8;--t3:#454F76;
+  --success:#3DC492;--danger:#E8646B;--warn:#E8A94C;
 }
 
-/* 2) Bordo & Kağıt Beyazı — açık */
+/* 2) Bordo & Fildişi — açık: sıcak fildişi zemin + koyu bordo/kahve metin */
 [data-palette="bordo"]{
-  --bg:#FAF7F4;--bg2:#F1EBE6;--bg3:#E7DED6;--card:#FFFFFF;--border:rgba(70,20,25,.08);--border2:rgba(70,20,25,.12);
-  --gold:#7A2430;--gold-hi:#5E1C25;--gold-lo:rgba(122,36,48,.08);--gold-mid:rgba(122,36,48,.18);--gold-rule:rgba(122,36,48,.28);
+  --bg:#F7EFE8;--bg2:#EEDFD5;--bg3:#E3CDBF;--card:#FFFCF9;--border:rgba(90,20,15,.13);--border2:rgba(90,20,15,.19);
+  --gold:#9C1F2E;--gold-hi:#7A1622;--gold-lo:rgba(156,31,46,.10);--gold-mid:rgba(156,31,46,.20);--gold-rule:rgba(156,31,46,.32);
+  --blue:#5C3A1E;--blue-lo:rgba(92,58,30,.09);--blue-hi:#432A15;
+  --t0:#2E1210;--t1:#513330;--t2:#815E58;--t3:#B99189;
+  --success:#3E7A2E;--danger:#9C1F2E;--warn:#A4601A;
 }
-/* Bordo & Kağıt Beyazı — koyu */
+/* Bordo & Fildişi — koyu */
 [data-palette="bordo"][data-theme="dark"]{
-  --bg:#221417;--bg2:#2A1A1E;--bg3:#332025;--card:#271719;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.11);
-  --gold:#C65D6B;--gold-hi:#DD7E8A;--gold-lo:rgba(198,93,107,.10);--gold-mid:rgba(198,93,107,.17);--gold-rule:rgba(198,93,107,.28);
+  --bg:#1C0F10;--bg2:#261416;--bg3:#331A1C;--card:#201112;--border:rgba(255,200,190,.10);--border2:rgba(255,200,190,.16);
+  --gold:#F0707E;--gold-hi:#F79BA6;--gold-lo:rgba(240,112,126,.12);--gold-mid:rgba(240,112,126,.20);--gold-rule:rgba(240,112,126,.32);
+  --blue:#D19A6B;--blue-lo:rgba(209,154,107,.10);--blue-hi:#E3B889;
+  --t0:#FBEFEA;--t1:#E0C4BE;--t2:#AE857D;--t3:#6E4C46;
+  --success:#5FBF4A;--danger:#F0707E;--warn:#E8A94C;
 }
 
-/* 3) Antrasit & Zümrüt — açık */
+/* 3) Antrasit & Zümrüt — açık: soğuk taş grisi zemin + koyu antrasit metin */
 [data-palette="antrasit"]{
-  --bg:#F3F6F5;--bg2:#E8EDEC;--bg3:#DCE4E2;--card:#FFFFFF;--border:rgba(10,45,40,.08);--border2:rgba(10,45,40,.12);
-  --gold:#0F6E5F;--gold-hi:#0B5449;--gold-lo:rgba(15,110,95,.08);--gold-mid:rgba(15,110,95,.18);--gold-rule:rgba(15,110,95,.28);
+  --bg:#EAEEEC;--bg2:#DBE2DE;--bg3:#C9D3CD;--card:#FFFFFF;--border:rgba(5,35,30,.13);--border2:rgba(5,35,30,.19);
+  --gold:#0B7A62;--gold-hi:#075E4C;--gold-lo:rgba(11,122,98,.10);--gold-mid:rgba(11,122,98,.20);--gold-rule:rgba(11,122,98,.32);
+  --blue:#263238;--blue-lo:rgba(38,50,56,.09);--blue-hi:#151E22;
+  --t0:#101715;--t1:#2E3B37;--t2:#5C6D67;--t3:#95A6A0;
+  --success:#0B7A62;--danger:#B4222E;--warn:#9C6A0A;
 }
 /* Antrasit & Zümrüt — koyu */
 [data-palette="antrasit"][data-theme="dark"]{
-  --bg:#161B1A;--bg2:#1C2322;--bg3:#232C2A;--card:#1A211F;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.11);
-  --gold:#2FBF9F;--gold-hi:#4FD8B8;--gold-lo:rgba(47,191,159,.10);--gold-mid:rgba(47,191,159,.17);--gold-rule:rgba(47,191,159,.28);
+  --bg:#0D1211;--bg2:#131A18;--bg3:#1A2320;--card:#101715;--border:rgba(170,255,230,.09);--border2:rgba(170,255,230,.15);
+  --gold:#2FE0B8;--gold-hi:#5CEAC8;--gold-lo:rgba(47,224,184,.12);--gold-mid:rgba(47,224,184,.20);--gold-rule:rgba(47,224,184,.32);
+  --blue:#8FA8A0;--blue-lo:rgba(143,168,160,.09);--blue-hi:#B0C4BC;
+  --t0:#E8F5F1;--t1:#B4CEC6;--t2:#75948B;--t3:#3E524C;
+  --success:#2FE0B8;--danger:#E8646B;--warn:#E8B84C;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
