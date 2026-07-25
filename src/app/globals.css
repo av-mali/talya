@@ -1,21 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
 
-:root {
-  --bg: #f7f5f1;
-  --bg2: #edeae4;
-  --card: #ffffff;
-  --border: rgba(0, 0, 0, 0.08);
-  --border2: rgba(0, 0, 0, 0.12);
-  --gold: #b8922a;
-  --gold-hi: #9a7820;
-  --gold-lo: rgba(184, 146, 42, 0.08);
-  --gold-rule: rgba(184, 146, 42, 0.25);
-  --t0: #1a1714;
-  --t1: #3d3936;
-  --t2: #6e6a64;
-  --t3: #a09b94;
-  --danger: #b03a34;
-}
+/* NOT: Renk değişkenleri (--gold, --bg vb.) burada TANIMLANMAZ —
+   tüm renk sistemi (varsayılan + paletler) tek kaynaktan,
+   /public/talya-original.css dosyasından gelir. Burada eskiden bu
+   değişkenlerin bir kopyası vardı, o kopya renk paletlerini rastgele
+   eziyordu (Next.js'in globals.css'i ile <link> ile yüklenen
+   talya-original.css arasındaki yükleme sırası kesin değil) —
+   kaldırıldı. */
 
 * {
   margin: 0;
