@@ -74,6 +74,10 @@ async function initModulePage() {
   const openId = (requestedOpen && !blockedSet.has(requestedOpen)) ? requestedOpen : (allowedItems[0] ? allowedItems[0].id : null);
   if (openId) {
     openPopup(openId);
+    // Ana sayfadaki "Talya'ya Sor" kutusundan gelen bir soru varsa, araç
+    // açılır açılmaz otomatik olarak sohbete gönderilir.
+    const q = params.get('q');
+    if (q) setTimeout(() => sendQ(q), 400);
   } else {
     const popBody = document.getElementById('popBody');
     if (popBody) popBody.innerHTML = `<div style="padding:20px;font-size:13px;color:var(--t3);">Bu modülde erişim yetkiniz olan bir araç bulunmuyor. Büro yöneticinizle iletişime geçin.</div>`;
@@ -394,6 +398,13 @@ async function renderHomeWidgets() {
       <span style="font-size:12px;color:var(--t1);">${t.name}</span>
     </div>
   `).join('');
+}
+
+function talyaAskSubmit() {
+  const inp = document.getElementById('talya-ask-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text) return;
+  openModule('belge?open=wizard&q=' + encodeURIComponent(text));
 }
 
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
@@ -749,18 +760,27 @@ async function renderGelirGiderOzet() {
             const net = stats.gelirgider?.net || 0;
             const bekleyen = stats.gelirgider?.bekleyen || 0;
             const positive = net >= 0;
+            const maxBar = Math.max(gelir, gider, 1);
             return `
               <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${positive ? 'var(--gold)' : 'var(--danger)'};"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-scale-balanced"></i> Bu Ay Net
                 </div>
-                <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:${positive ? 'var(--gold)' : 'var(--danger)'};margin-bottom:8px;">
+                <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:${positive ? 'var(--gold)' : 'var(--danger)'};margin-bottom:10px;">
                   ${fmtTLShort(net)}
                 </div>
-                <div style="display:flex;justify-content:center;gap:12px;font-size:10.5px;color:var(--t3);margin-bottom:${bekleyen > 0 ? '6px' : '0'};">
-                  <span><i class="fa-solid fa-arrow-up" style="color:var(--success);font-size:9px;"></i> ${fmtTLShort(gelir)}</span>
-                  <span><i class="fa-solid fa-arrow-down" style="color:var(--danger);font-size:9px;"></i> ${fmtTLShort(gider)}</span>
+                <div style="width:100%;display:flex;flex-direction:column;gap:5px;margin-bottom:${bekleyen > 0 ? '6px' : '0'};">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:9.5px;color:var(--success);width:34px;text-align:right;flex-shrink:0;">Gelir</span>
+                    <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="width:${(gelir/maxBar)*100}%;height:100%;background:var(--success);"></div></div>
+                    <span style="font-size:9.5px;color:var(--t3);width:44px;text-align:left;flex-shrink:0;">${fmtTLShort(gelir)}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:9.5px;color:var(--danger);width:34px;text-align:right;flex-shrink:0;">Gider</span>
+                    <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="width:${(gider/maxBar)*100}%;height:100%;background:var(--danger);"></div></div>
+                    <span style="font-size:9.5px;color:var(--t3);width:44px;text-align:left;flex-shrink:0;">${fmtTLShort(gider)}</span>
+                  </div>
                 </div>
                 ${bekleyen > 0 ? `
                   <div style="font-size:10.5px;color:var(--warn);border-top:1px solid var(--border);padding-top:6px;width:100%;">
@@ -788,16 +808,24 @@ async function renderGelirGiderOzet() {
           if (key === 'dosya') {
             const open = stats.dosya?.open ?? 0;
             const closed = stats.dosya?.closed ?? 0;
+            const total = Math.max(open + closed, 1);
+            const openPct = (open / total) * 100;
+            const circumference = 2 * Math.PI * 26; // r=26
+            const openLen = (openPct / 100) * circumference;
             return `
               <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
-                <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
+                <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">
                   <i class="fa-solid fa-folder-open"></i> Dosya Durumu
                 </div>
-                <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:var(--gold);margin-bottom:8px;">
-                  ${open}<span style="font-size:14px;color:var(--t3);"> açık</span>
+                <div style="position:relative;width:70px;height:70px;margin-bottom:6px;">
+                  <svg width="70" height="70" viewBox="0 0 70 70" style="transform:rotate(-90deg);">
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--border)" stroke-width="8"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--gold)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${openLen} ${circumference}"></circle>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--gold);">${open}</div>
                 </div>
-                <div style="font-size:10.5px;color:var(--t3);">${closed} kapalı dosya</div>
+                <div style="font-size:10.5px;color:var(--t3);">${open} açık · ${closed} kapalı</div>
               </div>
             `;
           }
@@ -815,6 +843,31 @@ function fmtTL(n) { return new Intl.NumberFormat('tr-TR', { style: 'currency', c
 function fmtTLShort(n) {
   if (typeof fmtTL === 'function') return fmtTL(n);
   return n.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 });
+}
+
+async function renderDashOzet() {
+  const box = document.getElementById('dashOzet');
+  if (!box) return;
+  box.innerHTML = skeletonLines(2);
+  try {
+    const res = await fetch('/api/daily-summary');
+    const data = await res.json();
+    const items = [
+      { renk: 'var(--success)', metin: `Bugün <strong>${data.bugunDurusma}</strong> duruşmanız/etkinliğiniz var.`, gizle: data.bugunDurusma === 0 },
+      { renk: 'var(--warn)', metin: `<strong>${data.yaklasanOdeme}</strong> ödeme yaklaşıyor.`, gizle: data.yaklasanOdeme === 0 },
+      { renk: 'var(--blue)', metin: `<strong>${data.uyapHareket}</strong> dosyada yeni UYAP hareketi var.`, gizle: data.uyapHareket === 0 },
+      { renk: 'var(--danger)', metin: `<strong>${data.gecikenGorev}</strong> görev gecikti.`, gizle: data.gecikenGorev === 0 },
+    ].filter(i => !i.gizle);
+
+    box.innerHTML = items.length ? items.map(i => `
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;color:var(--t1);">
+        <span style="width:8px;height:8px;border-radius:50%;background:${i.renk};flex-shrink:0;"></span>
+        <span>${i.metin}</span>
+      </div>
+    `).join('') : `<div style="font-size:12.5px;color:var(--t3);padding:8px 0;">Bugün için özel bir durum yok — her şey yolunda.</div>`;
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--danger);">Yüklenemedi.</div>`;
+  }
 }
 
 async function renderDashDeadlines() {
@@ -1206,6 +1259,7 @@ if (window.CURRENT_MODULE) {
 } else {
   runCountUp();
   renderDashDeadlines();
+  renderDashOzet();
   renderGelirGiderOzet();
   renderAppSidebar();
   renderHomeWidgets();
