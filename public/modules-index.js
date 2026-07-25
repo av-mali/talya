@@ -44,7 +44,7 @@ window.MODULES_INDEX = [
   {
     "key": "tevkil",
     "label": "Tevkil Menüsü",
-    "color": "g",
+    "color": "r",
     "items": [
       {"id": "tevkil", "icon": "fa-people-arrows", "name": "Tevkil Panosu"}
     ]
@@ -52,7 +52,7 @@ window.MODULES_INDEX = [
   {
     "key": "uyap",
     "label": "UYAP Entegrasyonu",
-    "color": "b",
+    "color": "a",
     "items": [
       {"id": "uyap-dilekce", "icon": "fa-paper-plane", "name": "Dilekçe Gönder"},
       {"id": "uyap-dosya", "icon": "fa-folder-open", "name": "Dosya Sorgula"},
@@ -79,7 +79,7 @@ window.MODULES_INDEX = [
   {
     "key": "uyelik",
     "label": "Üyelik & Hesap",
-    "color": "t",
+    "color": "b",
     "items": [
       {"id": "plan", "icon": "fa-star", "name": "Planım & Abonelik"},
       {"id": "faturalar", "icon": "fa-file-invoice", "name": "Fatura Geçmişi"},
