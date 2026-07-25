@@ -40,8 +40,8 @@ window.CURRENT_MODULE = {
     bakiyetablosu: {
       badge: 'b', badgeText: 'Muhasebe Özeti', titleHtml: 'Müvekkil <em class="b">Bakiye Tablosu</em>',
       desc: 'Her müvekkilin toplam anlaşılan ücreti, tahsil edilen tutarı ve kalan bakiyesini tek tabloda görün.',
-      btnClass: 'b', btnIco: 'fa-scale-unbalanced', btnLbl: '', hideCta: true,
-      body: `<div style="font-size:11.5px;color:var(--t3);line-height:1.6;">Kalan bakiyesi en yüksek müvekkil en üstte görünür. Tam tablo sağ panelde açılır.</div>`,
+      btnClass: 'b', btnIco: 'fa-scale-unbalanced', btnLbl: '', hideCta: true, hideToolPanel: true,
+      body: `<div style="font-size:11.5px;color:var(--t3);line-height:1.6;">Kalan bakiyesi en yüksek müvekkil en üstte görünür.</div>`,
       onOpen: () => bakiyeOnOpen(),
       prompt: () => ''
     },
@@ -49,8 +49,8 @@ window.CURRENT_MODULE = {
     raporlar: {
       badge: 'b', badgeText: 'Genel Bakış', titleHtml: 'Büro <em class="b">Raporları</em>',
       desc: 'Dosya durumu, gelir-gider trendi ve görev dağılımını tek ekranda görün.',
-      btnClass: 'b', btnIco: 'fa-chart-pie', btnLbl: '', hideCta: true,
-      body: `<div style="font-size:11.5px;color:var(--t3);line-height:1.6;">Rapor sağ panelde açılır.</div>`,
+      btnClass: 'b', btnIco: 'fa-chart-pie', btnLbl: '', hideCta: true, hideToolPanel: true,
+      body: `<div style="font-size:11.5px;color:var(--t3);line-height:1.6;">Dosya durumu, gelir-gider trendi ve görev dağılımı.</div>`,
       onOpen: () => raporlarOnOpen(),
       prompt: () => ''
     },
@@ -2557,8 +2557,8 @@ async function mvDeleteFeeAgreement(clientId, id) {
 // MÜVEKKİL BAKİYE TABLOSU
 // ══════════════════════════════════════════════════════
 async function bakiyeOnOpen() {
-  const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
+  const dp = document.getElementById('bakiye-box');
+  dp.innerHTML = skeletonRows(4);
   try {
     const res = await fetch('/api/clients/balance-table');
     const data = await res.json();
@@ -2566,7 +2566,6 @@ async function bakiyeOnOpen() {
     const toplamBakiye = rows.reduce((s, r) => s + r.bakiye, 0);
 
     dp.innerHTML = `
-      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
         <div style="background:var(--bg2);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;text-align:center;">
           <div style="font-size:22px;font-family:'JetBrains Mono',monospace;color:var(--warn);">${fmtTL(toplamBakiye)}</div>
           <div style="font-size:10.5px;color:var(--t3);">Toplam Bekleyen Bakiye (${rows.length} müvekkil)</div>
@@ -2593,10 +2592,9 @@ async function bakiyeOnOpen() {
           </tbody>
         </table>
         ` : emptyState('fa-scale-unbalanced', 'Henüz veri yok', 'Bir müvekkile Anlaşılan Ücret ya da Avukatlık Ücret Sözleşmesi ekleyince burada görünür.')}
-      </div>
     `;
   } catch (e) {
-    dp.innerHTML = `<div style="padding:22px 24px;color:var(--danger);font-size:12px;">Yüklenemedi.</div>`;
+    dp.innerHTML = `<div style="color:var(--danger);font-size:12px;">Yüklenemedi.</div>`;
   }
 }
 
@@ -2604,8 +2602,8 @@ async function bakiyeOnOpen() {
 // RAPORLAR — büronun genel durumunun tek sayfalık özeti
 // ══════════════════════════════════════════════════════
 async function raporlarOnOpen() {
-  const dp = document.getElementById('detailPane');
-  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
+  const dp = document.getElementById('raporlar-box');
+  dp.innerHTML = skeletonRows(4);
   try {
     const res = await fetch('/api/reports');
     const data = await res.json();
@@ -2616,7 +2614,6 @@ async function raporlarOnOpen() {
     const maxTutar = Math.max(1, ...data.gelirGiderTrend.flatMap(m => [m.gelir, m.gider]));
 
     dp.innerHTML = `
-      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
         <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
           <div style="flex:1;min-width:120px;background:var(--bg2);border-radius:var(--r);padding:14px;text-align:center;">
             <div style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--success);">${data.dosya.open}</div>
@@ -2642,7 +2639,7 @@ async function raporlarOnOpen() {
           <div style="width:${gorevYuzde(data.gorevDagilimi.devam)}%;background:var(--warn);"></div>
           <div style="width:${gorevYuzde(data.gorevDagilimi.tamamlandi)}%;background:var(--success);"></div>
         </div>
-        <div style="display:flex;gap:16px;font-size:11.5px;color:var(--t2);margin-bottom:24px;">
+        <div style="display:flex;gap:16px;font-size:11.5px;color:var(--t2);margin-bottom:24px;flex-wrap:wrap;">
           <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--t3);margin-right:4px;"></span>Yapılacak: ${data.gorevDagilimi.yapilacak}</span>
           <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:4px;"></span>Devam Ediyor: ${data.gorevDagilimi.devam}</span>
           <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success);margin-right:4px;"></span>Tamamlandı: ${data.gorevDagilimi.tamamlandi}</span>
@@ -2650,12 +2647,12 @@ async function raporlarOnOpen() {
 
         ${data.canSeeGelirGider ? `
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Son 6 Ay — Gelir / Gider</div>
-          <div style="display:flex;align-items:flex-end;gap:10px;height:140px;margin-bottom:8px;">
+          <div style="display:flex;align-items:flex-end;gap:14px;height:160px;margin-bottom:8px;max-width:520px;">
             ${data.gelirGiderTrend.map(m => `
               <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px;">
-                <div style="display:flex;align-items:flex-end;gap:2px;height:100%;">
-                  <div style="width:10px;height:${Math.max(2, (m.gelir / maxTutar) * 110)}px;background:var(--success);border-radius:2px 2px 0 0;" title="Gelir: ${fmtTL(m.gelir)}"></div>
-                  <div style="width:10px;height:${Math.max(2, (m.gider / maxTutar) * 110)}px;background:var(--danger);border-radius:2px 2px 0 0;" title="Gider: ${fmtTL(m.gider)}"></div>
+                <div style="display:flex;align-items:flex-end;gap:3px;height:100%;">
+                  <div style="width:14px;height:${Math.max(2, (m.gelir / maxTutar) * 130)}px;background:var(--success);border-radius:2px 2px 0 0;" title="Gelir: ${fmtTL(m.gelir)}"></div>
+                  <div style="width:14px;height:${Math.max(2, (m.gider / maxTutar) * 130)}px;background:var(--danger);border-radius:2px 2px 0 0;" title="Gider: ${fmtTL(m.gider)}"></div>
                 </div>
                 <div style="font-size:9.5px;color:var(--t3);">${m.ay}</div>
               </div>
@@ -2666,9 +2663,8 @@ async function raporlarOnOpen() {
             <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:4px;"></span>Gider</span>
           </div>
         ` : ''}
-      </div>
     `;
   } catch (e) {
-    dp.innerHTML = `<div style="padding:22px 24px;color:var(--danger);font-size:12px;">Yüklenemedi.</div>`;
+    dp.innerHTML = `<div style="color:var(--danger);font-size:12px;">Yüklenemedi.</div>`;
   }
 }

@@ -194,8 +194,17 @@ function openPopup(id) {
       toolPanel.style.flex = '1';
       toolPanel.style.maxWidth = '820px';
       toolPanel.style.margin = '0 auto';
+    } else if (popCfg.hideToolPanel) {
+      // Tersi: bu araç sadece veri/rapor gösterir, orta paneldeki forma
+      // hiç ihtiyacı yok — orta paneli gizleyip sağdaki (detay) paneli
+      // tam genişliğe yayıyoruz (ör. Raporlar, Bakiye Tablosu).
+      toolPanel.style.display = 'none';
+      aiPane.style.display = '';
+      aiPane.style.flex = '1';
+      aiPane.style.maxWidth = '';
     } else {
       aiPane.style.display = '';
+      toolPanel.style.display = '';
       toolPanel.style.width = '';
       toolPanel.style.flex = '';
       toolPanel.style.maxWidth = '';
