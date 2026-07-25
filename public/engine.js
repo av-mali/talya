@@ -151,7 +151,7 @@ async function renderAppSidebar() {
         const idAttr = isCurrent ? `id="si-${item.id}"` : '';
         children += `
           <div class="s-item" ${idAttr} style="padding-left:${indent}px;" onclick="${clickAction}">
-            <span class="ico"><i class="fa-solid ${item.icon}"></i></span>
+            <span class="ico"><i class="fa-solid ${item.icon}" style="color:${modColor};opacity:.8;"></i></span>
             ${item.name}
             ${item.badge ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;background:var(--bg2);color:var(--t3);">${item.badge}</span>` : ''}
           </div>`;

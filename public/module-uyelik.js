@@ -153,8 +153,7 @@ async function profilOnOpen() {
 
 // Renk paleti seçici — 4 kart, her biri küçük bir renk önizlemesiyle.
 const PALETTE_OPTIONS = [
-  { key: 'varsayilan', label: 'Varsayılan (Altın)', colors: ['#F7F5F1', '#B8922A', '#3A5F96'] },
-  { key: 'safir', label: 'Safir', colors: ['#EEF1F6', '#2E68CF', '#4A5568'] },
+  { key: 'varsayilan', label: 'Varsayılan (Safir)', colors: ['#DCE6F5', '#2E68CF', '#0F3F8C'] },
   { key: 'murekkep', label: 'Mürekkep', colors: ['#E6E6E3', '#A8291F', '#2B2B2B'] },
   { key: 'akik', label: 'Akik', colors: ['#F5DCD6', '#B0281C', '#6B3226'] },
   { key: 'turkuaz', label: 'Turkuaz', colors: ['#CFEDE8', '#0A8C7E', '#2E5C58'] },

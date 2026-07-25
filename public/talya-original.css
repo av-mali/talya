@@ -1,25 +1,25 @@
 :root{
-  --bg:#F7F5F1;--bg2:#EDEAE4;--bg3:#E4E0D8;--card:#FFFFFF;--border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.12);
-  --gold:#B8922A;--gold-hi:#9A7820;--gold-lo:rgba(184,146,42,.08);--gold-mid:rgba(184,146,42,.18);--gold-rule:rgba(184,146,42,.25);
-  --blue:#2E68CF;--blue-lo:rgba(46,104,207,.08);--blue-hi:#1F4FA6;
+  --bg:#DCE6F5;--bg2:#CBDBF0;--bg3:#B2C8E8;--card:#FFFFFF;--border:rgba(15,40,90,.16);--border2:rgba(15,40,90,.24);
+  --gold:#2E68CF;--gold-hi:#1F4FA6;--gold-lo:rgba(46,104,207,.10);--gold-mid:rgba(46,104,207,.20);--gold-rule:rgba(46,104,207,.32);
+  --blue:#0F3F8C;--blue-lo:rgba(15,63,140,.09);--blue-hi:#0A2C63;
   --teal:#0E8F63;--teal-lo:rgba(14,143,99,.08);--teal-hi:#0A7350;
   --purple:#7C3AED;--purple-lo:rgba(124,58,237,.08);--purple-hi:#6423CC;
   --rose:#DB2777;--rose-lo:rgba(219,39,119,.08);--rose-hi:#B01D60;
   --amber:#EA580C;--amber-lo:rgba(234,88,12,.08);--amber-hi:#C4460A;
-  --t0:#1A1714;--t1:#3D3936;--t2:#6E6A64;--t3:#A09B94;
+  --t0:#0E1729;--t1:#28324A;--t2:#57647F;--t3:#8E9BB5;
   --success:#1E6B3A;--danger:#B03A34;--warn:#8A5418;
   --r:8px;--r-lg:14px;--r-sm:5px;
   --ease:cubic-bezier(.22,.68,0,1.2);--std:cubic-bezier(.4,0,.2,1);
 }
 [data-theme="dark"]{
-  --bg:#1A1E26;--bg2:#202530;--bg3:#272D3A;--card:#1E2330;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.11);
-  --gold:#D4A93C;--gold-hi:#E8BF52;--gold-lo:rgba(212,169,60,.10);--gold-mid:rgba(212,169,60,.17);--gold-rule:rgba(212,169,60,.28);
-  --blue:#5B9CF0;--blue-lo:rgba(91,156,240,.10);--blue-hi:#8AB8F5;
+  --bg:#0A0F1C;--bg2:#0F1626;--bg3:#151F36;--card:#0D1220;--border:rgba(140,180,255,.13);--border2:rgba(140,180,255,.20);
+  --gold:#5B9CF0;--gold-hi:#8AB8F5;--gold-lo:rgba(91,156,240,.13);--gold-mid:rgba(91,156,240,.22);--gold-rule:rgba(91,156,240,.36);
+  --blue:#7A96C4;--blue-lo:rgba(122,150,196,.10);--blue-hi:#A0B6DC;
   --teal:#2FE0A8;--teal-lo:rgba(47,224,168,.10);--teal-hi:#5CEDC0;
   --purple:#A575F5;--purple-lo:rgba(165,117,245,.10);--purple-hi:#C09FFA;
   --rose:#F5589E;--rose-lo:rgba(245,88,158,.10);--rose-hi:#F888BC;
   --amber:#FF8A3D;--amber-lo:rgba(255,138,61,.10);--amber-hi:#FFAB70;
-  --t0:#E8EDF5;--t1:#B8C2D4;--t2:#7A8499;--t3:#4E5668;
+  --t0:#EAF1FC;--t1:#B0C2DE;--t2:#65799B;--t3:#334358;
   --success:#3DC492;--danger:#E05A54;--warn:#D4903C;
 }
 
