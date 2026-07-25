@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 const FEATURES = [
   { icon: "fa-file-lines", title: "Belge & Analiz", desc: "Dosya analizi, dilekçe sihirbazı, mevzuat arama — gerçek zamanlı AI desteğiyle." },
   { icon: "fa-handshake", title: "Arabuluculuk", desc: "Davet mektubu, ilk oturum ve son tutanağı, gerçek UYAP formatında otomatik oluşturun." },
+  { icon: "fa-people-arrows", title: "Tevkil Menüsü", desc: "Bürolar arası tevkil talep edin ya da başkasının talebini üstlenin — başvuru, onay, tek panelde." },
   { icon: "fa-briefcase", title: "Büro Yönetimi", desc: "Müvekkil, dosya, gelir-gider, görev panosu — hepsi tek yerde." },
   { icon: "fa-user-group", title: "Müvekkil Paneli", desc: "Müvekkilleriniz kendi dosya durumunu görsün, size doğrudan mesaj göndersin." },
   { icon: "fa-puzzle-piece", title: "UYAP Entegrasyonu", desc: "Duruşma ve tebligat tarihlerini otomatik senkronize edin." },

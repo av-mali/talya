@@ -147,6 +147,7 @@ model Client {
   tcMersis    String?   // TC Kimlik No / Mersis No
   address     String?   // Tebligat Adresi (Avukatlık Ücret Sözleşmesi için)
   archived    Boolean   @default(false)
+  isAday      Boolean   @default(false) // true ise: henüz anlaşılmamış "müvekkil adayı" — normal müvekkil listesinden ayrı gösterilir
   portalPasswordHash String? // müvekkil paneli girişi için (TC No + bu şifre)
   createdAt   DateTime  @default(now())
   // ── GÖÇ NOTU: workspaceId yeni sistem, userId eski sistem ──

@@ -14,7 +14,9 @@ window.MODULES_INDEX = [
       {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
       {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"},
       {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
-      {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"}
+      {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"},
+      {"id": "bakiyetablosu", "icon": "fa-scale-unbalanced", "name": "Müvekkil Bakiye Tablosu"},
+      {"id": "raporlar", "icon": "fa-chart-pie", "name": "Raporlar"}
     ]
   },
   {

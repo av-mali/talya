@@ -15,7 +15,9 @@ window.CURRENT_MODULE = {
     {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
     {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"},
     {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
-    {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"}
+    {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"},
+    {"id": "bakiyetablosu", "icon": "fa-scale-unbalanced", "name": "Müvekkil Bakiye Tablosu"},
+    {"id": "raporlar", "icon": "fa-chart-pie", "name": "Raporlar"}
   ],
   popups: {
     // ── SÖZLEŞME TAKİP ── bitiş/yenileme tarihi yaklaşan sözleşmeler
@@ -32,6 +34,24 @@ window.CURRENT_MODULE = {
         <button class="pop-cta-btn b" style="width:100%;" onclick="szAdd()"><i class="fa-solid fa-plus"></i><span>Sözleşme Ekle</span></button>
       `,
       onOpen: () => szOnOpen(),
+      prompt: () => ''
+    },
+    // ── MÜVEKKİL BAKİYE TABLOSU ── her müvekkilin toplam borcu tek bakışta
+    bakiyetablosu: {
+      badge: 'b', badgeText: 'Muhasebe Özeti', titleHtml: 'Müvekkil <em class="b">Bakiye Tablosu</em>',
+      desc: 'Her müvekkilin toplam anlaşılan ücreti, tahsil edilen tutarı ve kalan bakiyesini tek tabloda görün.',
+      btnClass: 'b', btnIco: 'fa-scale-unbalanced', btnLbl: '', hideCta: true,
+      body: `<div style="font-size:11.5px;color:var(--t3);line-height:1.6;">Kalan bakiyesi en yüksek müvekkil en üstte görünür. Tam tablo sağ panelde açılır.</div>`,
+      onOpen: () => bakiyeOnOpen(),
+      prompt: () => ''
+    },
+    // ── RAPORLAR ── büronun genel durumunun tek sayfalık özeti
+    raporlar: {
+      badge: 'b', badgeText: 'Genel Bakış', titleHtml: 'Büro <em class="b">Raporları</em>',
+      desc: 'Dosya durumu, gelir-gider trendi ve görev dağılımını tek ekranda görün.',
+      btnClass: 'b', btnIco: 'fa-chart-pie', btnLbl: '', hideCta: true,
+      body: `<div style="font-size:11.5px;color:var(--t3);line-height:1.6;">Rapor sağ panelde açılır.</div>`,
+      onOpen: () => raporlarOnOpen(),
       prompt: () => ''
     },
     // ── EKİP YÖNETİMİ ── büro üyeleri, davet linki
@@ -74,6 +94,10 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-n-phone" placeholder="05__ ___ __ __"></div>
         <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-n-email" placeholder="mail@ornek.com"></div>
         <div class="fg"><div class="fl">Dava Konusu / Not</div><textarea id="mv-n-note" rows="2" placeholder="Kısa not…"></textarea></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;">
+          <input type="checkbox" id="mv-n-isaday">
+          <span style="font-size:12.5px;">Henüz anlaşmadık — <strong>Müvekkil Adayı</strong> olarak ekle</span>
+        </label>
         <button class="pop-cta-btn b" style="width:100%;" onclick="mvSaveNew()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
       `,
       onOpen: () => tblOnOpen(),
@@ -296,6 +320,7 @@ async function mvSaveNew() {
   const notes = document.getElementById('mv-n-note').value;
   const tcMersis = document.getElementById('mv-n-tc').value;
   const address = document.getElementById('mv-n-address').value;
+  const isAday = document.getElementById('mv-n-isaday').checked;
 
   // Kaydetmeden önce aynı isimde zaten kayıtlı bir müvekkil var mı kontrol et.
   try {
@@ -310,17 +335,18 @@ async function mvSaveNew() {
 
   const res = await fetch('/api/clients', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, phone, email, notes, tcMersis, address })
+    body: JSON.stringify({ name, phone, email, notes, tcMersis, address, isAday })
   });
   const data = await res.json();
   if (data.client) {
-    toast('Müvekkil eklendi', 'fa-solid fa-check', true);
+    toast(isAday ? 'Müvekkil adayı eklendi' : 'Müvekkil eklendi', 'fa-solid fa-check', true);
     document.getElementById('mv-n-name').value = '';
     document.getElementById('mv-n-tc').value = '';
     document.getElementById('mv-n-address').value = '';
     document.getElementById('mv-n-phone').value = '';
     document.getElementById('mv-n-email').value = '';
     document.getElementById('mv-n-note').value = '';
+    document.getElementById('mv-n-isaday').checked = false;
     mvSelect(data.client.id);
   }
 }
@@ -1508,10 +1534,10 @@ async function txDelete(id) {
 // ══════════════════════════════════════════════════════
 let tblAllRows = [];
 
-let tblShowArchived = false;
+let tblTab = 'aktif'; // 'aktif' | 'arsiv' | 'aday'
 
 async function tblOnOpen() {
-  tblShowArchived = false;
+  tblTab = 'aktif';
   await tblLoad();
 }
 
@@ -1519,7 +1545,9 @@ async function tblLoad() {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
   try {
-    const res = await fetch('/api/clients?full=1&archived=' + (tblShowArchived ? '1' : '0'));
+    const archivedParam = tblTab === 'arsiv' ? '1' : '0';
+    const adayParam = tblTab === 'aday' ? '1' : '0';
+    const res = await fetch(`/api/clients?full=1&archived=${archivedParam}&aday=${adayParam}`);
     const data = await res.json();
     tblAllRows = data.clients || [];
     tblRender(tblAllRows);
@@ -1528,8 +1556,8 @@ async function tblLoad() {
   }
 }
 
-function tblSwitchTab(archived) {
-  tblShowArchived = archived;
+function tblSwitchTab(tab) {
+  tblTab = tab;
   tblLoad();
 }
 
@@ -1548,6 +1576,17 @@ async function tblToggleArchive(id, archive) {
   tblLoad();
 }
 
+async function tblConvertToClient(id) {
+  const ok = await talyaConfirm('Bu adayı gerçek bir müvekkile dönüştürmek istediğinize emin misiniz?', 'Evet, Dönüştür');
+  if (!ok) return;
+  await fetch('/api/clients/' + id, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isAday: false })
+  });
+  toast('Müvekkile dönüştürüldü', 'fa-solid fa-check', true);
+  tblLoad();
+}
+
 async function tblDeleteClient(id) {
   const ok = await talyaConfirm('Bu müvekkili ve <strong>tüm dosyalarını</strong> silmek istediğinize emin misiniz?<br><span style="font-size:12px;color:var(--t3);">Bu işlem geri alınamaz.</span>', 'Evet, Sil', 'danger');
   if (!ok) return;
@@ -1561,8 +1600,9 @@ function tblRender(rows) {
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow:auto;height:100%;">
       <div style="display:flex;gap:6px;margin-bottom:14px;">
-        <button class="pop-cta-btn ${!tblShowArchived ? 'b' : ''}" style="width:auto;padding:6px 14px;${tblShowArchived ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab(false)"><i class="fa-solid fa-users"></i><span>Aktif Müvekkiller</span></button>
-        <button class="pop-cta-btn ${tblShowArchived ? 'b' : ''}" style="width:auto;padding:6px 14px;${!tblShowArchived ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab(true)"><i class="fa-solid fa-box-archive"></i><span>Arşivlenenler</span></button>
+        <button class="pop-cta-btn ${tblTab === 'aktif' ? 'b' : ''}" style="width:auto;padding:6px 14px;${tblTab !== 'aktif' ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab('aktif')"><i class="fa-solid fa-users"></i><span>Aktif Müvekkiller</span></button>
+        <button class="pop-cta-btn ${tblTab === 'aday' ? 'b' : ''}" style="width:auto;padding:6px 14px;${tblTab !== 'aday' ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab('aday')"><i class="fa-solid fa-user-clock"></i><span>Müvekkil Adayları</span></button>
+        <button class="pop-cta-btn ${tblTab === 'arsiv' ? 'b' : ''}" style="width:auto;padding:6px 14px;${tblTab !== 'arsiv' ? 'background:var(--bg2);color:var(--t2);' : ''}" onclick="tblSwitchTab('arsiv')"><i class="fa-solid fa-box-archive"></i><span>Arşivlenenler</span></button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <input type="text" id="tbl-search" placeholder="Müvekkil ara…" oninput="tblFilter()" style="flex:1;">
@@ -1606,9 +1646,11 @@ function tblRenderRowsOnly(rows) {
               <td style="padding:8px 10px;">
                 <div style="display:flex;gap:10px;">
                   <span style="cursor:pointer;color:var(--t2);font-size:11px;" onclick="rpSelect('${r.id}')">Rapor</span>
-                  ${tblShowArchived
-                    ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="tblToggleArchive('${r.id}', false)">Aktife Al</span>`
-                    : `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="tblToggleArchive('${r.id}', true)">Arşivle</span>`
+                  ${tblTab === 'aday'
+                    ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="tblConvertToClient('${r.id}')"><i class="fa-solid fa-arrow-right"></i> Müvekkile Dönüştür</span>`
+                    : tblTab === 'arsiv'
+                      ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick="tblToggleArchive('${r.id}', false)">Aktife Al</span>`
+                      : `<span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="tblToggleArchive('${r.id}', true)">Arşivle</span>`
                   }
                   <span style="cursor:pointer;color:var(--danger);font-size:11px;" onclick="tblDeleteClient('${r.id}')">Sil</span>
                 </div>
@@ -1617,7 +1659,7 @@ function tblRenderRowsOnly(rows) {
           `).join('')}
         </tbody>
       </table>
-      ${!rows.length ? emptyState('fa-user-large', tblShowArchived ? 'Arşivde müvekkil yok' : 'Müvekkil bulunamadı', tblShowArchived ? 'Arşivlediğiniz müvekkiller burada listelenir.' : 'Arama teriminizi değiştirin ya da yeni bir müvekkil ekleyin.') : ''}
+      ${!rows.length ? emptyState('fa-user-large', tblTab === 'arsiv' ? 'Arşivde müvekkil yok' : tblTab === 'aday' ? 'Müvekkil adayı yok' : 'Müvekkil bulunamadı', tblTab === 'arsiv' ? 'Arşivlediğiniz müvekkiller burada listelenir.' : tblTab === 'aday' ? 'Henüz anlaşmadığınız, görüşme aşamasındaki kişileri buraya ekleyin.' : 'Arama teriminizi değiştirin ya da yeni bir müvekkil ekleyin.') : ''}
   `;
 }
 
@@ -2509,4 +2551,124 @@ async function mvDeleteFeeAgreement(clientId, id) {
   await fetch('/api/fee-agreements/' + id, { method: 'DELETE' });
   toast('Sözleşme silindi', 'fa-solid fa-trash');
   mvLoadFeeAgreements(clientId);
+}
+
+// ══════════════════════════════════════════════════════
+// MÜVEKKİL BAKİYE TABLOSU
+// ══════════════════════════════════════════════════════
+async function bakiyeOnOpen() {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
+  try {
+    const res = await fetch('/api/clients/balance-table');
+    const data = await res.json();
+    const rows = data.rows || [];
+    const toplamBakiye = rows.reduce((s, r) => s + r.bakiye, 0);
+
+    dp.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+        <div style="background:var(--bg2);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;text-align:center;">
+          <div style="font-size:22px;font-family:'JetBrains Mono',monospace;color:var(--warn);">${fmtTL(toplamBakiye)}</div>
+          <div style="font-size:10.5px;color:var(--t3);">Toplam Bekleyen Bakiye (${rows.length} müvekkil)</div>
+        </div>
+        ${rows.length ? `
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);text-align:left;">
+              <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;">Müvekkil</th>
+              <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;text-align:right;">Anlaşılan</th>
+              <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;text-align:right;">Tahsil Edilen</th>
+              <th style="padding:8px 10px;color:var(--t3);font-size:10.5px;text-transform:uppercase;text-align:right;">Bakiye</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${r.clientId}')">
+                <td style="padding:8px 10px;">${r.clientName}</td>
+                <td style="padding:8px 10px;text-align:right;font-family:'JetBrains Mono',monospace;color:var(--t2);">${fmtTL(r.anlasilan)}</td>
+                <td style="padding:8px 10px;text-align:right;font-family:'JetBrains Mono',monospace;color:var(--success);">${fmtTL(r.tahsil)}</td>
+                <td style="padding:8px 10px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;color:${r.bakiye > 0 ? 'var(--warn)' : 'var(--success)'};">${fmtTL(r.bakiye)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ` : emptyState('fa-scale-unbalanced', 'Henüz veri yok', 'Bir müvekkile Anlaşılan Ücret ya da Avukatlık Ücret Sözleşmesi ekleyince burada görünür.')}
+      </div>
+    `;
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:22px 24px;color:var(--danger);font-size:12px;">Yüklenemedi.</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// RAPORLAR — büronun genel durumunun tek sayfalık özeti
+// ══════════════════════════════════════════════════════
+async function raporlarOnOpen() {
+  const dp = document.getElementById('detailPane');
+  dp.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(4)}</div>`;
+  try {
+    const res = await fetch('/api/reports');
+    const data = await res.json();
+
+    const gorevToplam = data.gorevDagilimi.yapilacak + data.gorevDagilimi.devam + data.gorevDagilimi.tamamlandi;
+    const gorevYuzde = (n) => gorevToplam ? Math.round((n / gorevToplam) * 100) : 0;
+
+    const maxTutar = Math.max(1, ...data.gelirGiderTrend.flatMap(m => [m.gelir, m.gider]));
+
+    dp.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:120px;background:var(--bg2);border-radius:var(--r);padding:14px;text-align:center;">
+            <div style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--success);">${data.dosya.open}</div>
+            <div style="font-size:10.5px;color:var(--t3);">Açık Dosya</div>
+          </div>
+          <div style="flex:1;min-width:120px;background:var(--bg2);border-radius:var(--r);padding:14px;text-align:center;">
+            <div style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--t3);">${data.dosya.closed}</div>
+            <div style="font-size:10.5px;color:var(--t3);">Kapalı Dosya</div>
+          </div>
+          <div style="flex:1;min-width:120px;background:var(--bg2);border-radius:var(--r);padding:14px;text-align:center;">
+            <div style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--gold);">${data.muvekkil.total}</div>
+            <div style="font-size:10.5px;color:var(--t3);">Müvekkil</div>
+          </div>
+          <div style="flex:1;min-width:120px;background:var(--bg2);border-radius:var(--r);padding:14px;text-align:center;">
+            <div style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--purple);">${data.muvekkil.aday}</div>
+            <div style="font-size:10.5px;color:var(--t3);">Müvekkil Adayı</div>
+          </div>
+        </div>
+
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Görev Dağılımı</div>
+        <div style="display:flex;height:10px;border-radius:6px;overflow:hidden;margin-bottom:8px;">
+          <div style="width:${gorevYuzde(data.gorevDagilimi.yapilacak)}%;background:var(--t3);"></div>
+          <div style="width:${gorevYuzde(data.gorevDagilimi.devam)}%;background:var(--warn);"></div>
+          <div style="width:${gorevYuzde(data.gorevDagilimi.tamamlandi)}%;background:var(--success);"></div>
+        </div>
+        <div style="display:flex;gap:16px;font-size:11.5px;color:var(--t2);margin-bottom:24px;">
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--t3);margin-right:4px;"></span>Yapılacak: ${data.gorevDagilimi.yapilacak}</span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:4px;"></span>Devam Ediyor: ${data.gorevDagilimi.devam}</span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success);margin-right:4px;"></span>Tamamlandı: ${data.gorevDagilimi.tamamlandi}</span>
+        </div>
+
+        ${data.canSeeGelirGider ? `
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Son 6 Ay — Gelir / Gider</div>
+          <div style="display:flex;align-items:flex-end;gap:10px;height:140px;margin-bottom:8px;">
+            ${data.gelirGiderTrend.map(m => `
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px;">
+                <div style="display:flex;align-items:flex-end;gap:2px;height:100%;">
+                  <div style="width:10px;height:${Math.max(2, (m.gelir / maxTutar) * 110)}px;background:var(--success);border-radius:2px 2px 0 0;" title="Gelir: ${fmtTL(m.gelir)}"></div>
+                  <div style="width:10px;height:${Math.max(2, (m.gider / maxTutar) * 110)}px;background:var(--danger);border-radius:2px 2px 0 0;" title="Gider: ${fmtTL(m.gider)}"></div>
+                </div>
+                <div style="font-size:9.5px;color:var(--t3);">${m.ay}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="display:flex;gap:16px;font-size:11.5px;color:var(--t2);">
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success);margin-right:4px;"></span>Gelir</span>
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:4px;"></span>Gider</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  } catch (e) {
+    dp.innerHTML = `<div style="padding:22px 24px;color:var(--danger);font-size:12px;">Yüklenemedi.</div>`;
+  }
 }

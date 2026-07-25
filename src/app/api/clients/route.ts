@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireWorkspace } from "@/lib/workspace";
 
-// Tüm müvekkilleri listele (arama isteğe bağlı: ?q=isim, tablo görünümü: ?full=1, arşiv: ?archived=1)
+// Tüm müvekkilleri listele (arama isteğe bağlı: ?q=isim, tablo görünümü:
+// ?full=1, arşiv: ?archived=1, adaylar: ?aday=1). "Aday" olanlar normal
+// listelere hiç karışmaz — ayrı bir görünümdür.
 export async function GET(req: Request) {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
@@ -12,11 +14,12 @@ export async function GET(req: Request) {
   const q = searchParams.get("q")?.trim();
   const full = searchParams.get("full") === "1";
   const archived = searchParams.get("archived") === "1";
+  const adayOnly = searchParams.get("aday") === "1";
 
   if (full) {
     // Tablo/rapor görünümü için: dosya sayısı, toplam faturalanan tutar dahil.
     const clients = await prisma.client.findMany({
-      where: { workspaceId, archived, ...(q ? { name: { contains: q, mode: "insensitive" } } : {}) },
+      where: { workspaceId, archived, isAday: adayOnly, ...(q ? { name: { contains: q, mode: "insensitive" } } : {}) },
       orderBy: { name: "asc" },
       include: {
         cases: {
@@ -39,6 +42,7 @@ export async function GET(req: Request) {
         email: c.email,
         tcMersis: c.tcMersis,
         archived: c.archived,
+        isAday: c.isAday,
         caseCount: c.cases.length,
         totalInvoiced,
         nextEventDate: nextEvent ? nextEvent.dueDate : null,
@@ -53,6 +57,7 @@ export async function GET(req: Request) {
     where: {
       workspaceId,
       archived: false,
+      isAday: adayOnly,
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },
     orderBy: { name: "asc" },
@@ -76,18 +81,18 @@ export async function GET(req: Request) {
   return NextResponse.json({ clients: withNextEvent });
 }
 
-// Yeni müvekkil oluştur
+// Yeni müvekkil (ya da müvekkil adayı) oluştur
 export async function POST(req: Request) {
   const ws = await requireWorkspace();
   if (!ws) return NextResponse.json({ error: "Giriş yapmalısınız." }, { status: 401 });
 
-  const { name, phone, email, notes, tcMersis, address } = await req.json();
+  const { name, phone, email, notes, tcMersis, address, isAday } = await req.json();
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "Müvekkil adı gerekli." }, { status: 400 });
   }
 
   const client = await prisma.client.create({
-    data: { name: name.trim(), phone, email, notes, tcMersis, address, workspaceId: ws.workspaceId },
+    data: { name: name.trim(), phone, email, notes, tcMersis, address, isAday: !!isAday, workspaceId: ws.workspaceId },
   });
 
   return NextResponse.json({ client });
