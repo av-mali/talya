@@ -1,5 +1,5 @@
 :root{
-  --bg:#DCE6F5;--bg2:#CBDBF0;--bg3:#B2C8E8;--card:#FFFFFF;--border:rgba(15,40,90,.16);--border2:rgba(15,40,90,.24);
+  --bg:#DCE6F5;--bg2:#EAF0FA;--bg3:#B2C8E8;--card:#FFFFFF;--border:rgba(15,40,90,.16);--border2:rgba(15,40,90,.24);
   --gold:#2E68CF;--gold-hi:#1F4FA6;--gold-lo:rgba(46,104,207,.10);--gold-mid:rgba(46,104,207,.20);--gold-rule:rgba(46,104,207,.32);
   --blue:#0F3F8C;--blue-lo:rgba(15,63,140,.09);--blue-hi:#0A2C63;
   --teal:#0E8F63;--teal-lo:rgba(14,143,99,.08);--teal-hi:#0A7350;
@@ -7,7 +7,7 @@
   --rose:#DB2777;--rose-lo:rgba(219,39,119,.08);--rose-hi:#B01D60;
   --amber:#EA580C;--amber-lo:rgba(234,88,12,.08);--amber-hi:#C4460A;
   --t0:#0E1729;--t1:#28324A;--t2:#57647F;--t3:#8E9BB5;
-  --success:#1E6B3A;--danger:#B03A34;--warn:#8A5418;
+  --success:#1E6B3A;--danger:#B03A34;--danger-hi:#8C2E29;--danger-lo:rgba(176,58,52,.10);--warn:#8A5418;
   --r:8px;--r-lg:14px;--r-sm:5px;
   --ease:cubic-bezier(.22,.68,0,1.2);--std:cubic-bezier(.4,0,.2,1);
 }
@@ -20,7 +20,7 @@
   --rose:#F5589E;--rose-lo:rgba(245,88,158,.10);--rose-hi:#F888BC;
   --amber:#FF8A3D;--amber-lo:rgba(255,138,61,.10);--amber-hi:#FFAB70;
   --t0:#EAF1FC;--t1:#B0C2DE;--t2:#65799B;--t3:#334358;
-  --success:#3DC492;--danger:#E05A54;--warn:#D4903C;
+  --success:#3DC492;--danger:#E05A54;--danger-hi:#B34843;--danger-lo:rgba(224,90,84,.10);--warn:#D4903C;
 }
 
 /* ── RENK PALETLERİ ── varsayılan (Altın) dışında 4 seçenek daha,
@@ -37,7 +37,7 @@
   --gold:#2E68CF;--gold-hi:#2354A8;--gold-lo:rgba(46,104,207,.10);--gold-mid:rgba(46,104,207,.18);--gold-rule:rgba(46,104,207,.30);
   --blue:#4A5568;--blue-lo:rgba(74,85,104,.10);--blue-hi:#2D3546;
   --t0:#141414;--t1:#2E323B;--t2:#5C6472;--t3:#9AA2B0;
-  --success:#1E8C5A;--danger:#C4283A;--warn:#B0781E;
+  --success:#1E8C5A;--danger:#C4283A;--danger-hi:#9C202E;--danger-lo:rgba(196,40,58,.10);--warn:#B0781E;
 }
 /* Safir — koyu */
 [data-palette="safir"][data-theme="dark"]{
@@ -45,7 +45,7 @@
   --gold:#5B9CF0;--gold-hi:#8AB8F5;--gold-lo:rgba(91,156,240,.14);--gold-mid:rgba(91,156,240,.23);--gold-rule:rgba(91,156,240,.37);
   --blue:#8FA0B8;--blue-lo:rgba(143,160,184,.10);--blue-hi:#B4C2D6;
   --t0:#EAF1FC;--t1:#B0C2DE;--t2:#65799B;--t3:#334358;
-  --success:#4FCC9E;--danger:#F0687C;--warn:#F0C168;
+  --success:#4FCC9E;--danger:#F0687C;--danger-hi:#C05363;--danger-lo:rgba(240,104,124,.10);--warn:#F0C168;
 }
 
 /* 2) Mürekkep — açık: neredeyse siyah-beyaz, editoryal ciddiyet
@@ -55,7 +55,7 @@
   --gold:#A8291F;--gold-hi:#7A1D15;--gold-lo:rgba(168,41,31,.10);--gold-mid:rgba(168,41,31,.20);--gold-rule:rgba(168,41,31,.34);
   --blue:#2B2B2B;--blue-lo:rgba(43,43,43,.08);--blue-hi:#141414;
   --t0:#111111;--t1:#2E2E2C;--t2:#5C5C57;--t3:#9A9A92;
-  --success:#2E6B3E;--danger:#A8291F;--warn:#8C6A1E;
+  --success:#2E6B3E;--danger:#A8291F;--danger-hi:#862018;--danger-lo:rgba(168,41,31,.10);--warn:#8C6A1E;
 }
 /* Mürekkep — koyu */
 [data-palette="murekkep"][data-theme="dark"]{
@@ -63,7 +63,7 @@
   --gold:#E85B4F;--gold-hi:#F08276;--gold-lo:rgba(232,91,79,.14);--gold-mid:rgba(232,91,79,.23);--gold-rule:rgba(232,91,79,.37);
   --blue:#B8B8B4;--blue-lo:rgba(184,184,180,.08);--blue-hi:#D8D8D4;
   --t0:#F2F2EF;--t1:#C8C8C2;--t2:#87877E;--t3:#464642;
-  --success:#4FCC9E;--danger:#F0687C;--warn:#F0C168;
+  --success:#4FCC9E;--danger:#F0687C;--danger-hi:#C05363;--danger-lo:rgba(240,104,124,.10);--warn:#F0C168;
 }
 
 /* 3) Akik — açık: sıcak, doygun kırmızı-kiremit zemin — Türk avukatın
@@ -73,7 +73,7 @@
   --gold:#B0281C;--gold-hi:#821E14;--gold-lo:rgba(176,40,28,.11);--gold-mid:rgba(176,40,28,.22);--gold-rule:rgba(176,40,28,.38);
   --blue:#6B3226;--blue-lo:rgba(107,50,38,.10);--blue-hi:#4A2119;
   --t0:#2E0F0A;--t1:#4E211A;--t2:#835A4F;--t3:#BB958A;
-  --success:#3E7A2E;--danger:#B0281C;--warn:#A4601A;
+  --success:#3E7A2E;--danger:#B0281C;--danger-hi:#8C2016;--danger-lo:rgba(176,40,28,.10);--warn:#A4601A;
 }
 /* Akik — koyu */
 [data-palette="akik"][data-theme="dark"]{
@@ -81,7 +81,7 @@
   --gold:#F0685A;--gold-hi:#F58F84;--gold-lo:rgba(240,104,90,.15);--gold-mid:rgba(240,104,90,.25);--gold-rule:rgba(240,104,90,.40);
   --blue:#C99486;--blue-lo:rgba(201,148,134,.10);--blue-hi:#DDB4A8;
   --t0:#FFEFE9;--t1:#E8C4B8;--t2:#A47C6E;--t3:#5C443C;
-  --success:#7ECC4A;--danger:#FF6650;--warn:#FF9D3D;
+  --success:#7ECC4A;--danger:#FF6650;--danger-hi:#CC5140;--danger-lo:rgba(255,102,80,.10);--warn:#FF9D3D;
 }
 
 /* 4) Turkuaz — açık: taze, doygun petrol-teal zemin — yeni nesil
@@ -91,7 +91,7 @@
   --gold:#0A8C7E;--gold-hi:#076B60;--gold-lo:rgba(10,140,126,.11);--gold-mid:rgba(10,140,126,.21);--gold-rule:rgba(10,140,126,.36);
   --blue:#2E5C58;--blue-lo:rgba(46,92,88,.10);--blue-hi:#1C3D3A;
   --t0:#052420;--t1:#123B35;--t2:#4C6B65;--t3:#87A69F;
-  --success:#0A8C7E;--danger:#B5364A;--warn:#B0812E;
+  --success:#0A8C7E;--danger:#B5364A;--danger-hi:#902B3B;--danger-lo:rgba(181,54,74,.10);--warn:#B0812E;
 }
 /* Turkuaz — koyu */
 [data-palette="turkuaz"][data-theme="dark"]{
@@ -99,7 +99,7 @@
   --gold:#2FE0CC;--gold-hi:#5CEDDC;--gold-lo:rgba(47,224,204,.15);--gold-mid:rgba(47,224,204,.24);--gold-rule:rgba(47,224,204,.38);
   --blue:#8FBCB4;--blue-lo:rgba(143,188,180,.10);--blue-hi:#B0D4CC;
   --t0:#E8FFF9;--t1:#AED8CE;--t2:#649088;--t3:#33534C;
-  --success:#4FCC9E;--danger:#F0687C;--warn:#F0C168;
+  --success:#4FCC9E;--danger:#F0687C;--danger-hi:#C05363;--danger-lo:rgba(240,104,124,.10);--warn:#F0C168;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
@@ -129,7 +129,7 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--t0);background:va
 .hero-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;background:var(--gold-lo);border:1px solid var(--gold-rule);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
 .hero-badge i{font-size:8px;}
 .hero-title{font-family:'Instrument Serif',serif;font-size:32px;color:var(--t0);line-height:1.1;margin-bottom:8px;letter-spacing:-.5px;}
-.hero-title em{font-style:italic;color:var(--gold);}
+.hero-title em{font-style:italic;color:var(--purple);}
 .hero-sub{font-size:13px;color:var(--t2);max-width:420px;margin:0 auto;line-height:1.6;}
 
 .modules-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;max-width:920px;width:100%;position:relative;z-index:1;}
