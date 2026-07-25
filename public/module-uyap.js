@@ -4,7 +4,7 @@ window.CURRENT_MODULE = {
   key: 'uyap',
   label: 'UYAP Entegrasyonu',
   nameHtml: `UYAP <em class="t">Entegrasyonu</em>`,
-  color: 't',
+  color: 'b',
   items: [{"id": "uyap-dilekce", "icon": "fa-paper-plane", "name": "Dilekçe Gönder"}, {"id": "uyap-dosya", "icon": "fa-folder-open", "name": "Dosya Sorgula"}, {"id": "uyap-tebligat", "icon": "fa-envelope-open-text", "name": "Tebligat Takip"}, {"id": "uyap-harc", "icon": "fa-coins", "name": "Harç Hesapla"}, {"id": "eklenti", "icon": "fa-plug", "name": "Eklenti Bağlantısı"}],
   popups: {
   'eklenti':{

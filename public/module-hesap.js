@@ -9,7 +9,7 @@ window.CURRENT_MODULE = {
   key: 'hesap',
   label: 'Hesaplama Araçları',
   nameHtml: `Hesaplama <em class="p">Araçları</em>`,
-  color: 'p',
+  color: 'g',
   items: [
     {"id": "kidem", "icon": "fa-hand-holding-dollar", "name": "Kıdem Tazminatı"},
     {"id": "ihbar", "icon": "fa-person-walking-arrow-right", "name": "İhbar Tazminatı"},

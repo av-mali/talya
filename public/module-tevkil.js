@@ -5,7 +5,7 @@ window.CURRENT_MODULE = {
   key: 'tevkil',
   label: 'Tevkil Menüsü',
   nameHtml: `<em class="p">Tevkil Menüsü</em>`,
-  color: 'p',
+  color: 'g',
   items: [
     {"id": "tevkil", "icon": "fa-people-arrows", "name": "Tevkil Panosu"}
   ],

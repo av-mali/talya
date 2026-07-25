@@ -20,7 +20,7 @@ window.MODULES_INDEX = [
   {
     "key": "belge",
     "label": "Belge & Analiz",
-    "color": "g",
+    "color": "p",
     "items": [
       {"id": "wizard", "icon": "fa-scroll", "name": "Dilekçe Sihirbazı"},
       {"id": "emsal", "icon": "fa-magnifying-glass-chart", "name": "Emsal Karar Analizi"},
@@ -34,7 +34,7 @@ window.MODULES_INDEX = [
   {
     "key": "arabuluculuk",
     "label": "Arabuluculuk",
-    "color": "g",
+    "color": "t",
     "items": [
       {"id": "arabuluculuk", "icon": "fa-handshake", "name": "Dosyalarım"}
     ]
@@ -42,7 +42,7 @@ window.MODULES_INDEX = [
   {
     "key": "tevkil",
     "label": "Tevkil Menüsü",
-    "color": "p",
+    "color": "g",
     "items": [
       {"id": "tevkil", "icon": "fa-people-arrows", "name": "Tevkil Panosu"}
     ]
@@ -50,7 +50,7 @@ window.MODULES_INDEX = [
   {
     "key": "uyap",
     "label": "UYAP Entegrasyonu",
-    "color": "t",
+    "color": "b",
     "items": [
       {"id": "uyap-dilekce", "icon": "fa-paper-plane", "name": "Dilekçe Gönder"},
       {"id": "uyap-dosya", "icon": "fa-folder-open", "name": "Dosya Sorgula"},
@@ -62,7 +62,7 @@ window.MODULES_INDEX = [
   {
     "key": "hesap",
     "label": "Hesaplama Araçları",
-    "color": "p",
+    "color": "g",
     "items": [
       {"id": "kidem", "icon": "fa-hand-holding-dollar", "name": "Kıdem Tazminatı"},
       {"id": "ihbar", "icon": "fa-person-walking-arrow-right", "name": "İhbar Tazminatı"},
@@ -77,7 +77,7 @@ window.MODULES_INDEX = [
   {
     "key": "uyelik",
     "label": "Üyelik & Hesap",
-    "color": "g",
+    "color": "t",
     "items": [
       {"id": "plan", "icon": "fa-star", "name": "Planım & Abonelik"},
       {"id": "faturalar", "icon": "fa-file-invoice", "name": "Fatura Geçmişi"},

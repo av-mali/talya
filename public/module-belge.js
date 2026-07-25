@@ -11,7 +11,7 @@ window.CURRENT_MODULE = {
   key: 'belge',
   label: 'Belge & Analiz',
   nameHtml: `Belge &amp; <em class="g">Analiz</em>`,
-  color: 'g',
+  color: 'p',
   items: [
     {"id": "wizard", "icon": "fa-scroll", "name": "Dilekçe Sihirbazı"},
     {"id": "emsal", "icon": "fa-magnifying-glass-chart", "name": "Emsal Karar Analizi"},

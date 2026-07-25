@@ -6,7 +6,7 @@ window.CURRENT_MODULE = {
   key: 'arabuluculuk',
   label: 'Arabuluculuk',
   nameHtml: `<em class="g">Arabuluculuk</em>`,
-  color: 'g',
+  color: 't',
   items: [
     {"id": "arabuluculuk", "icon": "fa-handshake", "name": "Dosyalarım"}
   ],

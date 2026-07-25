@@ -29,10 +29,10 @@
 /* 1) Safir — açık: net, doygun kurumsal mavi zemin — sektörün "güvenli
    varsayılanı" (Clio, KolayOfis, T-HOS gibi Türk rakiplerin dili) */
 [data-palette="safir"]{
-  --bg:#D6E4F5;--bg2:#C2D6EE;--bg3:#A4BEE2;--card:#FFFFFF;--border:rgba(15,40,90,.18);--border2:rgba(15,40,90,.28);
-  --gold:#1D5FBF;--gold-hi:#154A96;--gold-lo:rgba(29,95,191,.10);--gold-mid:rgba(29,95,191,.20);--gold-rule:rgba(29,95,191,.34);
+  --bg:#EEF1F6;--bg2:#E6E8ED;--bg3:#D3D9E4;--card:#FFFFFF;--border:rgba(15,40,90,.13);--border2:rgba(15,40,90,.20);
+  --gold:#2E68CF;--gold-hi:#2354A8;--gold-lo:rgba(46,104,207,.10);--gold-mid:rgba(46,104,207,.18);--gold-rule:rgba(46,104,207,.30);
   --blue:#4A5568;--blue-lo:rgba(74,85,104,.10);--blue-hi:#2D3546;
-  --t0:#0A1626;--t1:#1E3049;--t2:#4C617F;--t3:#8CA0BC;
+  --t0:#141414;--t1:#2E323B;--t2:#5C6472;--t3:#9AA2B0;
   --success:#1E8C5A;--danger:#C4283A;--warn:#B0781E;
 }
 /* Safir — koyu */

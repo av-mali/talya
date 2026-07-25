@@ -121,13 +121,16 @@ async function renderAppSidebar() {
       Ana Sayfa
     </div>`;
 
+  const COLOR_MAP = { g: 'var(--gold)', b: 'var(--blue)', t: 'var(--teal)', p: 'var(--purple)' };
+
   const modulesHtml = modules.map(mod => {
     const isCurrent = !!cfg && mod.key === cfg.key;
     const isOpen = sidebarExpanded.has(mod.key);
     const modIcon = MODULE_ICONS[mod.key] || 'fa-folder';
+    const modColor = COLOR_MAP[mod.color] || 'var(--gold)';
     const header = `
-      <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;${isCurrent ? 'color:var(--gold);' : ''}" onclick="toggleSidebarGroup('${mod.key}')">
-        <span class="ico"><i class="fa-solid ${modIcon}"></i></span>
+      <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;${isCurrent ? `color:${modColor};` : ''}" onclick="toggleSidebarGroup('${mod.key}')">
+        <span class="ico"><i class="fa-solid ${modIcon}" style="color:${modColor};opacity:${isCurrent ? '1' : '.75'};"></i></span>
         ${mod.label}
         <span style="margin-left:auto;"><i class="fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:9px;opacity:.5;"></i></span>
       </div>`;
