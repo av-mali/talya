@@ -5,7 +5,7 @@ window.CURRENT_MODULE = {
   key: 'buro',
   label: 'Büro Yönetimi',
   nameHtml: `Büro <em class="b">Yönetimi</em>`,
-  color: 'b',
+  color: 'r',
   items: [
     {"id": "globalarama", "icon": "fa-magnifying-glass", "name": "Global Arama"},
     {"id": "ekip", "icon": "fa-people-group", "name": "Ekip Yönetimi"},

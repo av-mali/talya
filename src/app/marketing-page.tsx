@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 const FEATURES = [
-  { icon: "fa-file-lines", title: "Belge & Analiz", desc: "Dosya analizi, dilekçe sihirbazı, mevzuat arama — gerçek zamanlı AI desteğiyle." },
-  { icon: "fa-handshake", title: "Arabuluculuk", desc: "Davet mektubu, ilk oturum ve son tutanağı, gerçek UYAP formatında otomatik oluşturun." },
-  { icon: "fa-people-arrows", title: "Tevkil Menüsü", desc: "Bürolar arası tevkil talep edin ya da başkasının talebini üstlenin — başvuru, onay, tek panelde." },
-  { icon: "fa-briefcase", title: "Büro Yönetimi", desc: "Müvekkil, dosya, gelir-gider, görev panosu — hepsi tek yerde." },
-  { icon: "fa-user-group", title: "Müvekkil Paneli", desc: "Müvekkilleriniz kendi dosya durumunu görsün, size doğrudan mesaj göndersin." },
-  { icon: "fa-puzzle-piece", title: "UYAP Entegrasyonu", desc: "Duruşma ve tebligat tarihlerini otomatik senkronize edin." },
-  { icon: "fa-calculator", title: "Hesaplama Araçları", desc: "Kıdem, ihbar, faiz, kira artışı — güncel oranlarla anında hesap." },
-  { icon: "fa-people-group", title: "Ekip Yönetimi", desc: "Büronuzu büyütün, üyelere özel yetkiler tanımlayın." },
-  { icon: "fa-paper-plane", title: "Talya Asistan", desc: "Akıllı asistanınızla her sabah günlük özetinizi alın." },
+  { icon: "fa-file-lines", title: "Belge & Analiz", desc: "Dosya analizi, dilekçe sihirbazı, mevzuat arama — gerçek zamanlı AI desteğiyle.", color: "var(--purple)" },
+  { icon: "fa-handshake", title: "Arabuluculuk", desc: "Davet mektubu, ilk oturum ve son tutanağı, gerçek UYAP formatında otomatik oluşturun.", color: "var(--teal)" },
+  { icon: "fa-people-arrows", title: "Tevkil Menüsü", desc: "Bürolar arası tevkil talep edin ya da başkasının talebini üstlenin — başvuru, onay, tek panelde.", color: "var(--gold)" },
+  { icon: "fa-briefcase", title: "Büro Yönetimi", desc: "Müvekkil, dosya, gelir-gider, görev panosu — hepsi tek yerde.", color: "var(--rose)" },
+  { icon: "fa-user-group", title: "Müvekkil Paneli", desc: "Müvekkilleriniz kendi dosya durumunu görsün, size doğrudan mesaj göndersin.", color: "var(--blue)" },
+  { icon: "fa-puzzle-piece", title: "UYAP Entegrasyonu", desc: "Duruşma ve tebligat tarihlerini otomatik senkronize edin.", color: "var(--amber)" },
+  { icon: "fa-calculator", title: "Hesaplama Araçları", desc: "Kıdem, ihbar, faiz, kira artışı — güncel oranlarla anında hesap.", color: "var(--purple)" },
+  { icon: "fa-people-group", title: "Ekip Yönetimi", desc: "Büronuzu büyütün, üyelere özel yetkiler tanımlayın.", color: "var(--teal)" },
+  { icon: "fa-paper-plane", title: "Talya Asistan", desc: "Akıllı asistanınızla her sabah günlük özetinizi alın.", color: "var(--gold)" },
   { icon: "fa-shield-halved", title: "Gizlilik Odaklı", desc: "Yüklediğiniz hiçbir belge saklanmaz — anlık işlenir, silinir." },
 ];
 
@@ -172,8 +172,8 @@ export default function LandingPage() {
                   transitionDelay: `${i * 60}ms`,
                 }}
               >
-                <div style={{ width: 42, height: 42, borderRadius: 11, background: "linear-gradient(135deg, var(--gold-lo), var(--gold-mid))", border: "1px solid var(--gold-rule)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-                  <i className={`fa-solid ${f.icon}`} style={{ color: "var(--gold)", fontSize: 16 }}></i>
+                <div style={{ width: 42, height: 42, borderRadius: 11, background: "var(--bg2)", border: `1px solid ${f.color}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
+                  <i className={`fa-solid ${f.icon}`} style={{ color: f.color, fontSize: 16 }}></i>
                 </div>
                 <div style={{ fontSize: 14.5, fontWeight: 600, color: "var(--t0)", marginBottom: 6 }}>{f.title}</div>
                 <div style={{ fontSize: 12.5, color: "var(--t2)", lineHeight: 1.6 }}>{f.desc}</div>

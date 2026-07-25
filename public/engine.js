@@ -123,7 +123,7 @@ async function renderAppSidebar() {
 
   const COLOR_MAP = { g: 'var(--gold)', b: 'var(--blue)', t: 'var(--teal)', p: 'var(--purple)', r: 'var(--rose)', a: 'var(--amber)' };
 
-  const COLOR_LO_MAP = { g: 'var(--gold-lo)', b: 'var(--blue-lo)', t: 'var(--teal-lo)', p: 'var(--purple-lo)' };
+  const COLOR_LO_MAP = { g: 'var(--gold-lo)', b: 'var(--blue-lo)', t: 'var(--teal-lo)', p: 'var(--purple-lo)', r: 'var(--rose-lo)', a: 'var(--amber-lo)' };
 
   const modulesHtml = modules.map(mod => {
     const isCurrent = !!cfg && mod.key === cfg.key;

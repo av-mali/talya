@@ -4,7 +4,7 @@ window.MODULES_INDEX = [
   {
     "key": "buro",
     "label": "Büro Yönetimi",
-    "color": "b",
+    "color": "r",
     "items": [
       {"id": "globalarama", "icon": "fa-magnifying-glass", "name": "Global Arama"},
       {"id": "ekip", "icon": "fa-people-group", "name": "Ekip Yönetimi"},
