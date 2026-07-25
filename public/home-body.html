@@ -61,10 +61,15 @@
 
     <div class="dash-wrap" style="margin-top:0;">
       <div class="dash-card" style="margin-bottom:14px;padding:18px 20px;">
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
           <i class="fa-solid fa-scale-balanced" style="color:var(--gold);font-size:18px;"></i>
           <input type="text" id="talya-ask-input" placeholder="Talya'ya sorun… (ör. kira sözleşmesini incele)" style="flex:1;border:none;background:transparent;font-size:15px;outline:none;color:var(--t0);" onkeydown="if(event.key==='Enter')talyaAskSubmit()">
           <button class="pop-cta-btn g" style="width:auto;padding:9px 18px;" onclick="talyaAskSubmit()"><i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-left:28px;">
+          ${['Kira sözleşmesini analiz et', 'Bu dilekçeyi düzenle', 'Yargıtay emsal kararı bul', 'İcra takibi başlat'].map(ornek => `
+            <span class="nav-pill" style="cursor:pointer;font-size:11px;" onclick="document.getElementById('talya-ask-input').value='${ornek}';talyaAskSubmit();">${ornek}</span>
+          `).join('')}
         </div>
       </div>
 

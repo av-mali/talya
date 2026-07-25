@@ -818,14 +818,17 @@ async function renderGelirGiderOzet() {
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">
                   <i class="fa-solid fa-folder-open"></i> Dosya Durumu
                 </div>
-                <div style="position:relative;width:70px;height:70px;margin-bottom:6px;">
+                <div style="position:relative;width:70px;height:70px;margin-bottom:8px;">
                   <svg width="70" height="70" viewBox="0 0 70 70" style="transform:rotate(-90deg);">
-                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--border)" stroke-width="8"></circle>
-                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--gold)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${openLen} ${circumference}"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--danger)" stroke-width="8"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--success)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${openLen} ${circumference}"></circle>
                   </svg>
-                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--gold);">${open}</div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--t0);">${open + closed}</div>
                 </div>
-                <div style="font-size:10.5px;color:var(--t3);">${open} açık · ${closed} kapalı</div>
+                <div style="display:flex;gap:10px;font-size:10.5px;">
+                  <span style="color:var(--success);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--success);margin-right:3px;"></span>${open} Açık</span>
+                  <span style="color:var(--danger);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:3px;"></span>${closed} Kapalı</span>
+                </div>
               </div>
             `;
           }
@@ -854,17 +857,23 @@ async function renderDashOzet() {
     const data = await res.json();
     const items = [
       { renk: 'var(--success)', metin: `Bugün <strong>${data.bugunDurusma}</strong> duruşmanız/etkinliğiniz var.`, gizle: data.bugunDurusma === 0 },
-      { renk: 'var(--warn)', metin: `<strong>${data.yaklasanOdeme}</strong> ödeme yaklaşıyor.`, gizle: data.yaklasanOdeme === 0 },
+      { renk: 'var(--warn)', metin: data.yaklasanOdeme === 1 && data.enYakinOdemeIsim ? `<strong>${data.enYakinOdemeIsim}</strong>'in ödemesi yaklaşıyor.` : `<strong>${data.yaklasanOdeme}</strong> ödeme yaklaşıyor.`, gizle: data.yaklasanOdeme === 0 },
       { renk: 'var(--blue)', metin: `<strong>${data.uyapHareket}</strong> dosyada yeni UYAP hareketi var.`, gizle: data.uyapHareket === 0 },
-      { renk: 'var(--danger)', metin: `<strong>${data.gecikenGorev}</strong> görev gecikti.`, gizle: data.gecikenGorev === 0 },
+      { renk: 'var(--danger)', metin: data.gecikenGorev === 1 && data.enGecikenGorevBaslik ? `"<strong>${data.enGecikenGorevBaslik}</strong>" görevi gecikti.` : `<strong>${data.gecikenGorev}</strong> görev gecikti.`, gizle: data.gecikenGorev === 0 },
     ].filter(i => !i.gizle);
 
-    box.innerHTML = items.length ? items.map(i => `
+    box.innerHTML = (items.length ? items.map(i => `
       <div style="display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;color:var(--t1);">
         <span style="width:8px;height:8px;border-radius:50%;background:${i.renk};flex-shrink:0;"></span>
         <span>${i.metin}</span>
       </div>
-    `).join('') : `<div style="font-size:12.5px;color:var(--t3);padding:8px 0;">Bugün için özel bir durum yok — her şey yolunda.</div>`;
+    `).join('') : `<div style="font-size:12.5px;color:var(--t3);padding:8px 0;">Bugün için özel bir durum yok — her şey yolunda.</div>`)
+    + (data.oneri ? `
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+        <div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:4px;"><i class="fa-solid fa-lightbulb"></i> Talya'nın Önerisi</div>
+        <div style="font-size:12px;color:var(--t2);">${data.oneri}</div>
+      </div>
+    ` : '');
   } catch (e) {
     box.innerHTML = `<div style="font-size:12px;color:var(--danger);">Yüklenemedi.</div>`;
   }

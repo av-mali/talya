@@ -42,8 +42,10 @@ export default function TalyaShell({
         const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
         const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
         const now = new Date();
+        const saat = now.getHours();
+        const selamlama = saat < 6 ? "İyi geceler" : saat < 12 ? "Günaydın" : saat < 18 ? "İyi günler" : "İyi akşamlar";
         const ilkAd = (session?.user?.name?.trim() || "").split(" ")[0];
-        greeting.textContent = `${ilkAd ? "Merhaba, " + ilkAd + " — " : ""}Bugün günlerden ${now.getDate()} ${AYLAR[now.getMonth()]} ${GUNLER[now.getDay()]}`;
+        greeting.textContent = `${ilkAd ? selamlama + ", " + ilkAd + " — " : ""}Bugün günlerden ${now.getDate()} ${AYLAR[now.getMonth()]} ${GUNLER[now.getDay()]}`;
       }
 
       // Statik HTML kabukları (home-body.html vb.) "Çıkış Yap" için bunu
