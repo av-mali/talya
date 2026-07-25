@@ -67,9 +67,10 @@
           <button class="pop-cta-btn g" style="width:auto;padding:9px 18px;" onclick="talyaAskSubmit()"><i class="fa-solid fa-arrow-right"></i></button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;padding-left:28px;">
-          ${['Kira sözleşmesini analiz et', 'Bu dilekçeyi düzenle', 'Yargıtay emsal kararı bul', 'İcra takibi başlat'].map(ornek => `
-            <span class="nav-pill" style="cursor:pointer;font-size:11px;" onclick="document.getElementById('talya-ask-input').value='${ornek}';talyaAskSubmit();">${ornek}</span>
-          `).join('')}
+          <span class="nav-pill" style="cursor:pointer;font-size:11px;" onclick="document.getElementById('talya-ask-input').value='Kira sözleşmesini analiz et';talyaAskSubmit();">Kira sözleşmesini analiz et</span>
+          <span class="nav-pill" style="cursor:pointer;font-size:11px;" onclick="document.getElementById('talya-ask-input').value='Bu dilekçeyi düzenle';talyaAskSubmit();">Bu dilekçeyi düzenle</span>
+          <span class="nav-pill" style="cursor:pointer;font-size:11px;" onclick="document.getElementById('talya-ask-input').value='Yargıtay emsal kararı bul';talyaAskSubmit();">Yargıtay emsal kararı bul</span>
+          <span class="nav-pill" style="cursor:pointer;font-size:11px;" onclick="document.getElementById('talya-ask-input').value='İcra takibi başlat';talyaAskSubmit();">İcra takibi başlat</span>
         </div>
       </div>
 
