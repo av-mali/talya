@@ -36,6 +36,16 @@ export default function TalyaShell({
       const pill = document.getElementById("userEmailPill");
       if (pill) pill.textContent = session?.user?.name?.trim() || session?.user?.email || "";
 
+      // Ana sayfadaki basit karşılama satırı — "Merhaba, X — Bugün günlerden ..."
+      const greeting = document.getElementById("home-greeting");
+      if (greeting) {
+        const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+        const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+        const now = new Date();
+        const ilkAd = (session?.user?.name?.trim() || "").split(" ")[0];
+        greeting.textContent = `${ilkAd ? "Merhaba, " + ilkAd + " — " : ""}Bugün günlerden ${now.getDate()} ${AYLAR[now.getMonth()]} ${GUNLER[now.getDay()]}`;
+      }
+
       // Statik HTML kabukları (home-body.html vb.) "Çıkış Yap" için bunu
       // çağırır — NextAuth'un kendi çıplak onay ekranına gitmek yerine,
       // hiç ara ekran göstermeden temiz bir şekilde çıkış yapar.

@@ -388,7 +388,7 @@ async function renderHomeWidgets() {
   }
 
   box.innerHTML = resolved.map(t => `
-    <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer;width:140px;transition:all .2s cubic-bezier(.2,.8,.2,1);" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.1)';this.style.borderColor='var(--gold-rule)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)'" onclick="openModule('${t.mod}?open=${t.id}')">
+    <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer;width:140px;transition:all .2s cubic-bezier(.2,.8,.2,1);" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.1)';this.style.borderColor='var(--gold-rule)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)'" onclick="openModule('${t.mod}?open=${t.id}')">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
       <i class="fa-solid ${t.icon}" style="font-size:18px;color:var(--gold);"></i>
       <span style="font-size:12px;color:var(--t1);">${t.name}</span>
@@ -750,7 +750,7 @@ async function renderGelirGiderOzet() {
             const bekleyen = stats.gelirgider?.bekleyen || 0;
             const positive = net >= 0;
             return `
-              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${positive ? 'var(--gold)' : 'var(--danger)'};"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-scale-balanced"></i> Bu Ay Net
@@ -773,7 +773,7 @@ async function renderGelirGiderOzet() {
 
           if (key === 'muvekkil') {
             return `
-              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-users"></i> Toplam Müvekkil
@@ -789,7 +789,7 @@ async function renderGelirGiderOzet() {
             const open = stats.dosya?.open ?? 0;
             const closed = stats.dosya?.closed ?? 0;
             return `
-              <div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-folder-open"></i> Dosya Durumu

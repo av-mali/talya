@@ -453,7 +453,7 @@ textarea{resize:none;line-height:1.6;}
 
 /* ══════════════════════════ HOME DASHBOARD STRIP ══════════════════════════ */
 .dash-wrap{width:100%;max-width:920px;margin:0 auto 14px;position:relative;z-index:1;}
-.dash-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .dash-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px 16px;}
 .dash-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
 .dash-title{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);display:flex;align-items:center;gap:6px;}
