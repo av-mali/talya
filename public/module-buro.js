@@ -2557,7 +2557,7 @@ async function mvDeleteFeeAgreement(clientId, id) {
 // MÜVEKKİL BAKİYE TABLOSU
 // ══════════════════════════════════════════════════════
 async function bakiyeOnOpen() {
-  const dp = document.getElementById('bakiye-box');
+  const dp = document.getElementById('detailPane');
   dp.innerHTML = skeletonRows(4);
   try {
     const res = await fetch('/api/clients/balance-table');
@@ -2566,6 +2566,7 @@ async function bakiyeOnOpen() {
     const toplamBakiye = rows.reduce((s, r) => s + r.bakiye, 0);
 
     dp.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
         <div style="background:var(--bg2);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;text-align:center;">
           <div style="font-size:22px;font-family:'JetBrains Mono',monospace;color:var(--warn);">${fmtTL(toplamBakiye)}</div>
           <div style="font-size:10.5px;color:var(--t3);">Toplam Bekleyen Bakiye (${rows.length} müvekkil)</div>
@@ -2592,6 +2593,7 @@ async function bakiyeOnOpen() {
           </tbody>
         </table>
         ` : emptyState('fa-scale-unbalanced', 'Henüz veri yok', 'Bir müvekkile Anlaşılan Ücret ya da Avukatlık Ücret Sözleşmesi ekleyince burada görünür.')}
+      </div>
     `;
   } catch (e) {
     dp.innerHTML = `<div style="color:var(--danger);font-size:12px;">Yüklenemedi.</div>`;
@@ -2602,7 +2604,7 @@ async function bakiyeOnOpen() {
 // RAPORLAR — büronun genel durumunun tek sayfalık özeti
 // ══════════════════════════════════════════════════════
 async function raporlarOnOpen() {
-  const dp = document.getElementById('raporlar-box');
+  const dp = document.getElementById('detailPane');
   dp.innerHTML = skeletonRows(4);
   try {
     const res = await fetch('/api/reports');
@@ -2614,6 +2616,7 @@ async function raporlarOnOpen() {
     const maxTutar = Math.max(1, ...data.gelirGiderTrend.flatMap(m => [m.gelir, m.gider]));
 
     dp.innerHTML = `
+      <div style="padding:22px 24px;overflow-y:auto;height:100%;">
         <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
           <div style="flex:1;min-width:120px;background:var(--bg2);border-radius:var(--r);padding:14px;text-align:center;">
             <div style="font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--success);">${data.dosya.open}</div>
@@ -2663,6 +2666,7 @@ async function raporlarOnOpen() {
             <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:4px;"></span>Gider</span>
           </div>
         ` : ''}
+      </div>
     `;
   } catch (e) {
     dp.innerHTML = `<div style="color:var(--danger);font-size:12px;">Yüklenemedi.</div>`;
