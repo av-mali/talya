@@ -52,7 +52,7 @@ Hiçbir kayıt bulamazsan boş dizi [] döndür.`;
 // ═══════════════════════════════════════════════════════════
 // .ICS (UYAP "Toplu Takvime Ekle") AYRIŞTIRICISI
 // AI'a gerek yok — bu format düzenli ve standart, kesin kurallarla
-// okunabiliyor. Daha hızlı, daha güvenilir, daha ucuz (Claude çağrısı yok).
+// okunabiliyor. Daha hızlı, daha güvenilir, daha ucuz (AI çağrısı yok).
 // ═══════════════════════════════════════════════════════════
 
 // ICS satır katlamasını (RFC5545 "folding") düzeltir: bir sonraki satır
@@ -201,32 +201,29 @@ export async function POST(req: Request) {
     }
   }
 
-  // ── Yol 2: Dağınık sayfa metni — Claude ile ayrıştır ──
+  // ── Yol 2: Dağınık sayfa metni — Gemini ile ayrıştır ──
   // Çok uzun sayfalarda gereksiz maliyeti önlemek için makul bir üst sınır.
   const clipped = trimmed.slice(0, 12000);
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY as string,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 2000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: clipped }],
-      }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: "user", parts: [{ text: clipped }] }],
+        }),
+      }
+    );
 
     const data = await res.json();
     if (!res.ok) {
-      console.error("Anthropic API hatası (uyap-sync):", data);
+      console.error("Gemini API hatası (uyap-sync):", data);
       return NextResponse.json({ error: data?.error?.message || "Yapay zeka şu anda yanıt veremiyor." }, { status: 502, headers: CORS_HEADERS });
     }
-    const raw: string = data.content?.[0]?.text || "[]";
+    const raw: string = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("\n") || "[]";
     const jsonMatch = raw.match(/\[[\s\S]*\]/);
     let items: any[] = [];
     try {

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { hasAiAccess } from "@/lib/workspace";
 
 // BU DOSYA SUNUCUDA ÇALIŞIR — tarayıcı buranın içeriğini asla göremez.
-// Anthropic API anahtarı burada, process.env üzerinden okunur; hiçbir zaman
+// Gemini API anahtarı burada, process.env üzerinden okunur; hiçbir zaman
 // frontend koduna gömülmez, hiçbir zaman tarayıcıya gönderilmez.
 
 const SYSTEM_PROMPT =
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     data: { role: "user", content: message, userId },
   });
 
-  // 3) Son 20 mesajı veritabanından çekip Claude'a "hafıza" olarak gönder.
+  // 3) Son 20 mesajı veritabanından çekip Gemini'ye "hafıza" olarak gönder.
   const history = await prisma.message.findMany({
     where: { userId },
     orderBy: { createdAt: "asc" },
@@ -43,40 +43,39 @@ export async function POST(req: Request) {
   const recent = history.slice(-20);
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY as string,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 1000,
-        system: SYSTEM_PROMPT,
-        messages: recent.map((m) => ({
-          role: m.role === "assistant" ? "assistant" : "user",
-          content: m.content,
-        })),
-      }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: recent.map((m) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+          })),
+        }),
+      }
+    );
 
     const data = await res.json();
 
     if (!res.ok) {
-      // Anthropic API bir hata döndürdü (geçersiz model, kota, vb.) —
+      // Gemini API bir hata döndürdü (geçersiz anahtar, kota, vb.) —
       // bunu SESSİZCE "reply" olarak göstermek yerine gerçek hata olarak
       // döndürüyoruz ki ileride fark edilebilsin.
-      console.error("Anthropic API hatası:", data);
+      console.error("Gemini API hatası:", data);
       return NextResponse.json(
         { error: data?.error?.message || "Yapay zeka şu anda yanıt veremiyor." },
         { status: 502 }
       );
     }
 
-    const reply: string = data.content?.[0]?.text || "Bir cevap üretilemedi, lütfen tekrar deneyin.";
+    const reply: string =
+      data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("\n") ||
+      "Bir cevap üretilemedi, lütfen tekrar deneyin.";
 
-    // 4) Claude'un cevabını da veritabanına kaydet.
+    // 4) AI'nın cevabını da veritabanına kaydet.
     await prisma.message.create({
       data: { role: "assistant", content: reply, userId },
     });
@@ -84,7 +83,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ reply });
   } catch (err) {
     return NextResponse.json(
-      { error: "Claude API bağlantı hatası." },
+      { error: "Gemini API bağlantı hatası." },
       { status: 502 }
     );
   }
