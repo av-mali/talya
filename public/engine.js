@@ -852,7 +852,7 @@ async function renderGelirGiderOzet() {
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-scale-balanced"></i> Bu Ay Net
                 </div>
-                <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:${positive ? 'var(--gold)' : 'var(--danger)'};margin-bottom:10px;">
+                <div style="font-family:'Inter',sans-serif;font-weight:700;font-size:24px;line-height:1;color:${positive ? 'var(--gold)' : 'var(--danger)'};margin-bottom:10px;">
                   ${fmtTLShort(net)}
                 </div>
                 <div style="width:100%;display:flex;flex-direction:column;gap:5px;margin-bottom:${bekleyen > 0 ? '6px' : '0'};">
@@ -900,7 +900,7 @@ async function renderGelirGiderOzet() {
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--amber)" stroke-width="8" stroke-dasharray="${adayLen} ${circumference}" stroke-dashoffset="${adayOffset}"></circle>
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--t3)" stroke-width="8" stroke-dasharray="${arsivLen} ${circumference}" stroke-dashoffset="${arsivOffset}"></circle>
                   </svg>
-                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--t0);">${aktif + aday + arsiv}</div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:700;font-size:17px;color:var(--t0);">${aktif + aday + arsiv}</div>
                 </div>
                 <div style="display:flex;gap:8px;font-size:9.5px;flex-wrap:wrap;justify-content:center;">
                   <span style="color:var(--blue);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-right:3px;"></span>${aktif} Aktif</span>
@@ -929,7 +929,7 @@ async function renderGelirGiderOzet() {
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--danger)" stroke-width="8"></circle>
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--success)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${openLen} ${circumference}"></circle>
                   </svg>
-                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--t0);">${open + closed}</div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:700;font-size:17px;color:var(--t0);">${open + closed}</div>
                 </div>
                 <div style="display:flex;gap:10px;font-size:10.5px;">
                   <span style="color:var(--success);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--success);margin-right:3px;"></span>${open} Açık</span>

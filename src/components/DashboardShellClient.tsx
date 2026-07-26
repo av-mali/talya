@@ -190,7 +190,7 @@ export default function DashboardShellClient({ children }: { children: React.Rea
           const saat = now.getHours();
           const selamlama = saat < 6 ? "İyi geceler" : saat < 12 ? "Günaydın" : saat < 18 ? "İyi günler" : "İyi akşamlar";
           const ilkAd = (session?.user?.name?.trim() || "").split(" ")[0];
-          greeting.textContent = `${ilkAd ? selamlama + ", " + ilkAd + " — " : ""}Bugün günlerden ${now.getDate()} ${AYLAR[now.getMonth()]} ${GUNLER[now.getDay()]}`;
+          greeting.textContent = `${ilkAd ? selamlama + ", " + ilkAd + " — " : ""}Bugün günlerden ${now.getDate()} ${AYLAR[now.getMonth()]} ${now.getFullYear()}, ${GUNLER[now.getDay()]}`;
         }
       } else {
         const breadcrumbSep = document.getElementById("appBreadcrumbSep");
