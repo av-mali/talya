@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import DashboardShellClient from "@/components/DashboardShellClient";
 
 // Bu layout, /dashboard altındaki TÜM sayfalara uygulanır — ama sadece
@@ -17,5 +18,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <>{children}</>;
   }
 
-  return <DashboardShellClient>{children}</DashboardShellClient>;
+  // Suspense sınırı: DashboardShellClient useSearchParams() kullanıyor,
+  // Next.js bunun bir Suspense sınırı içinde olmasını şart koşuyor
+  // (yoksa build hatası / beklenmedik davranış olabilir).
+  return (
+    <Suspense fallback={<div style={{ height: "100vh" }} />}>
+      <DashboardShellClient>{children}</DashboardShellClient>
+    </Suspense>
+  );
 }

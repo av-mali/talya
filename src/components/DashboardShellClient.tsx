@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import OnboardingScreen from "@/components/OnboardingScreen";
 
 // Bu bileşen, Ana Sayfa ve Büro Yönetimi arasındaki geçişlerde topbar +
@@ -46,6 +46,8 @@ export default function DashboardShellClient({ children }: { children: React.Rea
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const openParam = searchParams.get("open");
   const shellRef = useRef<HTMLDivElement>(null);
 
   // "shellReady" — kabuk (topbar+sidebar) DOM'a yerleşip script'ler
@@ -183,6 +185,20 @@ export default function DashboardShellClient({ children }: { children: React.Rea
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shellReady, pathname]);
+
+  // ── ADIM 3: Sayfa (pathname) AYNI kalıp sadece ?open=... parametresi
+  // değiştiğinde (ör. büro içinde bir araçtan diğerine geçerken) — bu,
+  // ADIM 2'nin dinlemediği bir değişim. İçeriği YENİDEN YÜKLEMEYE gerek
+  // yok, sadece o an açık olan aracı değiştiriyoruz. ──
+  useEffect(() => {
+    if (!shellReady || !pathname || !MIGRATED_PATHS.includes(pathname)) return;
+    if (loadedPath.current !== pathname) return; // ADIM 2 henüz bu sayfayı yüklemediyse, o halledecek
+    if (!openParam) return;
+    if (typeof (window as any).openPopup === "function" && (window as any).CURRENT_MODULE) {
+      (window as any).openPopup(openParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shellReady, pathname, openParam]);
 
   if (status !== "authenticated" || checkingWorkspace) {
     return (
