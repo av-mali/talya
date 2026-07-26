@@ -57,13 +57,14 @@
     </div>
 
     <div class="home-body">
-    <div id="home-greeting" style="width:100%;max-width:920px;margin:6px auto 18px;font-size:13px;color:var(--t2);"></div>
+    <div id="home-greeting" style="width:100%;max-width:920px;margin:0 auto 10px;font-size:13px;color:var(--t2);"></div>
 
     <div class="dash-wrap" style="margin-top:0;">
-      <div class="dash-card" style="margin-bottom:14px;padding:18px 20px;">
+      <div class="dash-card" style="margin-bottom:14px;padding:18px 20px;background:linear-gradient(135deg, var(--card), var(--gold-lo));">
         <div style="display:flex;align-items:center;gap:10px;">
           <i class="fa-solid fa-scale-balanced" style="color:var(--gold);font-size:18px;"></i>
           <input type="text" id="talya-ask-input" placeholder="Talya'ya sorun…" style="flex:1;border:none;background:transparent;font-size:15px;outline:none;color:var(--t0);" onkeydown="if(event.key==='Enter')talyaAskSubmit()">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--gold);font-size:15px;animation:breathe 2s infinite;margin-right:2px;"></i>
           <button class="pop-cta-btn g" style="width:auto;padding:9px 18px;" onclick="talyaAskSubmit()"><i class="fa-solid fa-arrow-right"></i></button>
         </div>
       </div>
@@ -73,7 +74,7 @@
           <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-hourglass-half"></i> Yaklaşan Süreler</div><div class="dash-link" onclick="openDeadlinesModal()">Tümünü gör →</div></div>
           <div id="dashDeadlines"></div>
         </div>
-        <div class="dash-card">
+        <div class="dash-card" style="background:var(--accent-bg);">
           <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-list-check"></i> Günlük Özet</div></div>
           <div id="dashOzet"></div>
         </div>
@@ -86,7 +87,7 @@
         </div>
       </div>
 
-      <div id="widget-hizliErisim" class="dash-card" style="margin-top:14px;display:none;">
+      <div id="widget-hizliErisim" class="dash-card" style="margin-top:14px;display:none;background:var(--accent-bg);">
         <div class="dash-head"><div class="dash-title"><i class="fa-solid fa-bolt"></i> Hızlı Erişim</div></div>
         <div id="widget-hizliErisim-box" style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;padding-top:6px;"></div>
       </div>

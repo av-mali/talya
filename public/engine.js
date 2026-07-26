@@ -380,7 +380,7 @@ async function renderHomeWidgets() {
   const resolved = tools.map(t => {
     const mod = modules.find(m => m.key === t.mod);
     const item = mod && mod.items.find(it => it.id === t.id);
-    return item ? { mod: t.mod, id: t.id, icon: item.icon, name: item.name, color: COLOR_MAP[mod.color] || 'var(--gold)' } : null;
+    return item ? { mod: t.mod, id: t.id, icon: item.icon, name: item.name, color: COLOR_MAP[mod.color] || 'var(--gold)', colorLo: COLOR_LO_MAP[mod.color] || 'var(--gold-lo)' } : null;
   }).filter(Boolean);
 
   if (!resolved.length) {
@@ -389,7 +389,7 @@ async function renderHomeWidgets() {
   }
 
   box.innerHTML = resolved.map(t => `
-    <div style="position:relative;background:var(--accent-bg);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer;width:140px;transition:all .2s cubic-bezier(.2,.8,.2,1);" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''" onclick="openModule('${t.mod}?open=${t.id}')">
+    <div style="position:relative;background:var(--accent-bg);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer;width:140px;transition:all .2s cubic-bezier(.2,.8,.2,1);" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.1)';this.style.background='${t.colorLo}';this.style.borderColor='${t.color}'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.background='var(--accent-bg)';this.style.borderColor='var(--border)'" onclick="openModule('${t.mod}?open=${t.id}')">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${t.color};"></div>
       <i class="fa-solid ${t.icon}" style="font-size:18px;color:${t.color};"></i>
       <span style="font-size:12px;color:var(--t1);">${t.name}</span>
@@ -836,14 +836,14 @@ async function renderGelirGiderOzet() {
                 <div style="position:relative;width:70px;height:70px;margin-bottom:8px;">
                   <svg width="70" height="70" viewBox="0 0 70 70" style="transform:rotate(-90deg);">
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--border)" stroke-width="8"></circle>
-                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--success)" stroke-width="8" stroke-dasharray="${aktifLen} ${circumference}"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--blue)" stroke-width="8" stroke-dasharray="${aktifLen} ${circumference}"></circle>
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--amber)" stroke-width="8" stroke-dasharray="${adayLen} ${circumference}" stroke-dashoffset="${adayOffset}"></circle>
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--t3)" stroke-width="8" stroke-dasharray="${arsivLen} ${circumference}" stroke-dashoffset="${arsivOffset}"></circle>
                   </svg>
                   <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--t0);">${aktif + aday + arsiv}</div>
                 </div>
                 <div style="display:flex;gap:8px;font-size:9.5px;flex-wrap:wrap;justify-content:center;">
-                  <span style="color:var(--success);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--success);margin-right:3px;"></span>${aktif} Aktif</span>
+                  <span style="color:var(--blue);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-right:3px;"></span>${aktif} Aktif</span>
                   <span style="color:var(--amber);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:3px;"></span>${aday} Aday</span>
                   <span style="color:var(--t3);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--t3);margin-right:3px;"></span>${arsiv} Arşiv</span>
                 </div>
