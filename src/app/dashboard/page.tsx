@@ -1,39 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import TalyaShell from "@/components/TalyaShell";
-import OnboardingScreen from "@/components/OnboardingScreen";
-
+// NOT: Bu sayfanın içeriği artık render edilmiyor — Ana Sayfa'nın
+// gerçek içeriği (onboarding kontrolü dahil), üstteki
+// src/app/dashboard/layout.tsx üzerinden DashboardShellClient
+// tarafından yönetiliyor (bkz. /public/home-content.html).
+// Bu dosya sadece Next.js'in /dashboard rotasını tanıyabilmesi için var.
+// ÖNEMLİ: Burada TalyaShell KULLANILMAMALI — DashboardShellClient
+// çocuklarını (children) gizli şekilde de olsa render ettiği için,
+// TalyaShell kullanılırsa GÖRÜNMEZ bir şekilde ikinci kez çalışır ve
+// "Yönetici Paneli" gibi bağlantıları TEKRAR TEKRAR ekler.
 export default function Dashboard() {
-  const [checking, setChecking] = useState(true);
-  const [hasWorkspace, setHasWorkspace] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/workspace")
-      .then((r) => {
-        setHasWorkspace(r.ok);
-        setChecking(false);
-      })
-      .catch(() => {
-        setHasWorkspace(true);
-        setChecking(false);
-      });
-  }, []);
-
-  if (checking) {
-    return (
-      <>
-        <link rel="stylesheet" href="/talya-original.css" />
-        <div style={{ minHeight: "100vh", height: "100vh", overflowY: "auto", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
-          <div style={{ fontSize: 13, color: "var(--t3)" }}>Yükleniyor…</div>
-        </div>
-      </>
-    );
-  }
-
-  if (!hasWorkspace) {
-    return <OnboardingScreen onDone={() => setHasWorkspace(true)} />;
-  }
-
-  return <TalyaShell bodyUrl="/home-body.html" scripts={["/modules-index.js", "/cmdk-index.js", "/engine.js"]} />;
+  return null;
 }

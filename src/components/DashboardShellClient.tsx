@@ -237,10 +237,11 @@ export default function DashboardShellClient({ children }: { children: React.Rea
     <>
       <link rel="stylesheet" href="/talya-original.css" />
       <div ref={shellRef} style={{ height: "100vh" }} />
-      {/* children render edilmiyor — içerik, yukarıdaki effect ile
-          doğrudan #talyaContentSlot'a yazılıyor. Next.js'in route
-          eşleşmesi için burada tutuluyor. */}
-      <div style={{ display: "none" }}>{children}</div>
+      {/* children BİLEREK render edilmiyor — içerik, yukarıdaki effect
+          ile doğrudan #talyaContentSlot'a yazılıyor. Bir modülün
+          page.tsx'i yanlışlıkla eski TalyaShell'i kullanırsa (daha önce
+          "Yönetici Paneli" bağlantısının tekrar tekrar eklenmesine yol
+          açan hata buydu), bu satır onu ASLA çalıştırmaz. */}
     </>
   );
 }
