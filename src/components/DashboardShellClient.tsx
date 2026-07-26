@@ -27,11 +27,13 @@ const CONTENT_MAP: Record<string, { contentUrl: string; scripts: string[] }> = {
 
 const loadedScripts = new Set<string>();
 
+const BUILD_TAG = Date.now(); // her sayfa oturumunda sabit, ama her yeni deploy sonrası tarayıcının ESKİ script/HTML'i önbellekten göstermesini engeller
+
 function loadScriptOnce(src: string): Promise<void> {
   if (loadedScripts.has(src)) return Promise.resolve();
   return new Promise((resolve) => {
     const s = document.createElement("script");
-    s.src = src;
+    s.src = src + "?v=" + BUILD_TAG;
     s.async = false;
     s.onload = () => {
       loadedScripts.add(src);
@@ -88,7 +90,7 @@ export default function DashboardShellClient({ children }: { children: React.Rea
     shellSetupStarted.current = true;
 
     (async () => {
-      const res = await fetch("/dashboard-shell.html");
+      const res = await fetch("/dashboard-shell.html", { cache: "no-store" });
       const html = await res.text();
       if (!shellRef.current) return;
       shellRef.current.innerHTML = html;
@@ -139,7 +141,7 @@ export default function DashboardShellClient({ children }: { children: React.Rea
       const slot = document.getElementById("talyaContentSlot");
       if (!slot) { loadingPath.current = null; return; }
 
-      const res = await fetch(cfg.contentUrl);
+      const res = await fetch(cfg.contentUrl, { cache: "no-store" });
       const html = await res.text();
       slot.innerHTML = html;
 
