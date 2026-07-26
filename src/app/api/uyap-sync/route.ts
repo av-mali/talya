@@ -214,7 +214,7 @@ export async function POST(req: Request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5",
         max_tokens: 2000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: clipped }],
@@ -222,6 +222,10 @@ export async function POST(req: Request) {
     });
 
     const data = await res.json();
+    if (!res.ok) {
+      console.error("Anthropic API hatası (uyap-sync):", data);
+      return NextResponse.json({ error: data?.error?.message || "Yapay zeka şu anda yanıt veremiyor." }, { status: 502, headers: CORS_HEADERS });
+    }
     const raw: string = data.content?.[0]?.text || "[]";
     const jsonMatch = raw.match(/\[[\s\S]*\]/);
     let items: any[] = [];

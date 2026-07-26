@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5",
         max_tokens: 1000,
         system: SYSTEM_PROMPT,
         messages: recent.map((m) => ({
@@ -62,8 +62,19 @@ export async function POST(req: Request) {
     });
 
     const data = await res.json();
-    const reply: string =
-      data.content?.[0]?.text || "Bir hata oluştu, tekrar deneyin.";
+
+    if (!res.ok) {
+      // Anthropic API bir hata döndürdü (geçersiz model, kota, vb.) —
+      // bunu SESSİZCE "reply" olarak göstermek yerine gerçek hata olarak
+      // döndürüyoruz ki ileride fark edilebilsin.
+      console.error("Anthropic API hatası:", data);
+      return NextResponse.json(
+        { error: data?.error?.message || "Yapay zeka şu anda yanıt veremiyor." },
+        { status: 502 }
+      );
+    }
+
+    const reply: string = data.content?.[0]?.text || "Bir cevap üretilemedi, lütfen tekrar deneyin.";
 
     // 4) Claude'un cevabını da veritabanına kaydet.
     await prisma.message.create({
