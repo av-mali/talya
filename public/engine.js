@@ -154,7 +154,7 @@ async function renderAppSidebar() {
     const modColor = COLOR_MAP[mod.color] || 'var(--gold)';
     const modColorLo = COLOR_LO_MAP[mod.color] || 'var(--gold-lo)';
     const header = `
-      <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;border-radius:var(--r);${isCurrent ? `color:${modColor};background:${modColorLo};box-shadow:0 0 0 1px ${modColorLo}, 0 2px 10px -2px ${modColorLo};` : ''}" onclick="toggleSidebarGroup('${mod.key}')">
+      <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;border-radius:var(--r);${isCurrent ? `color:${modColor};background:${modColorLo};box-shadow:0 0 0 1px ${modColorLo}, 0 5px 16px -2px ${modColorLo};` : ''}" onclick="toggleSidebarGroup('${mod.key}')">
         <span class="ico"><i class="fa-solid ${modIcon}" style="color:${modColor};"></i></span>
         ${mod.label}
         <span style="margin-left:auto;"><i class="fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:9px;opacity:.5;"></i></span>
