@@ -565,6 +565,7 @@ textarea{resize:none;line-height:1.6;}
   .status-pill{display:none;}
   #userEmailPill{display:none;}
   .app-top-right .nav-pill.gold{font-size:10px;padding:5px 8px;}
+  .app-top-right .nav-pill.always-show{font-size:10px;padding:5px 8px;}
 
   /* 3 sütunlu uygulama düzeni → alt alta tek sütun */
   .app-body{flex-direction:column;overflow-y:auto;}

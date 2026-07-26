@@ -133,7 +133,7 @@ async function renderAppSidebar() {
     const modColor = COLOR_MAP[mod.color] || 'var(--gold)';
     const modColorLo = COLOR_LO_MAP[mod.color] || 'var(--gold-lo)';
     const header = `
-      <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;border-radius:var(--r);${isCurrent ? `color:${modColor};background:${modColorLo};` : ''}" onclick="toggleSidebarGroup('${mod.key}')">
+      <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;border-radius:var(--r);${isCurrent ? `color:${modColor};background:${modColorLo};box-shadow:0 0 0 1px ${modColorLo}, 0 2px 10px -2px ${modColorLo};` : ''}" onclick="toggleSidebarGroup('${mod.key}')">
         <span class="ico"><i class="fa-solid ${modIcon}" style="color:${modColor};"></i></span>
         ${mod.label}
         <span style="margin-left:auto;"><i class="fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:9px;opacity:.5;"></i></span>
@@ -395,6 +395,28 @@ async function renderHomeWidgets() {
       <span style="font-size:12px;color:var(--t1);">${t.name}</span>
     </div>
   `).join('');
+}
+
+// "Talya'ya sorun…" kutusunun placeholder'ı, kullanıcı hiçbir şey
+// yazmadığı sürece birkaç örnek arasında dönerek kutunun daha "canlı"
+// hissettirmesini sağlar — girdiye hiçbir müdahalede bulunmaz, sadece
+// ipucu metnidir.
+function startAskPlaceholderRotation() {
+  const inp = document.getElementById('talya-ask-input');
+  if (!inp) return;
+  const ORNEKLER = [
+    "Talya'ya sorun…",
+    'Kira sözleşmesini analiz et…',
+    'Tahliye davası dilekçesi hazırla…',
+    'Yargıtay emsal kararı bul…',
+    'İcra takibi nasıl başlatılır?',
+  ];
+  let i = 0;
+  setInterval(() => {
+    if (document.activeElement === inp || inp.value) return; // yazarken değişmesin
+    i = (i + 1) % ORNEKLER.length;
+    inp.placeholder = ORNEKLER[i];
+  }, 2500);
 }
 
 async function talyaAskSubmit() {
@@ -1318,6 +1340,7 @@ if (window.CURRENT_MODULE) {
   renderGelirGiderOzet();
   renderAppSidebar();
   renderHomeWidgets();
+  startAskPlaceholderRotation();
 }
 loadRealNotifications();
 loadNotifPrefs();
