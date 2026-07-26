@@ -1,13 +1,11 @@
 "use client";
 
-import TalyaShell from "@/components/TalyaShell";
-
-// UYAP Entegrasyonu modülü. İçeriği değiştirmek için: /public/module-uyap.js
+// NOT: Bu sayfanın içeriği artık render edilmiyor — gerçek içerik,
+// üstteki src/app/dashboard/layout.tsx üzerinden DashboardShellClient
+// tarafından yönetiliyor (bkz. DashboardShellClient.tsx içindeki
+// CONTENT_MAP["/dashboard/uyap"]).
+// Bu dosya sadece Next.js'in /dashboard/uyap rotasını tanıyabilmesi
+// için var.
 export default function UyapModulu() {
-  return (
-    <TalyaShell
-      bodyUrl="/module-body.html"
-      scripts={["/module-uyap.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
-    />
-  );
+  return null;
 }

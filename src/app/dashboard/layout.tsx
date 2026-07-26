@@ -9,7 +9,16 @@ import DashboardShellClient from "@/components/DashboardShellClient";
 // modüller (Belge & Analiz, Arabuluculuk, Tevkil, UYAP, Hesap, Üyelik)
 // bu listeye HENÜZ eklenmedi — onlar bu layout'tan hiç etkilenmez,
 // kendi TalyaShell'leriyle eskisi gibi çalışmaya devam eder.
-const MIGRATED_PATHS = ["/dashboard", "/dashboard/buro"];
+const MIGRATED_PATHS = [
+  "/dashboard",
+  "/dashboard/buro",
+  "/dashboard/belge",
+  "/dashboard/arabuluculuk",
+  "/dashboard/tevkil",
+  "/dashboard/uyap",
+  "/dashboard/hesap",
+  "/dashboard/uyelik",
+];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

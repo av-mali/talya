@@ -1,14 +1,11 @@
 "use client";
 
-import TalyaShell from "@/components/TalyaShell";
-
-// Tevkil Menüsü modülü. Bu modülün içeriğini (form, talep panosu)
-// değiştirmek istersen: /public/module-tevkil.js dosyasını düzenle.
+// NOT: Bu sayfanın içeriği artık render edilmiyor — gerçek içerik,
+// üstteki src/app/dashboard/layout.tsx üzerinden DashboardShellClient
+// tarafından yönetiliyor (bkz. DashboardShellClient.tsx içindeki
+// CONTENT_MAP["/dashboard/tevkil"]).
+// Bu dosya sadece Next.js'in /dashboard/tevkil rotasını tanıyabilmesi
+// için var.
 export default function TevkilModulu() {
-  return (
-    <TalyaShell
-      bodyUrl="/module-body-detail.html"
-      scripts={["/module-tevkil.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
-    />
-  );
+  return null;
 }

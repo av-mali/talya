@@ -1,15 +1,11 @@
 "use client";
 
-import TalyaShell from "@/components/TalyaShell";
-
-// Üyelik & Hesap modülü — sağdaki sohbet paneli kaldırıldı, orta panel
-// genişletildi (Hesaplama Araçları'ndaki gibi). İçeriği değiştirmek için:
-// /public/module-uyelik.js
+// NOT: Bu sayfanın içeriği artık render edilmiyor — gerçek içerik,
+// üstteki src/app/dashboard/layout.tsx üzerinden DashboardShellClient
+// tarafından yönetiliyor (bkz. DashboardShellClient.tsx içindeki
+// CONTENT_MAP["/dashboard/uyelik"]).
+// Bu dosya sadece Next.js'in /dashboard/uyelik rotasını tanıyabilmesi
+// için var.
 export default function UyelikModulu() {
-  return (
-    <TalyaShell
-      bodyUrl="/module-body-noai.html"
-      scripts={["/module-uyelik.js", "/kilavuz-content.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
-    />
-  );
+  return null;
 }

@@ -1,0 +1,43 @@
+<!-- ═══════ AI SOHBETLİ İÇERİK ŞABLONU (SPA modu) ═══════
+     Belge & Analiz, Arabuluculuk, UYAP Entegrasyonu — üçü de bu ŞEKLİ
+     kullanır (tool-panel + sağda AI sohbeti). Çerçeve (topbar+sidebar)
+     artık dashboard-shell.html'de, bir kez yükleniyor. -->
+<div class="tool-panel">
+  <div class="tool-panel-head">
+    <div class="pop-badge g" id="popBadge"><span id="popBadgeText">…</span></div>
+    <div class="pop-title" id="popTitle">…</div>
+    <div class="pop-desc" id="popDesc"></div>
+  </div>
+  <div class="tool-panel-body" id="popBody"></div>
+  <div class="tool-panel-cta" id="popCtaWrap" style="display:none;">
+    <button class="pop-cta-btn g" id="popBtn" onclick="submitPopup()">
+      <i class="fa-solid fa-gears" id="popBtnIco"></i><span id="popBtnLbl">Dilekçeyi Taslakla</span>
+    </button>
+  </div>
+</div>
+
+<div class="ai-pane">
+  <div class="ai-pane-head">
+    <div class="ai-ring"><i class="fa-solid fa-microchip" id="aiIco"></i></div>
+    <div class="ai-head-label" id="aiLabel">Talya AI</div>
+    <div class="ai-head-sub">HMK · TBK · TCK · İş K. · UYAP</div>
+  </div>
+
+  <div class="chat-msgs" id="chatMsgs">
+    <div class="chat-empty" id="chatEmpty" style="opacity:.5;">
+      <div class="chat-empty-ico"><i class="fa-solid fa-spinner fa-spin"></i></div>
+      <div class="chat-empty-title">Yükleniyor…</div>
+    </div>
+  </div>
+
+  <div class="chat-input-area">
+    <div class="chat-input-row">
+      <textarea id="chatIn" rows="1" placeholder="Sorunuzu yazın veya sol menüden araç seçin…" onkeydown="ckEnter(event)" oninput="autoH(this)"></textarea>
+      <button class="send-btn" id="improveBtn" onclick="improvePrompt()" title="Sorumu Geliştir" style="background:var(--bg2);color:var(--t2);"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+      <button class="send-btn" id="sendBtn" onclick="sendChat()"><i class="fa-solid fa-arrow-up"></i></button>
+    </div>
+    <div class="chat-foot">
+      <div class="chat-foot-note"><i class="fa-solid fa-lock"></i> Şifreli iletim — veriler saklanmaz</div>
+    </div>
+  </div>
+</div>

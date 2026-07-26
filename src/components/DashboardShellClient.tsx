@@ -18,11 +18,26 @@ import OnboardingScreen from "@/components/OnboardingScreen";
 // "sayfa değişti" effect'i birbirine YARIŞ DURUMU (race condition)
 // yaratıyordu; bu yüzden birleştirildi.
 
-const MIGRATED_PATHS = ["/dashboard", "/dashboard/buro"];
+const MIGRATED_PATHS = [
+  "/dashboard",
+  "/dashboard/buro",
+  "/dashboard/belge",
+  "/dashboard/arabuluculuk",
+  "/dashboard/tevkil",
+  "/dashboard/uyap",
+  "/dashboard/hesap",
+  "/dashboard/uyelik",
+];
 
 const CONTENT_MAP: Record<string, { contentUrl: string; scripts: string[] }> = {
   "/dashboard": { contentUrl: "/home-content.html", scripts: [] },
   "/dashboard/buro": { contentUrl: "/buro-content.html", scripts: ["/module-buro.js"] },
+  "/dashboard/belge": { contentUrl: "/ai-content.html", scripts: ["/module-belge.js"] },
+  "/dashboard/arabuluculuk": { contentUrl: "/ai-content.html", scripts: ["/module-arabuluculuk.js"] },
+  "/dashboard/tevkil": { contentUrl: "/buro-content.html", scripts: ["/module-tevkil.js"] },
+  "/dashboard/uyap": { contentUrl: "/ai-content.html", scripts: ["/module-uyap.js"] },
+  "/dashboard/hesap": { contentUrl: "/noai-content.html", scripts: ["/module-hesap.js"] },
+  "/dashboard/uyelik": { contentUrl: "/noai-content.html", scripts: ["/module-uyelik.js", "/kilavuz-content.js"] },
 };
 
 const loadedScripts = new Set<string>();
