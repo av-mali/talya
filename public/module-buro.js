@@ -65,7 +65,7 @@ window.CURRENT_MODULE = {
     },
     // ── GLOBAL ARAMA ── müvekkil, not, görev, şablon içinde birden arar
     globalarama: {
-      badge: 'b', badgeText: 'Tüm Verilerde Ara', titleHtml: 'Global <em class="b">Arama</em>',
+      badge: 'b', badgeText: 'Tüm Verilerde Ara', titleHtml: 'Akıllı <em class="b">Arama</em>',
       desc: 'Müvekkil, not, görev ve şablon içinde tek kutudan arayın.',
       btnClass: 'b', btnIco: 'fa-magnifying-glass', btnLbl: '', hideCta: true,
       body: `

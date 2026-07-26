@@ -15,10 +15,10 @@ window.CURRENT_MODULE = {
   items: [
     {"id": "wizard", "icon": "fa-scroll", "name": "Dilekçe Sihirbazı"},
     {"id": "emsal", "icon": "fa-magnifying-glass-chart", "name": "Emsal Karar Analizi"},
-    {"id": "dosya", "icon": "fa-file-shield", "name": "Dosya Analizi"},
+    {"id": "dosya", "icon": "fa-file-shield", "name": "AI Dosya Analizi"},
     {"id": "mevzuat", "icon": "fa-book-open-reader", "name": "Mevzuat Arama"},
     {"id": "sablon", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"},
-    {"id": "kutuphanem", "icon": "fa-bookmark", "name": "Kütüphanem"},
+    {"id": "kutuphanem", "icon": "fa-bookmark", "name": "Kaydettiklerim"},
     {"id": "durusma", "icon": "fa-timeline", "name": "Duruşma Hazırlık"}
   ],
   popups: {
@@ -50,7 +50,7 @@ window.CURRENT_MODULE = {
       prompt: () => `${document.getElementById('f-konu')?.value || ''} alanında şu konuda Yargıtay ve BAM emsal kararlarını ara ve analiz et:\n${document.getElementById('f-mesele')?.value || ''}`
     },
     dosya: {
-      badge: 'g', badgeText: 'PDF · Görsel · Word · UDF', titleHtml: 'Dosya <em class="g">Analizi</em>',
+      badge: 'g', badgeText: 'PDF · Görsel · Word · UDF', titleHtml: 'AI Dosya <em class="g">Analizi</em>',
       desc: 'Bir dosya yükleyin ya da metin yapıştırın; AI sorunuzu cevaplasın. Hiçbir dosya saklanmaz.',
       btnClass: 'g', btnIco: 'fa-file-magnifying-glass', btnLbl: '', hideCta: true,
       body: '', // JS ile dolduruluyor (bkz. buildAnalyzeWidgetHtml)
@@ -85,7 +85,7 @@ window.CURRENT_MODULE = {
       prompt: () => ''
     },
     kutuphanem: {
-      badge: 'g', badgeText: 'Kaydettikleriniz', titleHtml: '<em class="g">Kütüphanem</em>',
+      badge: 'g', badgeText: 'Kaydettikleriniz', titleHtml: '<em class="g">Kaydettiklerim</em>',
       desc: 'Mevzuat Arama\'da kaydettiğiniz maddeler burada birikir.',
       btnClass: 'g', btnIco: 'fa-bookmark', btnLbl: '', hideCta: true, hideChatInput: true,
       body: `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sağ panelde kayıtlarınız listelenir. Bir sonuca tıklayarak tam metni görebilirsiniz.</div>`,

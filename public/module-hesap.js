@@ -15,10 +15,12 @@ window.CURRENT_MODULE = {
     {"id": "ihbar", "icon": "fa-person-walking-arrow-right", "name": "İhbar Tazminatı"},
     {"id": "mesai", "icon": "fa-clock-rotate-left", "name": "Fazla Mesai"},
     {"id": "izin", "icon": "fa-umbrella-beach", "name": "Yıllık İzin"},
+    {"id": "iseiade", "icon": "fa-rotate-left", "name": "İşe İade Tazminatı"},
     {"id": "faiz", "icon": "fa-percent", "name": "Yasal Faiz"},
     {"id": "gecikme", "icon": "fa-arrow-trend-up", "name": "Gecikme Faizi"},
     {"id": "kira", "icon": "fa-building", "name": "Kira Artış Hesabı"},
-    {"id": "za", "icon": "fa-hourglass-half", "name": "Zamanaşımı Takvimi"}
+    {"id": "za", "icon": "fa-hourglass-half", "name": "Zamanaşımı Takvimi"},
+    {"id": "nafaka", "icon": "fa-hand-holding-heart", "name": "Nafaka Rehberi"}
   ],
   popups: {
     kidem:{
@@ -80,6 +82,41 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">Kullanılan İzin (gün)</div><input type="text" id="iz-k" placeholder="0" oninput="cIzin()"></div>
         <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cIzin()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
         <div class="cr" id="iz-res"><div class="cr-lbl">İzin Hakkı</div><div class="cr-val" id="iz-top">—</div><div class="cr-rows"><div class="cr-row"><span>Yasal hak</span><span id="iz-r1">—</span></div><div class="cr-row"><span>Kullanılmamış</span><span id="iz-r2">—</span></div></div></div>`,
+      prompt: () => ''
+    },
+    iseiade:{
+      badge:'p', badgeText:'İş K. Md.21', titleHtml:'İşe İade <em class="p">Tazminatı</em>',
+      desc:'İşe iade davası kazanılırsa ödenecek tazminat aralığını hesaplayın.',
+      btnClass:'p', btnIco:'fa-calculator', btnLbl:'Hesapla', hideCta: true,
+      body:`<div class="fg"><div class="fl"><i class="fa-solid fa-turkish-lira-sign"></i> Brüt Aylık Ücret (TL)</div><input type="text" id="ii-maas" class="tl-amount" placeholder="45.000" oninput="cIseIade()"></div>
+        <div class="fg"><div class="fl"><i class="fa-solid fa-calendar-days"></i> Dava Süreci (Boşta Geçen Gün)</div><input type="text" id="ii-gun" placeholder="90" oninput="cIseIade()"></div>
+        <button class="pop-cta-btn p" style="width:100%;margin-bottom:12px;" onclick="cIseIade()"><i class="fa-solid fa-calculator"></i><span>Hesapla</span></button>
+        <div class="cr" id="ii-res">
+          <div class="cr-lbl">İşe Başlatmama Tazminatı (Aralık)</div>
+          <div class="cr-val" id="ii-top">—</div>
+          <div class="cr-rows">
+            <div class="cr-row"><span>Boşta geçen süre ücreti (azami 4 ay)</span><span id="ii-r1">—</span></div>
+            <div class="cr-row"><span>Toplam (en düşük ihtimal)</span><span id="ii-r2">—</span></div>
+            <div class="cr-row"><span>Toplam (en yüksek ihtimal)</span><span id="ii-r3">—</span></div>
+          </div>
+        </div>
+        <div class="ic"><div class="ic-t"><i class="fa-solid fa-circle-info"></i> Not</div><p>İş K. Md.21 uyarınca, işveren işçiyi işe başlatmazsa <strong>4 ile 8 ay arası</strong> ücret tutarında tazminata (mahkeme takdirine göre) hükmedilir. Ayrıca kararın kesinleşmesine kadar geçen süre için <strong>en fazla 4 aylık</strong> "boşta geçen süre ücreti" ayrıca ödenir. Buradaki tutar bir <strong>aralık</strong> gösterir, kesin miktar mahkemenin takdirindedir.</p></div>`,
+      prompt: () => ''
+    },
+    nafaka:{
+      badge:'p', badgeText:'TMK Md.175 · Rehber', titleHtml:'Nafaka <em class="p">Rehberi</em>',
+      desc:'Nafakanın sabit bir hesaplama formülü yoktur — bu araç, mahkemenin dikkate aldığı faktörleri anımsatır.',
+      btnClass:'p', btnIco:'fa-hand-holding-heart', btnLbl:'', hideCta: true, hideChatInput: true,
+      body:`<div class="ic" style="margin-bottom:14px;"><div class="ic-t"><i class="fa-solid fa-triangle-exclamation"></i> Neden Sayı Üretmiyoruz</div><p>Nafaka miktarı, Türk Medeni Kanunu'na göre <strong>hâkimin takdirine</strong> bağlıdır — sabit bir yüzde ya da formül yoktur. "Hesaplayıcı" adı altında bir rakam üretmek, gerçekte var olmayan bir kesinlik göstermek olur. Bunun yerine mahkemenin dikkate aldığı faktörleri listeliyoruz.</p></div>
+        <div class="cl"><div class="cl-head"><i class="fa-solid fa-scale-balanced"></i> Mahkemenin Dikkate Aldığı Faktörler (İhtiyaç-Kudret Dengesi)</div>
+          <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span><strong>Nafaka alacak tarafın</strong> geliri, malvarlığı, çalışma gücü ve ihtiyaçları</span></div>
+          <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span><strong>Nafaka ödeyecek tarafın</strong> geliri, malvarlığı ve mali gücü</span></div>
+          <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Evlilik süresi ve tarafların evlilik sırasındaki yaşam standardı</span></div>
+          <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Boşanmada kusur durumu (yoksulluk nafakası için)</span></div>
+          <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Varsa çocuğun yaşı, eğitim durumu ve özel ihtiyaçları (iştirak nafakası için)</span></div>
+          <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>Tarafların sağlık durumu ve bakmakla yükümlü olduğu diğer kişiler</span></div>
+        </div>`,
+      onOpen: () => {},
       prompt: () => ''
     },
     faiz:{
@@ -226,6 +263,23 @@ function cIzin(){
   document.getElementById('iz-top').textContent=(hak-k)+' gün kullanılmamış';
   document.getElementById('iz-r1').textContent=hak+' gün/yıl';
   document.getElementById('iz-r2').textContent=(hak-k)+' gün';
+}
+
+function cIseIade(){
+  const maas=parseFloat((document.getElementById('ii-maas')?.value||'0').replace(/\D/g,''));
+  const gun=parseFloat(document.getElementById('ii-gun')?.value||'0');
+  if(!maas)return;
+  // İş K. Md.21: işe başlatmama tazminatı en az 4, en çok 8 aylık ücret tutarında (mahkeme takdiri)
+  const minTazminat=maas*4;
+  const maxTazminat=maas*8;
+  // Boşta geçen süre ücreti: en fazla 4 aylık ücret tutarında (gün bazlı, 4 ayı aşamaz)
+  const gunlukUcret=maas/30;
+  const bostaGecen=Math.min(gunlukUcret*(gun||0), maas*4);
+  document.getElementById('ii-res').style.display='block';
+  document.getElementById('ii-top').textContent=fmt(minTazminat)+' – '+fmt(maxTazminat);
+  document.getElementById('ii-r1').textContent=fmt(bostaGecen);
+  document.getElementById('ii-r2').textContent=fmt(minTazminat+bostaGecen);
+  document.getElementById('ii-r3').textContent=fmt(maxTazminat+bostaGecen);
 }
 
 function cFaiz(){

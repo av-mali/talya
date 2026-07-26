@@ -6,7 +6,7 @@ window.MODULES_INDEX = [
     "label": "Büro Yönetimi",
     "color": "r",
     "items": [
-      {"id": "globalarama", "icon": "fa-magnifying-glass", "name": "Global Arama"},
+      {"id": "globalarama", "icon": "fa-magnifying-glass", "name": "Akıllı Arama"},
       {"id": "ekip", "icon": "fa-people-group", "name": "Ekip Yönetimi"},
       {"id": "muvekkilyonetimi", "icon": "fa-user-group", "name": "Müvekkil Yönetimi"},
       {"id": "sure", "icon": "fa-calendar-xmark", "name": "Süre & Takvim"},
@@ -26,10 +26,10 @@ window.MODULES_INDEX = [
     "items": [
       {"id": "wizard", "icon": "fa-scroll", "name": "Dilekçe Sihirbazı"},
       {"id": "emsal", "icon": "fa-magnifying-glass-chart", "name": "Emsal Karar Analizi"},
-      {"id": "dosya", "icon": "fa-file-shield", "name": "Dosya Analizi"},
+      {"id": "dosya", "icon": "fa-file-shield", "name": "AI Dosya Analizi"},
       {"id": "mevzuat", "icon": "fa-book-open-reader", "name": "Mevzuat Arama"},
       {"id": "sablon", "icon": "fa-layer-group", "name": "Şablon Kütüphanesi"},
-      {"id": "kutuphanem", "icon": "fa-bookmark", "name": "Kütüphanem"},
+      {"id": "kutuphanem", "icon": "fa-bookmark", "name": "Kaydettiklerim"},
       {"id": "durusma", "icon": "fa-timeline", "name": "Duruşma Hazırlık"}
     ]
   },
@@ -70,10 +70,12 @@ window.MODULES_INDEX = [
       {"id": "ihbar", "icon": "fa-person-walking-arrow-right", "name": "İhbar Tazminatı"},
       {"id": "mesai", "icon": "fa-clock-rotate-left", "name": "Fazla Mesai"},
       {"id": "izin", "icon": "fa-umbrella-beach", "name": "Yıllık İzin"},
+      {"id": "iseiade", "icon": "fa-rotate-left", "name": "İşe İade Tazminatı"},
       {"id": "faiz", "icon": "fa-percent", "name": "Yasal Faiz"},
       {"id": "gecikme", "icon": "fa-arrow-trend-up", "name": "Gecikme Faizi"},
       {"id": "kira", "icon": "fa-building", "name": "Kira Artış Hesabı"},
-      {"id": "za", "icon": "fa-hourglass-half", "name": "Zamanaşımı Takvimi"}
+      {"id": "za", "icon": "fa-hourglass-half", "name": "Zamanaşımı Takvimi"},
+      {"id": "nafaka", "icon": "fa-hand-holding-heart", "name": "Nafaka Rehberi"}
     ]
   },
   {
