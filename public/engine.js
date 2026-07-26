@@ -1366,7 +1366,16 @@ window.talyaInitPage = function () {
   loadRealNotifications();
 };
 
-window.talyaInitPage();
+// SPA modunda (kalıcı menü) bu otomatik çalıştırma ATLANIR —
+// DashboardShellClient, içerik VE modül scripti tamamen hazır olduktan
+// SONRA window.talyaInitPage()'i KENDİSİ çağırır. Bu satır, engine.js
+// script'i CURRENT_MODULE henüz set edilmeden (içerik yüklenmeden)
+// otomatik çalışıp menüyü yanlış (eksik) bir duruma göre çizmesini
+// önler — "tıklayınca hiçbir şey gelmiyor, sayfayı yenileyince geliyor"
+// hatasının kök nedeni buydu.
+if (!window.__talyaSpaMode) {
+  window.talyaInitPage();
+}
 loadNotifPrefs();
 if (window.__talyaReady) window.__talyaReady();
 

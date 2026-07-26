@@ -100,6 +100,10 @@ export default function DashboardShellClient({ children }: { children: React.Rea
 
       await loadScriptOnce("/modules-index.js");
       await loadScriptOnce("/cmdk-index.js");
+      // Bu bayrak, engine.js'in kendi kendine (henüz içerik hazır
+      // olmadan) çalışmasını engeller — talyaInitPage'i BİZ, doğru
+      // zamanda (loadContentFor içinde) çağıracağız.
+      (window as any).__talyaSpaMode = true;
       await loadScriptOnce("/engine.js");
 
       // İlk yüklemede, o an bulunulan sayfanın içeriğini yükle.
