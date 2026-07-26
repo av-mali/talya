@@ -74,10 +74,6 @@ async function initModulePage() {
   const openId = (requestedOpen && !blockedSet.has(requestedOpen)) ? requestedOpen : (allowedItems[0] ? allowedItems[0].id : null);
   if (openId) {
     openPopup(openId);
-    // Ana sayfadaki "Talya'ya Sor" kutusundan gelen bir soru varsa, araç
-    // açılır açılmaz otomatik olarak sohbete gönderilir.
-    const q = params.get('q');
-    if (q) setTimeout(() => sendQ(q), 400);
   } else {
     const popBody = document.getElementById('popBody');
     if (popBody) popBody.innerHTML = `<div style="padding:20px;font-size:13px;color:var(--t3);">Bu modülde erişim yetkiniz olan bir araç bulunmuyor. Büro yöneticinizle iletişime geçin.</div>`;
@@ -111,6 +107,11 @@ const MODULE_ICONS = {
 // başlangıçta açık gelir.
 let sidebarExpanded = new Set();
 
+// Her modülün kendi rengi — kenar çubuğu VE Hızlı Erişim kartları bu
+// haritayı ortak kullanır.
+const COLOR_MAP = { g: 'var(--gold)', b: 'var(--blue)', t: 'var(--teal)', p: 'var(--purple)', r: 'var(--danger)', a: 'var(--amber)' };
+const COLOR_LO_MAP = { g: 'var(--gold-lo)', b: 'var(--blue-lo)', t: 'var(--teal-lo)', p: 'var(--purple-lo)', r: 'var(--danger-lo)', a: 'var(--amber-lo)' };
+
 async function renderAppSidebar() {
   const nav = document.getElementById('sidebarNav') || document.getElementById('homeSidebarNav');
   if (!nav) return;
@@ -124,10 +125,6 @@ async function renderAppSidebar() {
       <span class="ico"><i class="fa-solid fa-house"></i></span>
       Ana Sayfa
     </div>`;
-
-  const COLOR_MAP = { g: 'var(--gold)', b: 'var(--blue)', t: 'var(--teal)', p: 'var(--purple)', r: 'var(--danger)', a: 'var(--amber)' };
-
-  const COLOR_LO_MAP = { g: 'var(--gold-lo)', b: 'var(--blue-lo)', t: 'var(--teal-lo)', p: 'var(--purple-lo)', r: 'var(--danger-lo)', a: 'var(--amber-lo)' };
 
   const modulesHtml = modules.map(mod => {
     const isCurrent = !!cfg && mod.key === cfg.key;
@@ -383,7 +380,7 @@ async function renderHomeWidgets() {
   const resolved = tools.map(t => {
     const mod = modules.find(m => m.key === t.mod);
     const item = mod && mod.items.find(it => it.id === t.id);
-    return item ? { mod: t.mod, id: t.id, icon: item.icon, name: item.name } : null;
+    return item ? { mod: t.mod, id: t.id, icon: item.icon, name: item.name, color: COLOR_MAP[mod.color] || 'var(--gold)' } : null;
   }).filter(Boolean);
 
   if (!resolved.length) {
@@ -392,19 +389,12 @@ async function renderHomeWidgets() {
   }
 
   box.innerHTML = resolved.map(t => `
-    <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer;width:140px;transition:all .2s cubic-bezier(.2,.8,.2,1);" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.1)';this.style.borderColor='var(--gold-rule)'" onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)'" onclick="openModule('${t.mod}?open=${t.id}')">
-      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
-      <i class="fa-solid ${t.icon}" style="font-size:18px;color:var(--gold);"></i>
+    <div style="position:relative;background:var(--accent-bg);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;cursor:pointer;width:140px;transition:all .2s cubic-bezier(.2,.8,.2,1);" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''" onclick="openModule('${t.mod}?open=${t.id}')">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${t.color};"></div>
+      <i class="fa-solid ${t.icon}" style="font-size:18px;color:${t.color};"></i>
       <span style="font-size:12px;color:var(--t1);">${t.name}</span>
     </div>
   `).join('');
-}
-
-function talyaAskSubmit() {
-  const inp = document.getElementById('talya-ask-input');
-  const text = inp ? inp.value.trim() : '';
-  if (!text) return;
-  openModule('belge?open=wizard&q=' + encodeURIComponent(text));
 }
 
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
@@ -762,7 +752,7 @@ async function renderGelirGiderOzet() {
             const positive = net >= 0;
             const maxBar = Math.max(gelir, gider, 1);
             return `
-              <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="position:relative;background:var(--accent-bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${positive ? 'var(--gold)' : 'var(--danger)'};"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-scale-balanced"></i> Bu Ay Net
@@ -793,7 +783,7 @@ async function renderGelirGiderOzet() {
 
           if (key === 'muvekkil') {
             return `
-              <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="position:relative;background:var(--accent-bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
                   <i class="fa-solid fa-users"></i> Toplam Müvekkil
@@ -813,7 +803,7 @@ async function renderGelirGiderOzet() {
             const circumference = 2 * Math.PI * 26; // r=26
             const openLen = (openPct / 100) * circumference;
             return `
-              <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+              <div style="position:relative;background:var(--accent-bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">
                   <i class="fa-solid fa-folder-open"></i> Dosya Durumu

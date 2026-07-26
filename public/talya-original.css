@@ -1,5 +1,5 @@
 :root{
-  --bg:#DCE6F5;--bg2:#EAF0FA;--bg3:#B2C8E8;--card:#FFFFFF;--border:rgba(15,40,90,.16);--border2:rgba(15,40,90,.24);
+  --bg:#DCE6F5;--accent-bg:#EFF3FA;--bg2:#EAF0FA;--bg3:#B2C8E8;--card:#FFFFFF;--border:rgba(15,40,90,.16);--border2:rgba(15,40,90,.24);
   --gold:#2E68CF;--gold-hi:#1F4FA6;--gold-lo:rgba(46,104,207,.10);--gold-mid:rgba(46,104,207,.20);--gold-rule:rgba(46,104,207,.32);
   --blue:#0F3F8C;--blue-lo:rgba(15,63,140,.09);--blue-hi:#0A2C63;
   --teal:#0E8F63;--teal-lo:rgba(14,143,99,.08);--teal-hi:#0A7350;
@@ -12,7 +12,7 @@
   --ease:cubic-bezier(.22,.68,0,1.2);--std:cubic-bezier(.4,0,.2,1);
 }
 [data-theme="dark"]{
-  --bg:#0A0F1C;--bg2:#0F1626;--bg3:#151F36;--card:#0D1220;--border:rgba(140,180,255,.13);--border2:rgba(140,180,255,.20);
+  --bg:#0A0F1C;--accent-bg:#909398;--bg2:#0F1626;--bg3:#151F36;--card:#0D1220;--border:rgba(140,180,255,.13);--border2:rgba(140,180,255,.20);
   --gold:#5B9CF0;--gold-hi:#8AB8F5;--gold-lo:rgba(91,156,240,.13);--gold-mid:rgba(91,156,240,.22);--gold-rule:rgba(91,156,240,.36);
   --blue:#7A96C4;--blue-lo:rgba(122,150,196,.10);--blue-hi:#A0B6DC;
   --teal:#2FE0A8;--teal-lo:rgba(47,224,168,.10);--teal-hi:#5CEDC0;
@@ -33,7 +33,7 @@
 /* 1) Safir — açık: net, doygun kurumsal mavi zemin — sektörün "güvenli
    varsayılanı" (Clio, KolayOfis, T-HOS gibi Türk rakiplerin dili) */
 [data-palette="safir"]{
-  --bg:#EEF1F6;--bg2:#E6E8ED;--bg3:#D3D9E4;--card:#FFFFFF;--border:rgba(15,40,90,.13);--border2:rgba(15,40,90,.20);
+  --bg:#EEF1F6;--accent-bg:#F7F8FA;--bg2:#E6E8ED;--bg3:#D3D9E4;--card:#FFFFFF;--border:rgba(15,40,90,.13);--border2:rgba(15,40,90,.20);
   --gold:#2E68CF;--gold-hi:#2354A8;--gold-lo:rgba(46,104,207,.10);--gold-mid:rgba(46,104,207,.18);--gold-rule:rgba(46,104,207,.30);
   --blue:#4A5568;--blue-lo:rgba(74,85,104,.10);--blue-hi:#2D3546;
   --t0:#141414;--t1:#2E323B;--t2:#5C6472;--t3:#9AA2B0;
@@ -41,7 +41,7 @@
 }
 /* Safir — koyu */
 [data-palette="safir"][data-theme="dark"]{
-  --bg:#080D18;--bg2:#0D1422;--bg3:#141E32;--card:#0A0F1C;--border:rgba(140,180,255,.14);--border2:rgba(140,180,255,.22);
+  --bg:#080D18;--accent-bg:#8F9297;--bg2:#0D1422;--bg3:#141E32;--card:#0A0F1C;--border:rgba(140,180,255,.14);--border2:rgba(140,180,255,.22);
   --gold:#5B9CF0;--gold-hi:#8AB8F5;--gold-lo:rgba(91,156,240,.14);--gold-mid:rgba(91,156,240,.23);--gold-rule:rgba(91,156,240,.37);
   --blue:#8FA0B8;--blue-lo:rgba(143,160,184,.10);--blue-hi:#B4C2D6;
   --t0:#EAF1FC;--t1:#B0C2DE;--t2:#65799B;--t3:#334358;
@@ -51,7 +51,7 @@
 /* 2) Mürekkep — açık: neredeyse siyah-beyaz, editoryal ciddiyet
    (Harvey'in tipografi-öncelikli, renk-az kimliği) — TEK keskin vurgu */
 [data-palette="murekkep"]{
-  --bg:#E6E6E3;--bg2:#D8D8D3;--bg3:#C4C4BD;--card:#FFFFFF;--border:rgba(20,20,18,.18);--border2:rgba(20,20,18,.28);
+  --bg:#E6E6E3;--accent-bg:#F3F3F2;--bg2:#D8D8D3;--bg3:#C4C4BD;--card:#FFFFFF;--border:rgba(20,20,18,.18);--border2:rgba(20,20,18,.28);
   --gold:#A8291F;--gold-hi:#7A1D15;--gold-lo:rgba(168,41,31,.10);--gold-mid:rgba(168,41,31,.20);--gold-rule:rgba(168,41,31,.34);
   --blue:#2B2B2B;--blue-lo:rgba(43,43,43,.08);--blue-hi:#141414;
   --t0:#111111;--t1:#2E2E2C;--t2:#5C5C57;--t3:#9A9A92;
@@ -59,7 +59,7 @@
 }
 /* Mürekkep — koyu */
 [data-palette="murekkep"][data-theme="dark"]{
-  --bg:#101010;--bg2:#181818;--bg3:#212121;--card:#141414;--border:rgba(255,255,255,.12);--border2:rgba(255,255,255,.20);
+  --bg:#101010;--accent-bg:#939393;--bg2:#181818;--bg3:#212121;--card:#141414;--border:rgba(255,255,255,.12);--border2:rgba(255,255,255,.20);
   --gold:#E85B4F;--gold-hi:#F08276;--gold-lo:rgba(232,91,79,.14);--gold-mid:rgba(232,91,79,.23);--gold-rule:rgba(232,91,79,.37);
   --blue:#B8B8B4;--blue-lo:rgba(184,184,180,.08);--blue-hi:#D8D8D4;
   --t0:#F2F2EF;--t1:#C8C8C2;--t2:#87877E;--t3:#464642;
@@ -69,7 +69,7 @@
 /* 3) Akik — açık: sıcak, doygun kırmızı-kiremit zemin — Türk avukatın
    UYAP'tan zaten tanıdığı, güven veren resmi kimlik */
 [data-palette="akik"]{
-  --bg:#F5DCD6;--bg2:#EFC5BB;--bg3:#E5A897;--card:#FFFFFF;--border:rgba(110,25,15,.20);--border2:rgba(110,25,15,.30);
+  --bg:#F5DCD6;--accent-bg:#FAEFEC;--bg2:#EFC5BB;--bg3:#E5A897;--card:#FFFFFF;--border:rgba(110,25,15,.20);--border2:rgba(110,25,15,.30);
   --gold:#B0281C;--gold-hi:#821E14;--gold-lo:rgba(176,40,28,.11);--gold-mid:rgba(176,40,28,.22);--gold-rule:rgba(176,40,28,.38);
   --blue:#6B3226;--blue-lo:rgba(107,50,38,.10);--blue-hi:#4A2119;
   --t0:#2E0F0A;--t1:#4E211A;--t2:#835A4F;--t3:#BB958A;
@@ -77,7 +77,7 @@
 }
 /* Akik — koyu */
 [data-palette="akik"][data-theme="dark"]{
-  --bg:#170807;--bg2:#210D0B;--bg3:#2E1310;--card:#1B0A08;--border:rgba(255,170,150,.14);--border2:rgba(255,170,150,.22);
+  --bg:#170807;--accent-bg:#968F8F;--bg2:#210D0B;--bg3:#2E1310;--card:#1B0A08;--border:rgba(255,170,150,.14);--border2:rgba(255,170,150,.22);
   --gold:#F0685A;--gold-hi:#F58F84;--gold-lo:rgba(240,104,90,.15);--gold-mid:rgba(240,104,90,.25);--gold-rule:rgba(240,104,90,.40);
   --blue:#C99486;--blue-lo:rgba(201,148,134,.10);--blue-hi:#DDB4A8;
   --t0:#FFEFE9;--t1:#E8C4B8;--t2:#A47C6E;--t3:#5C443C;
@@ -87,7 +87,7 @@
 /* 4) Turkuaz — açık: taze, doygun petrol-teal zemin — yeni nesil
    hukuk-AI girişimlerinin "eski/kurumsal değil" tazeliği */
 [data-palette="turkuaz"]{
-  --bg:#CFEDE8;--bg2:#B5E2DA;--bg3:#94D2C6;--card:#FFFFFF;--border:rgba(5,60,55,.18);--border2:rgba(5,60,55,.28);
+  --bg:#CFEDE8;--accent-bg:#E9F6F4;--bg2:#B5E2DA;--bg3:#94D2C6;--card:#FFFFFF;--border:rgba(5,60,55,.18);--border2:rgba(5,60,55,.28);
   --gold:#0A8C7E;--gold-hi:#076B60;--gold-lo:rgba(10,140,126,.11);--gold-mid:rgba(10,140,126,.21);--gold-rule:rgba(10,140,126,.36);
   --blue:#2E5C58;--blue-lo:rgba(46,92,88,.10);--blue-hi:#1C3D3A;
   --t0:#052420;--t1:#123B35;--t2:#4C6B65;--t3:#87A69F;
@@ -95,7 +95,7 @@
 }
 /* Turkuaz — koyu */
 [data-palette="turkuaz"][data-theme="dark"]{
-  --bg:#051615;--bg2:#0A1E1C;--bg3:#102B27;--card:#081C1A;--border:rgba(150,255,235,.13);--border2:rgba(150,255,235,.21);
+  --bg:#051615;--accent-bg:#8E9695;--bg2:#0A1E1C;--bg3:#102B27;--card:#081C1A;--border:rgba(150,255,235,.13);--border2:rgba(150,255,235,.21);
   --gold:#2FE0CC;--gold-hi:#5CEDDC;--gold-lo:rgba(47,224,204,.15);--gold-mid:rgba(47,224,204,.24);--gold-rule:rgba(47,224,204,.38);
   --blue:#8FBCB4;--blue-lo:rgba(143,188,180,.10);--blue-hi:#B0D4CC;
   --t0:#E8FFF9;--t1:#AED8CE;--t2:#649088;--t3:#33534C;
