@@ -836,15 +836,15 @@ async function renderGelirGiderOzet() {
                 <div style="position:relative;width:70px;height:70px;margin-bottom:8px;">
                   <svg width="70" height="70" viewBox="0 0 70 70" style="transform:rotate(-90deg);">
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--border)" stroke-width="8"></circle>
-                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--gold)" stroke-width="8" stroke-dasharray="${aktifLen} ${circumference}"></circle>
-                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--purple)" stroke-width="8" stroke-dasharray="${adayLen} ${circumference}" stroke-dashoffset="${adayOffset}"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--success)" stroke-width="8" stroke-dasharray="${aktifLen} ${circumference}"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--amber)" stroke-width="8" stroke-dasharray="${adayLen} ${circumference}" stroke-dashoffset="${adayOffset}"></circle>
                     <circle cx="35" cy="35" r="26" fill="none" stroke="var(--t3)" stroke-width="8" stroke-dasharray="${arsivLen} ${circumference}" stroke-dashoffset="${arsivOffset}"></circle>
                   </svg>
                   <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--t0);">${aktif + aday + arsiv}</div>
                 </div>
                 <div style="display:flex;gap:8px;font-size:9.5px;flex-wrap:wrap;justify-content:center;">
-                  <span style="color:var(--gold);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-right:3px;"></span>${aktif} Aktif</span>
-                  <span style="color:var(--purple);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--purple);margin-right:3px;"></span>${aday} Aday</span>
+                  <span style="color:var(--success);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--success);margin-right:3px;"></span>${aktif} Aktif</span>
+                  <span style="color:var(--amber);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:3px;"></span>${aday} Aday</span>
                   <span style="color:var(--t3);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--t3);margin-right:3px;"></span>${arsiv} Arşiv</span>
                 </div>
               </div>

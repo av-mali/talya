@@ -11,11 +11,11 @@ window.CURRENT_MODULE = {
     {"id": "ekip", "icon": "fa-people-group", "name": "Ekip Yönetimi"},
     {"id": "muvekkilyonetimi", "icon": "fa-user-group", "name": "Müvekkil Yönetimi"},
     {"id": "sure", "icon": "fa-calendar-xmark", "name": "Süre & Takvim"},
+    {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"},
     {"id": "fatura", "icon": "fa-receipt", "name": "Fatura & Tahsilat"},
+    {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
     {"id": "gorevler", "icon": "fa-list-check", "name": "Görevler"},
     {"id": "notlar", "icon": "fa-note-sticky", "name": "Notlar"},
-    {"id": "gelirgider", "icon": "fa-scale-balanced", "name": "Gelir-Gider"},
-    {"id": "sozlesmetakip", "icon": "fa-file-contract", "name": "Sözleşme Takip"},
     {"id": "bakiyetablosu", "icon": "fa-scale-unbalanced", "name": "Müvekkil Bakiye Tablosu"},
     {"id": "raporlar", "icon": "fa-chart-pie", "name": "Raporlar"}
   ],
