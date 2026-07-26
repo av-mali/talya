@@ -1,0 +1,23 @@
+<!-- ═══════ BÜRO YÖNETİMİ İÇERİĞİ (SPA modu) ═══════
+     Sadece orta panel + detay paneli — çerçeve (topbar+sidebar) artık
+     dashboard-shell.html'de, bir kez yükleniyor. -->
+<div class="tool-panel">
+  <div class="tool-panel-head">
+    <div class="pop-badge g" id="popBadge"><span id="popBadgeText">…</span></div>
+    <div class="pop-title" id="popTitle">…</div>
+    <div class="pop-desc" id="popDesc"></div>
+  </div>
+  <div class="tool-panel-body" id="popBody"></div>
+  <div class="tool-panel-cta" style="display:none;">
+    <button class="pop-cta-btn g" id="popBtn" onclick="submitPopup()">
+      <i class="fa-solid fa-gears" id="popBtnIco"></i><span id="popBtnLbl">Dilekçeyi Taslakla</span>
+    </button>
+  </div>
+</div>
+
+<div class="ai-pane" id="detailPane">
+  <div style="padding:40px 24px;text-align:center;color:var(--t3);margin-top:60px;">
+    <i class="fa-solid fa-arrow-left" style="font-size:20px;opacity:.3;display:block;margin-bottom:10px;"></i>
+    Soldaki listeden bir öğe seçin.
+  </div>
+</div>

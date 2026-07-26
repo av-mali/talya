@@ -13,10 +13,26 @@ let cmdkItems = [];
 let cmdkSel = 0;
 
 // ── NAV (sayfa geçişleri artık gerçek Next.js route'ları) ──
+// ── SPA NAVİGASYONU ──
+// Kalıcı menü moduna alınmış sayfalar (şu an: Ana Sayfa + Büro Yönetimi)
+// arasında geçiş, tam sayfa yenilemesi YAPMADAN olur — bunu
+// /src/app/dashboard/layout.tsx, window.__talyaSpaNav'a kendi
+// fonksiyonunu vererek etkinleştirir. O fonksiyon yoksa (henüz kalıcı
+// menüye taşınmamış bir sayfadaysak) eskisi gibi tam sayfa geçişi olur.
 function openModule(modId) {
+  const target = '/dashboard/' + modId.split('?')[0];
+  const openParam = modId.includes('?') ? modId.split('?')[1] : null;
+  if (window.__talyaSpaNav && window.__talyaMigratedPaths?.includes(target)) {
+    window.__talyaSpaNav(target, openParam);
+    return;
+  }
   window.location.href = '/dashboard/' + modId;
 }
 function goHome() {
+  if (window.__talyaSpaNav && window.__talyaMigratedPaths?.includes('/dashboard')) {
+    window.__talyaSpaNav('/dashboard', null);
+    return;
+  }
   window.location.href = '/dashboard';
 }
 
@@ -1330,19 +1346,27 @@ document.addEventListener('keydown', e => {
   }
 });
 
-cmdkItems = window.CMDK_INDEX || [];
-if (window.CURRENT_MODULE) {
-  initModulePage();
-} else {
-  runCountUp();
-  renderDashDeadlines();
-  renderDashOzet();
-  renderGelirGiderOzet();
-  renderAppSidebar();
-  renderHomeWidgets();
-  startAskPlaceholderRotation();
-}
-loadRealNotifications();
+// Bu fonksiyon, sayfa ilk açıldığında BİR KEZ, ayrıca SPA modunda (kalıcı
+// menü) bir modülden diğerine geçildiğinde her seferinde TEKRAR çağrılır
+// — çünkü içerik alanı yenilendiğinde (popBody, detailPane vb. yeniden
+// oluştuğunda) verinin yeniden çekilip ekrana basılması gerekir.
+window.talyaInitPage = function () {
+  cmdkItems = window.CMDK_INDEX || [];
+  if (window.CURRENT_MODULE) {
+    initModulePage();
+  } else {
+    runCountUp();
+    renderDashDeadlines();
+    renderDashOzet();
+    renderGelirGiderOzet();
+    renderAppSidebar();
+    renderHomeWidgets();
+    startAskPlaceholderRotation();
+  }
+  loadRealNotifications();
+};
+
+window.talyaInitPage();
 loadNotifPrefs();
 if (window.__talyaReady) window.__talyaReady();
 

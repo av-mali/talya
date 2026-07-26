@@ -1,0 +1,88 @@
+<!-- ═══════ KALICI ÇERÇEVE (SPA modu) ═══════
+     Bu dosya, Ana Sayfa ve Büro Yönetimi arasında geçişte HİÇ yeniden
+     yüklenmez — src/app/dashboard/layout.tsx tarafından BİR KEZ DOM'a
+     yerleştirilir. İçerik (dash-wrap / tool-panel+detailPane) bunun
+     yanına, ayrıca yüklenir. -->
+<div style="display:flex;flex-direction:column;width:100%;height:100%;">
+  <div class="app-topbar">
+    <div class="app-top-left">
+      <button class="home-btn" onclick="goHome()"><i class="fa-solid fa-house"></i> Ana Sayfa</button>
+      <div class="app-breadcrumb">
+        <span id="appModuleName">…</span>
+        <span style="opacity:.35" id="appBreadcrumbSep">›</span>
+        <span class="cur" id="appItemName">…</span>
+      </div>
+    </div>
+    <div class="app-top-right">
+      <button class="cmdk-trigger" onclick="openCmdk()"><i class="fa-solid fa-magnifying-glass" style="font-size:10px;"></i> Araç ara… <kbd>⌘K</kbd></button>
+      <button class="dm-toggle" id="dmToggleApp" onclick="toggleDark()" title="Karanlık/Aydınlık mod"><i class="fa-solid fa-moon" id="dmIconApp"></i></button>
+      <div class="notif-wrap">
+        <button class="notif-bell" id="notifBell" onclick="toggleNotif(event)" title="Bildirimler">
+          <i class="fa-solid fa-bell"></i>
+        </button>
+        <div class="notif-badge hidden" id="notifBadge"></div>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="nd-head">
+            <div class="nd-title">Bildirimler</div>
+            <div class="nd-actions">
+              <button class="nd-act-btn" onclick="markAllRead()">Tümünü okundu işaretle</button>
+            </div>
+          </div>
+          <div class="nd-filter" id="ndFilter">
+            <div class="nd-chip active" data-filter="all" onclick="filterNotif(this,'all')"><i class="fa-solid fa-layer-group"></i> Tümü</div>
+            <div class="nd-chip" data-filter="sure" onclick="filterNotif(this,'sure')"><i class="fa-solid fa-clock"></i> Süre</div>
+            <div class="nd-chip" data-filter="tebligat" onclick="filterNotif(this,'tebligat')"><i class="fa-solid fa-envelope"></i> Tebligat</div>
+            <div class="nd-chip" data-filter="ai" onclick="filterNotif(this,'ai')"><i class="fa-solid fa-microchip"></i> AI</div>
+            <div class="nd-chip" data-filter="sistem" onclick="filterNotif(this,'sistem')"><i class="fa-solid fa-circle-info"></i> Sistem</div>
+          </div>
+          <div class="nd-list" id="ndList"></div>
+          <div class="nd-settings">
+            <div class="nd-settings-title">Bildirim Tercihleri</div>
+            <div class="nd-toggle-row"><span>Süre uyarıları</span><label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('sure',this.checked)"><span class="nd-slider"></span></label></div>
+            <div class="nd-toggle-row"><span>Tebligat bildirimleri</span><label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('tebligat',this.checked)"><span class="nd-slider"></span></label></div>
+            <div class="nd-toggle-row"><span>AI önerileri</span><label class="nd-toggle"><input type="checkbox" checked onchange="saveNotifPref('ai',this.checked)"><span class="nd-slider"></span></label></div>
+            <div class="nd-toggle-row"><span>Sistem bildirimleri</span><label class="nd-toggle"><input type="checkbox" onchange="saveNotifPref('sistem',this.checked)"><span class="nd-slider"></span></label></div>
+          </div>
+        </div>
+      </div>
+      <span class="status-pill live"><i class="fa-solid fa-circle fa-xs"></i> Talya AI Aktif</span>
+      <span class="status-pill sec"><i class="fa-solid fa-shield-halved"></i> KVKK Güvenli</span>
+      <div id="userEmailPill" style="font-size:11px;color:var(--t3);margin-left:6px;"></div>
+      <div class="nav-pill always-show" style="cursor:pointer;" onclick="window.talyaSignOut ? window.talyaSignOut() : window.location.href='/'">Çıkış Yap</div>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- SIDEBAR — artık sayfalar arası geçişte hiç yeniden çizilmez -->
+    <div class="app-sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-mod-label" id="sidebarLabel">TALYA HUKUK</div>
+        <div class="sidebar-mod-name" id="sidebarName">Tüm Araçlar</div>
+      </div>
+      <div class="s-nav" id="sidebarNav"></div>
+    </div>
+
+    <!-- İÇERİK — sayfa değiştikçe SADECE burası değişir -->
+    <div id="talyaContentSlot" style="flex:1;display:flex;overflow:hidden;min-height:0;"></div>
+  </div>
+</div>
+
+<!-- ═══════ COMMAND PALETTE ═══════ -->
+<div class="cmdk-scrim" id="cmdkScrim" onclick="if(event.target===this)closeCmdk()">
+  <div class="cmdk-box">
+    <div class="cmdk-inrow">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="cmdkInput" placeholder="Araç, modül veya hesaplama ara…" oninput="cmdkFilter()" onkeydown="cmdkKey(event)">
+      <span class="cmdk-esc">ESC</span>
+    </div>
+    <div class="cmdk-list" id="cmdkList"></div>
+    <div class="cmdk-foot">
+      <span class="cmdk-hint"><kbd>↑↓</kbd> gezin</span>
+      <span class="cmdk-hint"><kbd>↵</kbd> aç</span>
+      <span class="cmdk-hint"><kbd>ESC</kbd> kapat</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ TOASTS ═══════ -->
+<div class="toast-stack" id="toastStack"></div>
