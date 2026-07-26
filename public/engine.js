@@ -21,7 +21,12 @@ let cmdkSel = 0;
 // menüye taşınmamış bir sayfadaysak) eskisi gibi tam sayfa geçişi olur.
 function openModule(modId) {
   const target = '/dashboard/' + modId.split('?')[0];
-  const openParam = modId.includes('?') ? modId.split('?')[1] : null;
+  // NOT: modId 'buro?open=ekip' formatında geliyor. Buradan SADECE
+  // değeri ('ekip') çıkarmamız lazım — split('?')[1] 'open=ekip'i
+  // (öneki DAHİL) verir, bu da __talyaSpaNav'da "?open=open=ekip" gibi
+  // BOZUK bir URL oluşturuyordu ("İlk tıklamada açılmıyor" hatasının
+  // gerçek kök nedeni buydu).
+  const openParam = modId.includes('?open=') ? modId.split('?open=')[1] : null;
   if (window.__talyaSpaNav && window.__talyaMigratedPaths?.includes(target)) {
     window.__talyaSpaNav(target, openParam);
     return;

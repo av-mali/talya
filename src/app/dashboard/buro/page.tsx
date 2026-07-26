@@ -1,11 +1,15 @@
 "use client";
 
-// NOT: Bu sayfanın içeriği artık render edilmiyor — Büro Yönetimi'nin
-// gerçek içeriği, üstteki src/app/dashboard/layout.tsx üzerinden
-// DashboardShellClient tarafından yönetiliyor (bkz.
-// /public/buro-content.html + /public/module-buro.js).
-// Bu dosya sadece Next.js'in /dashboard/buro rotasını tanıyabilmesi
-// için var.
+import TalyaShell from "@/components/TalyaShell";
+
+// Büro Yönetimi modülü — 3 sütunlu orijinal tasarım korunuyor.
+// Sağ sütun artık sohbet değil, seçilen öğeye göre değişen bir "detay
+// paneli". İçeriği değiştirmek için: /public/module-buro.js
 export default function BuroModulu() {
-  return null;
+  return (
+    <TalyaShell
+      bodyUrl="/module-body-detail.html"
+      scripts={["/module-buro.js", "/modules-index.js", "/cmdk-index.js", "/engine.js"]}
+    />
+  );
 }
