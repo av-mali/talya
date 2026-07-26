@@ -56,6 +56,14 @@ export default function DashboardShellClient({ children }: { children: React.Rea
   const shellSetupStarted = useRef(false);
   const loadingPath = useRef<string | null>(null); // o an YÜKLENMEKTE olan yol (çakışan çağrıları engellemek için)
   const loadedPath = useRef<string | null>(null); // en son BAŞARIYLA yüklenmiş yol
+  // Bir modülden Ana Sayfa'ya dönünce window.CURRENT_MODULE'ü null'a
+  // çekiyoruz (home'un "hiçbir modülde değiliz" durumunu doğru
+  // yansıtması için) — ama modülün script'i (ör. module-buro.js) İKİNCİ
+  // ziyarette YENİDEN ÇALIŞMAZ (tarayıcı script'i tekrar yüklemez), yani
+  // CURRENT_MODULE bir daha KENDİLİĞİNDEN set olmaz. Bu yüzden her
+  // modülün config'ini burada saklayıp, o modüle her geri dönüşte
+  // elle geri yüklüyoruz.
+  const moduleConfigCache = useRef<Record<string, any>>({});
 
   const [checkingWorkspace, setCheckingWorkspace] = useState(pathname === "/dashboard");
   const [hasWorkspace, setHasWorkspace] = useState(true);
@@ -134,6 +142,12 @@ export default function DashboardShellClient({ children }: { children: React.Rea
       slot.innerHTML = html;
 
       if (pathname === "/dashboard") {
+        // Ayrılmadan önce, o an aktif olan modülün config'ini kaydet —
+        // ileride o modüle geri dönülünce script YENİDEN ÇALIŞMAYACAĞI
+        // için bu değeri elle geri yükleyeceğiz.
+        if ((window as any).CURRENT_MODULE) {
+          moduleConfigCache.current[loadedPath.current || ""] = (window as any).CURRENT_MODULE;
+        }
         (window as any).CURRENT_MODULE = null;
         const sbLabel = document.getElementById("sidebarLabel");
         if (sbLabel) sbLabel.innerHTML = "TALYA HUKUK";
@@ -152,6 +166,12 @@ export default function DashboardShellClient({ children }: { children: React.Rea
 
       for (const src of cfg.scripts) {
         await loadScriptOnce(src);
+      }
+
+      // Bu modüle DAHA ÖNCE girilmişse, script'i tekrar çalışmadığı için
+      // CURRENT_MODULE'ü önbellekten geri yüklüyoruz.
+      if (pathname !== "/dashboard" && !(window as any).CURRENT_MODULE && moduleConfigCache.current[pathname]) {
+        (window as any).CURRENT_MODULE = moduleConfigCache.current[pathname];
       }
 
       if (typeof (window as any).talyaInitPage === "function") {
