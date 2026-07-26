@@ -80,10 +80,10 @@ async function initModulePage() {
   if (!cfg) return;
   const nameEl = document.getElementById('appModuleName');
   if (nameEl) nameEl.innerHTML = cfg.label;
-  const sbLabel = document.getElementById('sidebarLabel');
-  if (sbLabel) sbLabel.innerHTML = cfg.label;
-  const sbName = document.getElementById('sidebarName');
-  if (sbName) sbName.innerHTML = cfg.nameHtml;
+  // NOT: sidebarLabel/sidebarName BİLEREK değiştirilmiyor — bunlar
+  // artık her sayfada SABİT kalıyor (menünün yukarı/aşağı oynamaması
+  // için). Hangi modülde olduğun bilgisi zaten üst çubuktaki
+  // breadcrumb'ta (appModuleName) gösteriliyor.
 
   sidebarExpanded.add(cfg.key); // bulunduğun kategori varsayılan olarak açık
   renderAppSidebar();

@@ -169,12 +169,10 @@ export default function DashboardShellClient({ children }: { children: React.Rea
           moduleConfigCache.current[loadedPath.current || ""] = (window as any).CURRENT_MODULE;
         }
         (window as any).CURRENT_MODULE = null;
-        const sbLabel = document.getElementById("sidebarLabel");
-        if (sbLabel) sbLabel.innerHTML = "TALYA HUKUK";
-        const sbName = document.getElementById("sidebarName");
-        if (sbName) sbName.innerHTML = "Tüm Araçlar";
-        const tagline = document.getElementById("sidebarTagline");
-        if (tagline) (tagline as HTMLElement).style.display = "";
+        // NOT: sidebarLabel/sidebarName/sidebarTagline artık HİÇ
+        // değiştirilmiyor — sidebar başlığı her sayfada SABİT kalıyor
+        // (menünün yukarı/aşağı oynamaması için). Bkz. engine.js'teki
+        // aynı notla ilgili yorum.
         const breadcrumbSep = document.getElementById("appBreadcrumbSep");
         if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "none";
         const modName = document.getElementById("appModuleName");
@@ -198,8 +196,6 @@ export default function DashboardShellClient({ children }: { children: React.Rea
       } else {
         const breadcrumbSep = document.getElementById("appBreadcrumbSep");
         if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "";
-        const tagline = document.getElementById("sidebarTagline");
-        if (tagline) (tagline as HTMLElement).style.display = "none";
       }
 
       for (const src of cfg.scripts) {
