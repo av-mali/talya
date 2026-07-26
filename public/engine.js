@@ -157,10 +157,7 @@ async function renderAppSidebar() {
       <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;border-radius:var(--r);${isCurrent ? `color:${modColor};background:${modColorLo};box-shadow:0 0 0 1px ${modColorLo}, 0 2px 10px -2px ${modColorLo};` : ''}" onclick="toggleSidebarGroup('${mod.key}')">
         <span class="ico"><i class="fa-solid ${modIcon}" style="color:${modColor};"></i></span>
         ${mod.label}
-        <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-          ${!isOpen ? `<span style="font-size:10px;color:var(--t3);font-weight:400;">${mod.items.length} araç</span>` : ''}
-          <i class="fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:9px;opacity:.5;"></i>
-        </span>
+        <span style="margin-left:auto;"><i class="fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:9px;opacity:.5;"></i></span>
       </div>`;
     let children = '';
     if (isOpen) {
