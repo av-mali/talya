@@ -164,7 +164,7 @@ async function renderAppSidebar() {
         }
         lastGroup = item.group || null;
         const indent = item.group ? 40 : 30;
-        const clickAction = isCurrent ? `openPopup('${item.id}')` : `openModule('${mod.key}?open=${item.id}')`;
+        const clickAction = `handleSidebarItemClick('${mod.key}','${item.id}')`;
         const idAttr = isCurrent ? `id="si-${item.id}"` : '';
         children += `
           <div class="s-item" ${idAttr} style="padding-left:${indent}px;" onclick="${clickAction}">
@@ -178,6 +178,23 @@ async function renderAppSidebar() {
   }).join('');
 
   nav.innerHTML = homeEntry + modulesHtml;
+}
+
+// Sidebar'daki bir araca tıklandığında ÇAĞRILAN TEK fonksiyon. Kasıtlı
+// olarak "hangi modüldeyiz" kararını RENDER anında (HTML'e onclick
+// string'i olarak gömülü, dondurulmuş bir değer) DEĞİL, TIKLAMA anında,
+// window.CURRENT_MODULE'ün O ANKİ değerine bakarak veriyor. Bu, sidebar
+// bir asenkron işlem (ör. loadMyPermissions) tamamlanmadan render
+// edildiğinde oluşabilecek "ilk tıklama açmıyor, sonrakiler açıyor"
+// hatasının kökten çözümüdür — artık HİÇBİR tıklama, geçmişte
+// dondurulmuş bir karara güvenmiyor.
+function handleSidebarItemClick(modKey, itemId) {
+  const cfg = window.CURRENT_MODULE;
+  if (cfg && cfg.key === modKey) {
+    openPopup(itemId);
+  } else {
+    openModule(modKey + '?open=' + itemId);
+  }
 }
 
 function toggleSidebarGroup(key) {
