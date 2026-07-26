@@ -10,6 +10,8 @@ const DEFAULT_PREFS = {
     { mod: "buro", id: "muvekkilyonetimi" },
     { mod: "belge", id: "wizard" },
     { mod: "buro", id: "gorevler" },
+    { mod: "buro", id: "ekip" },
+    { mod: "buro", id: "fatura" },
   ],
 };
 
