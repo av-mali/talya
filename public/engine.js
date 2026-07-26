@@ -397,6 +397,41 @@ async function renderHomeWidgets() {
   `).join('');
 }
 
+async function talyaAskSubmit() {
+  const inp = document.getElementById('talya-ask-input');
+  const text = inp ? inp.value.trim() : '';
+  if (!text) return;
+
+  openTalyaModal(`
+    <div class="ic" style="margin-bottom:14px;"><div class="ic-t"><i class="fa-solid fa-scale-balanced"></i> Talya'ya Sordunuz</div>
+      <p style="font-style:italic;">"${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}"</p>
+    </div>
+    <div id="talya-ask-answer" style="font-size:13px;color:var(--t2);line-height:1.7;">
+      <i class="fa-solid fa-spinner fa-spin"></i> Talya düşünüyor…
+    </div>
+    <button class="pop-cta-btn" style="width:100%;margin-top:16px;background:var(--bg2);color:var(--t2);" onclick="closeTalyaModal()">Kapat</button>
+  `);
+  inp.value = '';
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    const answerBox = document.getElementById('talya-ask-answer');
+    if (!answerBox) return; // kullanıcı pencereyi kapattıysa
+    if (!res.ok) {
+      answerBox.innerHTML = `<span style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> ${data.error || 'Bir hata oluştu.'}</span>`;
+      return;
+    }
+    answerBox.innerHTML = fmtAI(data.reply || 'Bir cevap alınamadı, tekrar deneyin.');
+  } catch (e) {
+    const answerBox = document.getElementById('talya-ask-answer');
+    if (answerBox) answerBox.innerHTML = `<span style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Bağlantı hatası. Lütfen tekrar deneyin.</span>`;
+  }
+}
+
 function autoH(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
 // Bir tarihi gösterirken, eğer anlamlı bir saat bilgisi varsa (tam gece
@@ -782,14 +817,35 @@ async function renderGelirGiderOzet() {
           }
 
           if (key === 'muvekkil') {
+            const aktif = stats.muvekkil?.aktif ?? 0;
+            const aday = stats.muvekkil?.aday ?? 0;
+            const arsiv = stats.muvekkil?.arsiv ?? 0;
+            const total = Math.max(aktif + aday + arsiv, 1);
+            const circumference = 2 * Math.PI * 26;
+            const aktifLen = (aktif / total) * circumference;
+            const adayLen = (aday / total) * circumference;
+            const adayOffset = -aktifLen;
+            const arsivLen = (arsiv / total) * circumference;
+            const arsivOffset = -(aktifLen + adayLen);
             return `
               <div style="position:relative;background:var(--accent-bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);"></div>
-                <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
+                <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">
                   <i class="fa-solid fa-users"></i> Toplam Müvekkil
                 </div>
-                <div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1;color:var(--gold);">
-                  ${stats.muvekkil?.total ?? 0}
+                <div style="position:relative;width:70px;height:70px;margin-bottom:8px;">
+                  <svg width="70" height="70" viewBox="0 0 70 70" style="transform:rotate(-90deg);">
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--border)" stroke-width="8"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--gold)" stroke-width="8" stroke-dasharray="${aktifLen} ${circumference}"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--purple)" stroke-width="8" stroke-dasharray="${adayLen} ${circumference}" stroke-dashoffset="${adayOffset}"></circle>
+                    <circle cx="35" cy="35" r="26" fill="none" stroke="var(--t3)" stroke-width="8" stroke-dasharray="${arsivLen} ${circumference}" stroke-dashoffset="${arsivOffset}"></circle>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--t0);">${aktif + aday + arsiv}</div>
+                </div>
+                <div style="display:flex;gap:8px;font-size:9.5px;flex-wrap:wrap;justify-content:center;">
+                  <span style="color:var(--gold);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-right:3px;"></span>${aktif} Aktif</span>
+                  <span style="color:var(--purple);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--purple);margin-right:3px;"></span>${aday} Aday</span>
+                  <span style="color:var(--t3);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--t3);margin-right:3px;"></span>${arsiv} Arşiv</span>
                 </div>
               </div>
             `;
