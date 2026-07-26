@@ -177,7 +177,11 @@ export default function DashboardShellClient({ children }: { children: React.Rea
       }
 
       if (typeof (window as any).talyaInitPage === "function") {
-        (window as any).talyaInitPage();
+        try {
+          await (window as any).talyaInitPage();
+        } catch (e) {
+          console.error("talyaInitPage sırasında hata (SPA içerik yükleme):", e);
+        }
       }
 
       loadedPath.current = pathname;

@@ -1367,10 +1367,10 @@ document.addEventListener('keydown', e => {
 // menü) bir modülden diğerine geçildiğinde her seferinde TEKRAR çağrılır
 // — çünkü içerik alanı yenilendiğinde (popBody, detailPane vb. yeniden
 // oluştuğunda) verinin yeniden çekilip ekrana basılması gerekir.
-window.talyaInitPage = function () {
+window.talyaInitPage = async function () {
   cmdkItems = window.CMDK_INDEX || [];
   if (window.CURRENT_MODULE) {
-    initModulePage();
+    await initModulePage();
   } else {
     runCountUp();
     renderDashDeadlines();
