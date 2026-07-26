@@ -11,6 +11,12 @@ import OnboardingScreen from "@/components/OnboardingScreen";
 // güncellenir. Diğer modüller (Belge & Analiz, Arabuluculuk vb.) henüz
 // bu yapıya taşınmadı — onlar eskisi gibi, kendi tam sayfalarıyla
 // çalışmaya devam ediyor (bkz. openModule'daki MIGRATED_PATHS kontrolü).
+//
+// ÖNEMLİ TASARIM KURALI: içerik yükleme yalnızca TEK BİR yerden
+// (aşağıdaki tek useEffect) tetiklenir — hem ilk yükleme hem sonraki
+// sayfa değişimleri AYNI koddan geçer. İki ayrı "ilk yükleme" ve
+// "sayfa değişti" effect'i birbirine YARIŞ DURUMU (race condition)
+// yaratıyordu; bu yüzden birleştirildi.
 
 const MIGRATED_PATHS = ["/dashboard", "/dashboard/buro"];
 
@@ -41,15 +47,22 @@ export default function DashboardShellClient({ children }: { children: React.Rea
   const router = useRouter();
   const pathname = usePathname();
   const shellRef = useRef<HTMLDivElement>(null);
-  const shellMounted = useRef(false);
-  const currentContentPath = useRef<string | null>(null);
 
-  // Ana Sayfa'ya (/dashboard) özel: kullanıcının hiç workspace'i yoksa
-  // (ilk kayıt sonrası), kalıcı çerçeveyi hiç göstermeden onboarding
-  // ekranını göster — eski page.tsx'teki kontrolün AYNISI, sadece yeri
-  // değişti.
+  // "shellReady" — kabuk (topbar+sidebar) DOM'a yerleşip script'ler
+  // yüklendikten sonra true olur. İçerik yükleme, bu true olmadan HİÇ
+  // başlamaz — böylece "kabuk henüz hazır değilken içerik yüklemeye
+  // çalışma" yarışı tamamen ortadan kalkar.
+  const [shellReady, setShellReady] = useState(false);
+  const shellSetupStarted = useRef(false);
+  const loadingPath = useRef<string | null>(null); // o an YÜKLENMEKTE olan yol (çakışan çağrıları engellemek için)
+  const loadedPath = useRef<string | null>(null); // en son BAŞARIYLA yüklenmiş yol
+
   const [checkingWorkspace, setCheckingWorkspace] = useState(pathname === "/dashboard");
   const [hasWorkspace, setHasWorkspace] = useState(true);
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/login");
+  }, [status, router]);
 
   useEffect(() => {
     if (pathname !== "/dashboard") { setCheckingWorkspace(false); return; }
@@ -59,14 +72,10 @@ export default function DashboardShellClient({ children }: { children: React.Rea
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  // ── ADIM 1: Kabuğu (topbar+sidebar) BİR KEZ kur ──
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-  }, [status, router]);
-
-  // ── Kabuk (topbar + sidebar) BİR KEZ yüklenir ──
-  useEffect(() => {
-    if (status !== "authenticated" || shellMounted.current || !shellRef.current) return;
-    shellMounted.current = true;
+    if (status !== "authenticated" || shellSetupStarted.current || !shellRef.current || checkingWorkspace || !hasWorkspace) return;
+    shellSetupStarted.current = true;
 
     (async () => {
       const res = await fetch("/dashboard-shell.html");
@@ -89,9 +98,6 @@ export default function DashboardShellClient({ children }: { children: React.Rea
         pill.parentElement?.insertBefore(adminLink, pill.nextSibling);
       }
 
-      // Diğer sayfalar tam yenilemeyle (window.location.href) gitmeye
-      // devam etsin, ama BU iki sayfa arasında SPA (yenilemesiz) geçiş
-      // yapılsın.
       (window as any).__talyaMigratedPaths = MIGRATED_PATHS;
       (window as any).__talyaSpaNav = (path: string, openParam: string | null) => {
         const url = openParam ? `${path}?open=${openParam}` : path;
@@ -100,73 +106,63 @@ export default function DashboardShellClient({ children }: { children: React.Rea
 
       await loadScriptOnce("/modules-index.js");
       await loadScriptOnce("/cmdk-index.js");
-      // Bu bayrak, engine.js'in kendi kendine (henüz içerik hazır
-      // olmadan) çalışmasını engeller — talyaInitPage'i BİZ, doğru
-      // zamanda (loadContentFor içinde) çağıracağız.
       (window as any).__talyaSpaMode = true;
       await loadScriptOnce("/engine.js");
 
-      // İlk yüklemede, o an bulunulan sayfanın içeriğini yükle.
-      await loadContentFor(window.location.pathname, new URLSearchParams(window.location.search).get("open"));
+      setShellReady(true); // içerik yükleme artık başlayabilir
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
+  }, [status, checkingWorkspace, hasWorkspace]);
 
-  // ── Sayfa (pathname) değiştikçe SADECE içerik alanını güncelle ──
+  // ── ADIM 2: Kabuk hazır olduktan SONRA, o an hangi sayfadaysak
+  // (ilk yükleme DAHİL) ya da sayfa her değiştiğinde, İÇERİĞİ yükle.
+  // Bu, TEK ve YEGÂNE içerik yükleme tetikleyicisidir. ──
   useEffect(() => {
-    if (!shellMounted.current) return; // kabuk henüz kurulmadıysa, yukarıdaki ilk yükleme zaten halledecek
-    if (!pathname || !MIGRATED_PATHS.includes(pathname)) return;
-    if (currentContentPath.current === pathname) return;
-    loadContentFor(pathname, new URLSearchParams(window.location.search).get("open"));
+    if (!shellReady || !pathname || !MIGRATED_PATHS.includes(pathname)) return;
+    if (loadingPath.current === pathname || loadedPath.current === pathname) return;
+    loadingPath.current = pathname;
+
+    (async () => {
+      const cfg = CONTENT_MAP[pathname];
+      if (!cfg) { loadingPath.current = null; return; }
+
+      const slot = document.getElementById("talyaContentSlot");
+      if (!slot) { loadingPath.current = null; return; }
+
+      const res = await fetch(cfg.contentUrl);
+      const html = await res.text();
+      slot.innerHTML = html;
+
+      if (pathname === "/dashboard") {
+        (window as any).CURRENT_MODULE = null;
+        const sbLabel = document.getElementById("sidebarLabel");
+        if (sbLabel) sbLabel.innerHTML = "TALYA HUKUK";
+        const sbName = document.getElementById("sidebarName");
+        if (sbName) sbName.innerHTML = "Tüm Araçlar";
+        const breadcrumbSep = document.getElementById("appBreadcrumbSep");
+        if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "none";
+        const modName = document.getElementById("appModuleName");
+        if (modName) modName.innerHTML = "";
+        const itemName = document.getElementById("appItemName");
+        if (itemName) itemName.innerHTML = "";
+      } else {
+        const breadcrumbSep = document.getElementById("appBreadcrumbSep");
+        if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "";
+      }
+
+      for (const src of cfg.scripts) {
+        await loadScriptOnce(src);
+      }
+
+      if (typeof (window as any).talyaInitPage === "function") {
+        (window as any).talyaInitPage();
+      }
+
+      loadedPath.current = pathname;
+      loadingPath.current = null;
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  async function loadContentFor(path: string, openParam: string | null) {
-    const cfg = CONTENT_MAP[path];
-    if (!cfg) return;
-    currentContentPath.current = path;
-
-    const slot = document.getElementById("talyaContentSlot");
-    if (!slot) return;
-    slot.innerHTML = "";
-
-    const res = await fetch(cfg.contentUrl);
-    const html = await res.text();
-    slot.innerHTML = html;
-
-    // Ana Sayfa'ya dönüldüyse, önceki modülün CURRENT_MODULE'ü hâlâ
-    // bellekte kalmış olabilir — temizle ki sidebar/talyaInitPage
-    // "hâlâ o modüldeymişiz" gibi davranmasın. Sidebar başlığını ve üst
-    // çubuktaki breadcrumb'ı da varsayılana döndür.
-    if (path === "/dashboard") {
-      (window as any).CURRENT_MODULE = null;
-      const sbLabel = document.getElementById("sidebarLabel");
-      if (sbLabel) sbLabel.innerHTML = "TALYA HUKUK";
-      const sbName = document.getElementById("sidebarName");
-      if (sbName) sbName.innerHTML = "Tüm Araçlar";
-      const breadcrumbSep = document.getElementById("appBreadcrumbSep");
-      if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "none";
-      const modName = document.getElementById("appModuleName");
-      if (modName) modName.innerHTML = "";
-      const itemName = document.getElementById("appItemName");
-      if (itemName) itemName.innerHTML = "";
-    } else {
-      const breadcrumbSep = document.getElementById("appBreadcrumbSep");
-      if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "";
-    }
-
-    for (const src of cfg.scripts) {
-      await loadScriptOnce(src);
-    }
-
-    // ?open=... varsa, modül scripti bunu kendi initModulePage'i
-    // içinde zaten okuyor (URLSearchParams ile) — sadece emin olmak
-    // için query'yi güncelliyoruz (SPA nav sırasında history zaten
-    // router.push ile güncellendi).
-    if (typeof (window as any).talyaInitPage === "function") {
-      (window as any).talyaInitPage();
-    }
-  }
+  }, [shellReady, pathname]);
 
   if (status !== "authenticated" || checkingWorkspace) {
     return (
@@ -184,8 +180,8 @@ export default function DashboardShellClient({ children }: { children: React.Rea
     <>
       <link rel="stylesheet" href="/talya-original.css" />
       <div ref={shellRef} style={{ height: "100vh" }} />
-      {/* children render edilmiyor — içerik, loadContentFor ile doğrudan
-          #talyaContentSlot'a yazılıyor. Bu prop sadece Next.js'in route
+      {/* children render edilmiyor — içerik, yukarıdaki effect ile
+          doğrudan #talyaContentSlot'a yazılıyor. Next.js'in route
           eşleşmesi için burada tutuluyor. */}
       <div style={{ display: "none" }}>{children}</div>
     </>
