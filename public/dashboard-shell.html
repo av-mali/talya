@@ -47,8 +47,15 @@
       </div>
       <span class="status-pill live"><i class="fa-solid fa-circle fa-xs"></i> Talya AI Aktif</span>
       <span class="status-pill sec"><i class="fa-solid fa-shield-halved"></i> KVKK Güvenli</span>
-      <div id="userEmailPill" style="font-size:11px;color:var(--t3);margin-left:6px;"></div>
-      <div class="nav-pill always-show" style="cursor:pointer;" onclick="window.talyaSignOut ? window.talyaSignOut() : window.location.href='/'">Çıkış Yap</div>
+      <div class="user-menu-wrap" style="position:relative;">
+        <div id="userEmailPill" style="font-size:11px;color:var(--t2);margin-left:6px;cursor:pointer;display:flex;align-items:center;gap:5px;" onclick="toggleUserMenu(event)"></div>
+        <div id="userMenuDropdown" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.12);min-width:180px;z-index:300;overflow:hidden;">
+          <div onclick="openModule('uyelik');closeUserMenu();" style="padding:10px 14px;font-size:12.5px;color:var(--t1);cursor:pointer;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-user-circle" style="width:14px;color:var(--t3);"></i> Üyelik & Hesap</div>
+          <div id="userMenuAdminLink" style="display:none;padding:10px 14px;font-size:12.5px;color:var(--t1);cursor:pointer;align-items:center;gap:8px;"><i class="fa-solid fa-shield-halved" style="width:14px;color:var(--t3);"></i> Yönetici Paneli</div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div onclick="window.talyaSignOut ? window.talyaSignOut() : window.location.href='/'" style="padding:10px 14px;font-size:12.5px;color:var(--danger);cursor:pointer;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-arrow-right-from-bracket" style="width:14px;"></i> Çıkış Yap</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -58,6 +65,7 @@
       <div class="sidebar-head">
         <div class="sidebar-mod-label" id="sidebarLabel">TALYA HUKUK</div>
         <div class="sidebar-mod-name" id="sidebarName">Tüm Araçlar</div>
+        <div id="sidebarTagline" style="font-size:9.5px;color:var(--t3);margin-top:2px;letter-spacing:.01em;">Yapay Zeka Destekli Hukuk Platformu</div>
       </div>
       <div class="s-nav" id="sidebarNav"></div>
     </div>

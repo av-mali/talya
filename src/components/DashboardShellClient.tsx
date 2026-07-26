@@ -111,18 +111,19 @@ export default function DashboardShellClient({ children }: { children: React.Rea
       shellRef.current.innerHTML = html;
 
       const pill = document.getElementById("userEmailPill");
-      if (pill) pill.textContent = session?.user?.name?.trim() || session?.user?.email || "";
+      if (pill) {
+        const name = session?.user?.name?.trim() || session?.user?.email || "";
+        pill.innerHTML = `${name} <i class="fa-solid fa-chevron-down" style="font-size:8px;opacity:.6;"></i>`;
+      }
 
       (window as any).talyaSignOut = () => signOut({ callbackUrl: "/" });
 
-      if (pill && (session?.user as any)?.isAdmin) {
-        const adminLink = document.createElement("a");
-        adminLink.href = "/admin";
-        adminLink.textContent = "Yönetici Paneli";
-        adminLink.className = "nav-pill";
-        adminLink.style.cssText =
-          "font-size:11px;color:var(--gold);margin-left:6px;text-decoration:none;cursor:pointer;white-space:nowrap;";
-        pill.parentElement?.insertBefore(adminLink, pill.nextSibling);
+      if ((session?.user as any)?.isAdmin) {
+        const adminLink = document.getElementById("userMenuAdminLink");
+        if (adminLink) {
+          adminLink.style.display = "flex";
+          adminLink.onclick = () => { window.location.href = "/admin"; };
+        }
       }
 
       (window as any).__talyaMigratedPaths = MIGRATED_PATHS;
@@ -172,6 +173,8 @@ export default function DashboardShellClient({ children }: { children: React.Rea
         if (sbLabel) sbLabel.innerHTML = "TALYA HUKUK";
         const sbName = document.getElementById("sidebarName");
         if (sbName) sbName.innerHTML = "Tüm Araçlar";
+        const tagline = document.getElementById("sidebarTagline");
+        if (tagline) (tagline as HTMLElement).style.display = "";
         const breadcrumbSep = document.getElementById("appBreadcrumbSep");
         if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "none";
         const modName = document.getElementById("appModuleName");
@@ -195,6 +198,8 @@ export default function DashboardShellClient({ children }: { children: React.Rea
       } else {
         const breadcrumbSep = document.getElementById("appBreadcrumbSep");
         if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "";
+        const tagline = document.getElementById("sidebarTagline");
+        if (tagline) (tagline as HTMLElement).style.display = "none";
       }
 
       for (const src of cfg.scripts) {

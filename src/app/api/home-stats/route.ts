@@ -11,16 +11,21 @@ export async function GET() {
 
   const result: Record<string, any> = {};
 
-  const [aktifCount, adayCount, arsivCount, openCases, closedCases, canSeeGelirGider] = await Promise.all([
+  const ayBasi = new Date();
+  ayBasi.setDate(1);
+  ayBasi.setHours(0, 0, 0, 0);
+
+  const [aktifCount, adayCount, arsivCount, openCases, closedCases, canSeeGelirGider, yeniBuAy] = await Promise.all([
     prisma.client.count({ where: { workspaceId: ws.workspaceId, archived: false, isAday: false } }),
     prisma.client.count({ where: { workspaceId: ws.workspaceId, isAday: true } }),
     prisma.client.count({ where: { workspaceId: ws.workspaceId, archived: true, isAday: false } }),
     prisma.case.count({ where: { client: { workspaceId: ws.workspaceId }, status: "acik" } }),
     prisma.case.count({ where: { client: { workspaceId: ws.workspaceId }, status: "kapali" } }),
     hasToolAccess(ws.userId, "gelirgider"),
+    prisma.client.count({ where: { workspaceId: ws.workspaceId, createdAt: { gte: ayBasi } } }),
   ]);
 
-  result.muvekkil = { total: aktifCount + adayCount + arsivCount, aktif: aktifCount, aday: adayCount, arsiv: arsivCount };
+  result.muvekkil = { total: aktifCount + adayCount + arsivCount, aktif: aktifCount, aday: adayCount, arsiv: arsivCount, yeniBuAy };
   result.dosya = { open: openCases, closed: closedCases };
 
   if (canSeeGelirGider) {

@@ -157,7 +157,10 @@ async function renderAppSidebar() {
       <div class="s-item" style="font-weight:600;cursor:pointer;margin-top:4px;border-radius:var(--r);${isCurrent ? `color:${modColor};background:${modColorLo};box-shadow:0 0 0 1px ${modColorLo}, 0 2px 10px -2px ${modColorLo};` : ''}" onclick="toggleSidebarGroup('${mod.key}')">
         <span class="ico"><i class="fa-solid ${modIcon}" style="color:${modColor};"></i></span>
         ${mod.label}
-        <span style="margin-left:auto;"><i class="fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:9px;opacity:.5;"></i></span>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+          ${!isOpen ? `<span style="font-size:10px;color:var(--t3);font-weight:400;">${mod.items.length} araç</span>` : ''}
+          <i class="fa-solid ${isOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" style="font-size:9px;opacity:.5;"></i>
+        </span>
       </div>`;
     let children = '';
     if (isOpen) {
@@ -200,6 +203,24 @@ function handleSidebarItemClick(modKey, itemId) {
   } else {
     openModule(modKey + '?open=' + itemId);
   }
+}
+
+function toggleUserMenu(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('userMenuDropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display === 'block';
+  dd.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    document.addEventListener('click', closeUserMenuOnOutsideClick, { once: true });
+  }
+}
+function closeUserMenu() {
+  const dd = document.getElementById('userMenuDropdown');
+  if (dd) dd.style.display = 'none';
+}
+function closeUserMenuOnOutsideClick() {
+  closeUserMenu();
 }
 
 function toggleSidebarGroup(key) {
@@ -907,6 +928,7 @@ async function renderGelirGiderOzet() {
                   <span style="color:var(--amber);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:3px;"></span>${aday} Aday</span>
                   <span style="color:var(--t3);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--t3);margin-right:3px;"></span>${arsiv} Arşiv</span>
                 </div>
+                ${stats.muvekkil?.yeniBuAy > 0 ? `<div style="font-size:9.5px;color:var(--success);margin-top:4px;">+${stats.muvekkil.yeniBuAy} bu ay</div>` : ''}
               </div>
             `;
           }
