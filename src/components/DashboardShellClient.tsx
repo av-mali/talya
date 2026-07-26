@@ -178,6 +178,20 @@ export default function DashboardShellClient({ children }: { children: React.Rea
         if (modName) modName.innerHTML = "";
         const itemName = document.getElementById("appItemName");
         if (itemName) itemName.innerHTML = "";
+
+        // Ana sayfadaki karşılama satırı — "Merhaba, X — Bugün günlerden…"
+        // Bu daha önce (SPA'ya geçmeden önce) TalyaShell'de dolduruluyordu;
+        // artık burada, ana sayfa içeriği her yüklendiğinde dolduruluyor.
+        const greeting = document.getElementById("home-greeting");
+        if (greeting) {
+          const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+          const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+          const now = new Date();
+          const saat = now.getHours();
+          const selamlama = saat < 6 ? "İyi geceler" : saat < 12 ? "Günaydın" : saat < 18 ? "İyi günler" : "İyi akşamlar";
+          const ilkAd = (session?.user?.name?.trim() || "").split(" ")[0];
+          greeting.textContent = `${ilkAd ? selamlama + ", " + ilkAd + " — " : ""}Bugün günlerden ${now.getDate()} ${AYLAR[now.getMonth()]} ${GUNLER[now.getDay()]}`;
+        }
       } else {
         const breadcrumbSep = document.getElementById("appBreadcrumbSep");
         if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "";
