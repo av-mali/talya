@@ -40,10 +40,11 @@ window.CURRENT_MODULE = {
       prompt: () => ''
     },
     emsal: {
-      badge: 'g', badgeText: 'Yargıtay · BAM Kararları', titleHtml: 'Emsal Karar <em class="g">Analizi</em>',
-      desc: 'Uyuşmazlığı tanımlayın; benzer davalardaki kararlar AI ile analiz edilsin.',
+      badge: 'g', badgeText: 'AI Destekli · Doğrulayın', titleHtml: 'Emsal Karar <em class="g">Analizi</em>',
+      desc: 'Uyuşmazlığı tanımlayın; AI benzer davalardaki olası kararları analiz etsin. Sonuçları mutlaka orijinal kaynaktan doğrulayın.',
       btnClass: 'g', btnIco: 'fa-magnifying-glass', btnLbl: 'Emsal Karar Ara',
       body: `
+        <div class="ic" style="margin-bottom:14px;"><div class="ic-t"><i class="fa-solid fa-triangle-exclamation"></i> Önemli</div><p>Bu araç canlı bir Yargıtay veritabanı taraması yapmaz — AI'ın genel bilgisine dayanır. Verilen karar numaralarını/içtihatları <strong>mutlaka</strong> resmi kaynaktan (UYAP, Yargıtay Karar Arama) doğrulayın.</p></div>
         <div class="fg"><div class="fl"><i class="fa-solid fa-gavel"></i> Uyuşmazlık Konusu</div><div class="sw"><select id="f-konu"><option>İş Hukuku</option><option>Aile Hukuku</option><option>Ticaret Hukuku</option><option>Ceza Hukuku</option><option>İdare Hukuku</option></select></div></div>
         <div class="fg"><div class="fl"><i class="fa-solid fa-align-left"></i> Hukuki Mesele</div><textarea id="f-mesele" rows="4" placeholder="Emsal aranan hukuki meseleyi özetleyin…"></textarea></div>`,
       prompt: () => `${document.getElementById('f-konu')?.value || ''} alanında şu konuda Yargıtay ve BAM emsal kararlarını ara ve analiz et:\n${document.getElementById('f-mesele')?.value || ''}`

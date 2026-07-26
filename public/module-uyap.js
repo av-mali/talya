@@ -18,34 +18,34 @@ window.CURRENT_MODULE = {
     prompt: () => ''
   },
   'uyap-dilekce':{
-    badge:'t', badgeText:'UYAP · PDF/A · e-İmza', titleHtml:'UYAP Dilekçe <em class="t">Gönder</em>',
-    desc:'Dilekçenizi UYAP uyumlu formata hazırlayın.',
-    btnClass:'t', btnIco:'fa-upload', btnLbl:"UYAP'a Hazırla",
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-building-columns"></i> Hedef Mahkeme</div><input type="text" id="f-uyapmah" placeholder="İstanbul 3. İş Mahkemesi…"></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-hashtag"></i> Esas No</div><input type="text" id="f-uyapno" placeholder="2024/____"></div>
-      <div class="cl"><div class="cl-head"><i class="fa-solid fa-circle-check"></i> UYAP Kontrol</div>
-        <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>PDF/A-1b formatına dönüştürülür</span></div>
-        <div class="cl-item"><div class="cl-dot"><i class="fa-solid fa-check"></i></div><span>e-İmza alanı hazırlanır</span></div>
-      </div>`,
-    prompt: ()=>`UYAP için dilekçe hazırlık kontrol listesi oluştur. Hedef mahkeme: ${document.getElementById('f-uyapmah')?.value||''}. Esas no: ${document.getElementById('f-uyapno')?.value||''}. PDF/A uyumluluk adımlarını ve e-imza gerekliliklerini açıkla.`
+    badge:'t', badgeText:'Yapım Aşamasında', titleHtml:'UYAP Dilekçe <em class="t">Gönder</em>',
+    desc:'Bu araç henüz gerçek bir UYAP bağlantısına sahip değil.',
+    btnClass:'t', btnIco:'fa-upload', btnLbl:'', hideCta: true, hideChatInput: true,
+    body:`<div class="ic"><div class="ic-t"><i class="fa-solid fa-hammer"></i> Yapım Aşamasında</div>
+      <p>UYAP'a doğrudan dilekçe gönderme özelliği, resmi bir UYAP entegrasyonu gerektiriyor ve şu an geliştirme sürecinde. Bu özellik hazır olduğunda burada aktif olacak.</p>
+      <p style="margin-top:8px;">Şimdilik dilekçenizi <strong>Dilekçe Sihirbazı</strong>'ndan hazırlayıp, UYAP Avukat Portalı'ndan elle gönderebilirsiniz.</p></div>`,
+    onOpen: () => {},
+    prompt: () => ''
   },
   'uyap-dosya':{
-    badge:'t', badgeText:'UYAP · Gerçek Zamanlı', titleHtml:'UYAP Dosya <em class="t">Sorgula</em>',
-    desc:'Esas numarasıyla dosya sorgulayın.',
-    btnClass:'t', btnIco:'fa-magnifying-glass', btnLbl:'Dosyayı Sorgula',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-hashtag"></i> Esas Numarası</div><input type="text" id="f-dsorg" placeholder="2024/12345"></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-building-columns"></i> Mahkeme Türü</div><div class="sw"><select id="f-dsorgtip"><option>İş Mahkemesi</option><option>Asliye Hukuk</option><option>Aile Mahkemesi</option><option>Ceza Mahkemesi</option></select></div></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-location-dot"></i> İl</div><input type="text" id="f-dsorgil" placeholder="İstanbul…"></div>`,
-    prompt: ()=>`UYAP ${document.getElementById('f-dsorgtip')?.value||''} dosya sorgulama. Esas no: ${document.getElementById('f-dsorg')?.value||''}, il: ${document.getElementById('f-dsorgil')?.value||''}. Son celse, duruşma tarihi, karar durumu ve yapılması gerekenler hakkında özet ver.`
+    badge:'t', badgeText:'Yapım Aşamasında', titleHtml:'UYAP Dosya <em class="t">Sorgula</em>',
+    desc:'Bu araç henüz gerçek bir UYAP bağlantısına sahip değil.',
+    btnClass:'t', btnIco:'fa-magnifying-glass', btnLbl:'', hideCta: true, hideChatInput: true,
+    body:`<div class="ic"><div class="ic-t"><i class="fa-solid fa-hammer"></i> Yapım Aşamasında</div>
+      <p>Dosya sorgulama, UYAP'ın gerçek zamanlı verisine erişim gerektiriyor ve şu an geliştirme sürecinde. Bu özellik hazır olduğunda burada aktif olacak.</p>
+      <p style="margin-top:8px;">Şimdilik dosya durumunu doğrudan UYAP Avukat Portalı'ndan kontrol edebilirsiniz.</p></div>`,
+    onOpen: () => {},
+    prompt: () => ''
   },
   'uyap-tebligat':{
-    badge:'t', badgeText:'Elektronik Tebligat', titleHtml:'Tebligat <em class="t">Takip</em>',
-    desc:'Elektronik tebligatları takip edin.',
-    btnClass:'t', btnIco:'fa-inbox', btnLbl:'Tebligatları Getir',
-    body:`<div class="fg"><div class="fl"><i class="fa-solid fa-user"></i> Baro Sicil No</div><input type="text" id="f-tbsicil" placeholder="Sicil numaranız…"></div>
-      <div class="fg"><div class="fl"><i class="fa-solid fa-filter"></i> Filtre</div><div class="sw"><select id="f-tbfil"><option>Tüm tebligatlar</option><option>Okunmamış</option><option>Son 7 gün</option><option>Son 30 gün</option></select></div></div>
-      <div class="ic"><div class="ic-t"><i class="fa-solid fa-robot"></i> Akıllı Bağlama</div><p>Tebligat tarihi Süre & Takvim modülüne otomatik aktarılır.</p></div>`,
-    prompt: ()=>`Sicil no ${document.getElementById('f-tbsicil')?.value||''} için UYAP elektronik tebligatları listele. Filtre: ${document.getElementById('f-tbfil')?.value||''}. Her tebligat için süre hesabı yap.`
+    badge:'t', badgeText:'Yapım Aşamasında', titleHtml:'Tebligat <em class="t">Takip</em>',
+    desc:'Bu araç henüz gerçek bir UETS/UYAP bağlantısına sahip değil.',
+    btnClass:'t', btnIco:'fa-inbox', btnLbl:'', hideCta: true, hideChatInput: true,
+    body:`<div class="ic"><div class="ic-t"><i class="fa-solid fa-hammer"></i> Yapım Aşamasında</div>
+      <p>Elektronik tebligat takibi, UETS'e resmi bir bağlantı gerektiriyor ve şu an geliştirme sürecinde. Bu özellik hazır olduğunda burada aktif olacak.</p>
+      <p style="margin-top:8px;">Şimdilik tebligatlarınızı e-Devlet/UETS üzerinden takip edip, tarihini <strong>Süre & Takvim</strong>'e elle ekleyebilirsiniz.</p></div>`,
+    onOpen: () => {},
+    prompt: () => ''
   },
   'uyap-harc':{
     badge:'t', badgeText:'492 Sayılı Harçlar K. · 2026', titleHtml:'Harç <em class="t">Hesapla</em>',
@@ -113,7 +113,8 @@ function extRender(token, batches) {
 
 async function extGenerate() {
   if (document.getElementById('ext-token-val')) {
-    if (!confirm('Yeni anahtar oluşturulursa eski anahtar geçersiz olur, eklentiyi yeniden eşleştirmen gerekir. Devam edilsin mi?')) return;
+    const ok = await talyaConfirm('Yeni anahtar oluşturulursa <strong>eski anahtar geçersiz olur</strong>, eklentiyi yeniden eşleştirmen gerekir. Devam edilsin mi?', 'Evet, Yenile', 'danger');
+    if (!ok) return;
   }
   const res = await fetch('/api/sync-token', { method: 'POST' });
   const data = await res.json();
