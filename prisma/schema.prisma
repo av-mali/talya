@@ -23,6 +23,7 @@ model User {
   approved     Boolean   @default(true)
   suspended    Boolean   @default(false) // yönetici tarafından geçici olarak girişi engellenmiş mi (ör. ödeme yapılmadı)
   isAdmin      Boolean   @default(false)
+  isDemo       Boolean   @default(false) // true ise: bu bir demo hesabı — hiçbir yazma/AI işlemi yapamaz, sadece gezinebilir
   notifPrefs   Json?
   kvkkChecklist Json?
   homeStatsPrefs Json?

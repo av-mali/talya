@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const FEATURES = [
   { icon: "fa-file-lines", title: "Belge & Analiz", desc: "Dosya analizi, dilekçe sihirbazı, mevzuat arama — gerçek zamanlı AI desteğiyle.", color: "var(--purple)" },
@@ -57,6 +59,26 @@ const PLANS = [
 
 export default function LandingPage() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  // Kayıt olmadan, sabit bir demo hesabına anında giriş yapar. Bu hesap
+  // sadece gezinmeye izin verir — hiçbir kayıt/silme/AI işlemi yapamaz
+  // (bkz. /src/middleware.ts).
+  async function handleDemoLogin() {
+    setDemoLoading(true);
+    const res = await signIn("credentials", {
+      email: "demo@talyahukuk.com",
+      password: "talya-demo-2026",
+      redirect: false,
+    });
+    setDemoLoading(false);
+    if (res?.ok) {
+      router.push("/dashboard");
+    } else {
+      alert("Demo hesabına şu an ulaşılamıyor, lütfen daha sonra tekrar deneyin.");
+    }
+  }
 
   useEffect(() => {
     const els = rootRef.current?.querySelectorAll(".reveal");
@@ -131,10 +153,13 @@ export default function LandingPage() {
               Dilekçe yazımından müvekkil takibine, mevzuat aramasından gelir-gidere —
               Talya, gerçek AI desteğiyle avukatların günlük işini hızlandırır.
             </div>
-            <div style={{ marginTop: 24, display: "flex", gap: 10, justifyContent: "center" }}>
+            <div style={{ marginTop: 24, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
               <Link href="/register" className="nav-pill gold cta-pulse" style={{ textDecoration: "none", padding: "10px 22px", fontSize: 13 }}>
                 7 Gün Ücretsiz Dene
               </Link>
+              <button onClick={handleDemoLogin} disabled={demoLoading} className="nav-pill" style={{ padding: "10px 22px", fontSize: 13, cursor: demoLoading ? "default" : "pointer" }}>
+                <i className={`fa-solid ${demoLoading ? "fa-spinner fa-spin" : "fa-eye"}`} style={{ marginRight: 6 }}></i>{demoLoading ? "Giriliyor…" : "Kayıt Olmadan Demo'yu Gör"}
+              </button>
               <a href="#fiyatlar" className="nav-pill" style={{ textDecoration: "none", padding: "10px 22px", fontSize: 13 }}>
                 Fiyatları Gör
               </a>

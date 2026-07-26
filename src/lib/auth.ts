@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("SUSPENDED");
         }
 
-        return { id: user.id, email: user.email, name: user.name || "", isAdmin: user.isAdmin };
+        return { id: user.id, email: user.email, name: user.name || "", isAdmin: user.isAdmin, isDemo: user.isDemo };
       },
     }),
   ],
@@ -48,6 +48,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = (user as any).id;
         token.isAdmin = (user as any).isAdmin;
+        token.isDemo = (user as any).isDemo;
       }
       return token;
     },
@@ -55,6 +56,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id;
         (session.user as any).isAdmin = token.isAdmin;
+        (session.user as any).isDemo = token.isDemo;
       }
       return session;
     },
