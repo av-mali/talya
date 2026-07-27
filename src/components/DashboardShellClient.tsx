@@ -151,73 +151,84 @@ export default function DashboardShellClient({ children }: { children: React.Rea
     loadingPath.current = pathname;
 
     (async () => {
-      const cfg = CONTENT_MAP[pathname];
-      if (!cfg) { loadingPath.current = null; return; }
+      try {
+        const cfg = CONTENT_MAP[pathname];
+        if (!cfg) return;
 
-      const slot = document.getElementById("talyaContentSlot");
-      if (!slot) { loadingPath.current = null; return; }
+        const slot = document.getElementById("talyaContentSlot");
+        if (!slot) return;
 
-      const res = await fetch(cfg.contentUrl, { cache: "no-store" });
-      const html = await res.text();
-      slot.innerHTML = html;
+        const res = await fetch(cfg.contentUrl, { cache: "no-store" });
+        const html = await res.text();
+        slot.innerHTML = html;
 
-      if (pathname === "/dashboard") {
-        // Ayrılmadan önce, o an aktif olan modülün config'ini kaydet —
-        // ileride o modüle geri dönülünce script YENİDEN ÇALIŞMAYACAĞI
-        // için bu değeri elle geri yükleyeceğiz.
-        if ((window as any).CURRENT_MODULE) {
-          moduleConfigCache.current[loadedPath.current || ""] = (window as any).CURRENT_MODULE;
+        if (pathname === "/dashboard") {
+          // Ayrılmadan önce, o an aktif olan modülün config'ini kaydet —
+          // ileride o modüle geri dönülünce script YENİDEN ÇALIŞMAYACAĞI
+          // için bu değeri elle geri yükleyeceğiz.
+          if ((window as any).CURRENT_MODULE) {
+            moduleConfigCache.current[loadedPath.current || ""] = (window as any).CURRENT_MODULE;
+          }
+          (window as any).CURRENT_MODULE = null;
+          // NOT: sidebarLabel/sidebarName/sidebarTagline artık HİÇ
+          // değiştirilmiyor — sidebar başlığı her sayfada SABİT kalıyor
+          // (menünün yukarı/aşağı oynamaması için). Bkz. engine.js'teki
+          // aynı notla ilgili yorum.
+          const breadcrumbSep = document.getElementById("appBreadcrumbSep");
+          if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "none";
+          const modName = document.getElementById("appModuleName");
+          if (modName) modName.innerHTML = "";
+          const itemName = document.getElementById("appItemName");
+          if (itemName) itemName.innerHTML = "";
+
+          // Ana sayfadaki karşılama satırı — "Merhaba, X — Bugün günlerden…"
+          // Bu daha önce (SPA'ya geçmeden önce) TalyaShell'de dolduruluyordu;
+          // artık burada, ana sayfa içeriği her yüklendiğinde dolduruluyor.
+          const greeting = document.getElementById("home-greeting");
+          if (greeting) {
+            const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+            const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+            const now = new Date();
+            const saat = now.getHours();
+            const selamlama = saat < 6 ? "İyi geceler" : saat < 12 ? "Günaydın" : saat < 18 ? "İyi günler" : "İyi akşamlar";
+            const ilkAd = (session?.user?.name?.trim() || "").split(" ")[0];
+            greeting.textContent = `${ilkAd ? selamlama + ", " + ilkAd + " — " : ""}Bugün günlerden ${now.getDate()} ${AYLAR[now.getMonth()]} ${now.getFullYear()}, ${GUNLER[now.getDay()]}`;
+          }
+        } else {
+          const breadcrumbSep = document.getElementById("appBreadcrumbSep");
+          if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "";
         }
-        (window as any).CURRENT_MODULE = null;
-        // NOT: sidebarLabel/sidebarName/sidebarTagline artık HİÇ
-        // değiştirilmiyor — sidebar başlığı her sayfada SABİT kalıyor
-        // (menünün yukarı/aşağı oynamaması için). Bkz. engine.js'teki
-        // aynı notla ilgili yorum.
-        const breadcrumbSep = document.getElementById("appBreadcrumbSep");
-        if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "none";
-        const modName = document.getElementById("appModuleName");
-        if (modName) modName.innerHTML = "";
-        const itemName = document.getElementById("appItemName");
-        if (itemName) itemName.innerHTML = "";
 
-        // Ana sayfadaki karşılama satırı — "Merhaba, X — Bugün günlerden…"
-        // Bu daha önce (SPA'ya geçmeden önce) TalyaShell'de dolduruluyordu;
-        // artık burada, ana sayfa içeriği her yüklendiğinde dolduruluyor.
-        const greeting = document.getElementById("home-greeting");
-        if (greeting) {
-          const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
-          const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
-          const now = new Date();
-          const saat = now.getHours();
-          const selamlama = saat < 6 ? "İyi geceler" : saat < 12 ? "Günaydın" : saat < 18 ? "İyi günler" : "İyi akşamlar";
-          const ilkAd = (session?.user?.name?.trim() || "").split(" ")[0];
-          greeting.textContent = `${ilkAd ? selamlama + ", " + ilkAd + " — " : ""}Bugün günlerden ${now.getDate()} ${AYLAR[now.getMonth()]} ${now.getFullYear()}, ${GUNLER[now.getDay()]}`;
+        for (const src of cfg.scripts) {
+          await loadScriptOnce(src);
         }
-      } else {
-        const breadcrumbSep = document.getElementById("appBreadcrumbSep");
-        if (breadcrumbSep) (breadcrumbSep as HTMLElement).style.display = "";
-      }
 
-      for (const src of cfg.scripts) {
-        await loadScriptOnce(src);
-      }
-
-      // Bu modüle DAHA ÖNCE girilmişse, script'i tekrar çalışmadığı için
-      // CURRENT_MODULE'ü önbellekten geri yüklüyoruz.
-      if (pathname !== "/dashboard" && !(window as any).CURRENT_MODULE && moduleConfigCache.current[pathname]) {
-        (window as any).CURRENT_MODULE = moduleConfigCache.current[pathname];
-      }
-
-      if (typeof (window as any).talyaInitPage === "function") {
-        try {
-          await (window as any).talyaInitPage();
-        } catch (e) {
-          console.error("talyaInitPage sırasında hata (SPA içerik yükleme):", e);
+        // Bu modüle DAHA ÖNCE girilmişse, script'i tekrar çalışmadığı için
+        // CURRENT_MODULE'ü önbellekten geri yüklüyoruz.
+        if (pathname !== "/dashboard" && !(window as any).CURRENT_MODULE && moduleConfigCache.current[pathname]) {
+          (window as any).CURRENT_MODULE = moduleConfigCache.current[pathname];
         }
-      }
 
-      loadedPath.current = pathname;
-      loadingPath.current = null;
+        if (typeof (window as any).talyaInitPage === "function") {
+          try {
+            await (window as any).talyaInitPage();
+          } catch (e) {
+            console.error("talyaInitPage sırasında hata (SPA içerik yükleme):", e);
+          }
+        }
+
+        loadedPath.current = pathname;
+      } catch (e) {
+        // BURASI ÇOK ÖNEMLİ: herhangi bir adımda (fetch, script yükleme
+        // vb.) beklenmeyen bir hata olursa, ESKİDEN loadingPath.current
+        // hiç sıfırlanmıyordu — bu da o modülün BİR DAHA HİÇ
+        // yüklenememesine (sürekli "yükleniyor" görünmesine) yol
+        // açıyordu. Artık ne olursa olsun (başarı ya da hata) en altta
+        // MUTLAKA sıfırlanıyor.
+        console.error("SPA içerik yükleme hatası:", pathname, e);
+      } finally {
+        loadingPath.current = null;
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shellReady, pathname]);
