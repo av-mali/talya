@@ -24,8 +24,8 @@ window.CURRENT_MODULE = {
           <div id="ar-autofill-status" style="font-size:11px;color:var(--t3);margin-top:6px;"></div>
         </div>
 
-        <div class="fg"><div class="fl">Dosya Numarası <span class="opt">(Arabuluculuk Bilgi Sistemi)</span></div><input type="text" id="ar-dosyano" placeholder="2026/1329"></div>
-        <div class="fg"><div class="fl">Büro Dosya Numarası <span class="opt">(iç takip için, opsiyonel)</span></div><input type="text" id="ar-buro-dosyano" placeholder="ör. 2026/45"></div>
+        <div class="fg"><div class="fl">Başvuru Dosya Numarası</div><input type="text" id="ar-buro-dosyano" placeholder="ör. 2026/45"></div>
+        <div class="fg"><div class="fl">Dosya Numarası</div><input type="text" id="ar-dosyano" placeholder="2026/1329"></div>
 
         <div class="fg"><div class="fl">Başvurucu Türü</div>
           <div style="display:flex;gap:6px;">
@@ -184,7 +184,7 @@ function arCaseCardHtml(c) {
          ondragstart="event.dataTransfer.setData('text/plain','${c.id}')"
          onclick="arSelectCase(${idx})"
          style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
-      <div style="font-size:12.5px;">${c.dosyaNo || 'Dosya No yok'}${c.buroDosyaNo ? ` <span style="color:var(--t3);font-weight:400;">(${c.buroDosyaNo})</span>` : ''}</div>
+      <div style="font-size:12.5px;">${c.buroDosyaNo ? c.buroDosyaNo + ' - ' : ''}${c.dosyaNo || 'Dosya No yok'}</div>
       <div style="font-size:10.5px;color:var(--t3);margin-top:2px;">${c.basvurucuAd || '?'} / ${c.uyusmazlikTuru || '?'}</div>
     </div>
   `;
@@ -285,7 +285,7 @@ async function arSelectCase(index) {
   pane.innerHTML = `
     <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="arRenderCaseList()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.dosyaNo || 'Dosya No yok'}${c.buroDosyaNo ? ` <span style="font-size:12px;color:var(--t3);font-family:'Inter',sans-serif;">— Büro Dosya No: ${c.buroDosyaNo}</span>` : ''}</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.buroDosyaNo ? c.buroDosyaNo + ' - ' : ''}${c.dosyaNo || 'Dosya No yok'}</div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${c.basvurucuAd || '?'} — ${karsiOzet}</div>
 
       <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:16px;">

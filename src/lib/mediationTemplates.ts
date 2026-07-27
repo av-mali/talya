@@ -10,17 +10,25 @@
 // bloğu üretilir.
 
 export type MediationParty = {
+  tip?: string | null; // "sahis" | "tuzel"
   ad?: string | null;
+  tcKimlik?: string | null;
   adres?: string | null;
   vergiMersis?: string | null;
   yetkiliAd?: string | null;
   vekilAd?: string | null;
+  vekilBaroSicil?: string | null;
   telefon?: string | null;
 };
 
 export type MediationCaseData = {
   dosyaNo?: string | null;
+  buroDosyaNo?: string | null;
+  basvurucuTip?: string | null; // "sahis" | "tuzel"
   basvurucuAd?: string | null;
+  basvurucuTC?: string | null;
+  basvurucuVergiMersis?: string | null;
+  basvurucuYetkiliAd?: string | null;
   basvurucuAdres?: string | null;
   basvurucuVekilAd?: string | null;
   basvurucuBaroSicil?: string | null;
@@ -77,16 +85,32 @@ function partiesList(c: MediationCaseData): MediationParty[] {
 }
 
 // Bir karşı taraf bloğu (birden fazlaysa numaralanır: "KARŞI TARAF 1" vb.)
+// NOT: Şahıs/tüzel ayrımına göre SADECE ilgili satırlar eklenir — ör.
+// şahısta "Vergi/Mersis No" satırı hiç YAZILMAZ (boş bırakılıp gösterilmez,
+// tamamen atlanır). Bu hem yanlış bilgi göstermeyi hem de gereksiz boşluk
+// satırlarını önler.
 function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): string {
   const label = total > 1 ? `KARŞI TARAF ${index + 1}` : "KARŞI TARAF";
+  const isTuzel = p.tip === "tuzel";
+  const lines = [
+    `\t${isTuzel ? "Unvanı" : "Adı ve Soyadı"}\t: ${v(p.ad)}`,
+  ];
+  if (isTuzel) {
+    lines.push(`\tVergi/Mersis/Detsis No\t: ${v(p.vergiMersis)}`);
+    if (p.yetkiliAd && p.yetkiliAd.trim()) lines.push(`\tŞirket Yetkilisi\t: ${v(p.yetkiliAd)}`);
+  } else {
+    lines.push(`\tT.C. Kimlik No\t: ${v(p.tcKimlik)}`);
+  }
+  lines.push(`\tAdres\t: ${v(p.adres)}`);
+  if (p.vekilAd && p.vekilAd.trim()) {
+    lines.push(`\tVekili\t: ${v(p.vekilAd)}`);
+    if (p.vekilBaroSicil && p.vekilBaroSicil.trim()) lines.push(`\tVekilin Baro/Sicil No\t: ${v(p.vekilBaroSicil)}`);
+  }
+  lines.push(`\tTelefon\t: ${v(p.telefon)}`);
+
   return `**__${label}__**\t\t\t
 
-\tAdı ve Soyadı\t: ${v(p.ad)}
-\tAdres\t: ${v(p.adres)}
-\tVergi/Mersis/Detsis No\t: ${v(p.vergiMersis, "")}
-\tŞirket Yetkilisi\t: ${v(p.yetkiliAd, "")}
-\tVekili\t: ${v(p.vekilAd, "")}
-\tTelefon\t: ${v(p.telefon)}
+${lines.join("\n")}
 `;
 }
 
@@ -101,10 +125,33 @@ export function buildHeaderBlock(
   const parties = partiesList(c);
   const karsiTarafBlocks = parties.map((p, i) => buildKarsiTarafBlock(p, i, parties.length)).join("\n");
 
+  // Dosya Numarası satırı: başvuru (büro) dosya no'su varsa önce o,
+  // sonra " - " ile resmi (Arabuluculuk Bilgi Sistemi) dosya no'su.
+  const dosyaNoGosterim = c.buroDosyaNo && c.buroDosyaNo.trim()
+    ? `${c.buroDosyaNo.trim()} - ${v(c.dosyaNo)}`
+    : v(c.dosyaNo);
+
+  const basvurucuTuzel = c.basvurucuTip === "tuzel";
+  const basvurucuLines = [
+    `\t${basvurucuTuzel ? "Unvanı" : "Adı Soyadı"}\t: ${v(c.basvurucuAd)}`,
+  ];
+  if (basvurucuTuzel) {
+    basvurucuLines.push(`\tVergi/Mersis No\t: ${v(c.basvurucuVergiMersis)}`);
+    if (c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()) basvurucuLines.push(`\tŞirket Yetkilisi\t: ${v(c.basvurucuYetkiliAd)}`);
+  } else {
+    basvurucuLines.push(`\tT.C. Kimlik No\t: ${v(c.basvurucuTC)}`);
+  }
+  basvurucuLines.push(`\tAdresi\t: ${v(c.basvurucuAdres)}`);
+  if (c.basvurucuVekilAd && c.basvurucuVekilAd.trim()) {
+    basvurucuLines.push(`\tVekili\t: ${v(c.basvurucuVekilAd)}`);
+    if (c.basvurucuBaroSicil && c.basvurucuBaroSicil.trim()) basvurucuLines.push(`\tBaro / Sicil Numarası\t: ${v(c.basvurucuBaroSicil)}`);
+  }
+  basvurucuLines.push(`\tTelefon\t: ${v(c.basvurucuTelefon)}`);
+
   return `**__ARABULUCULUK BÜROSU__**\t\t\t\t  
  
 \tArabuluculuk Bürosu\t: ${v(a.arabuluculukBurosu)}
- \tDosya Numarası\t: ${v(c.dosyaNo)}
+ \tDosya Numarası\t: ${dosyaNoGosterim}
 
 **__${arabulucuLabel}__**\t\t\t\t\t
 \t
@@ -116,21 +163,30 @@ export function buildHeaderBlock(
 
 **__BAŞVURUCU__**\t\t\t
 \t
-\tAdı Soyadı\t: ${v(c.basvurucuAd)}
-\tAdresi\t: ${v(c.basvurucuAdres)}
-\tVekili\t: ${v(c.basvurucuVekilAd, "")}
-\tBaro / Sicil Numarası\t: ${v(c.basvurucuBaroSicil, "")}
-\tTelefon\t: ${v(c.basvurucuTelefon)}
+${basvurucuLines.join("\n")}
 
 ${karsiTarafBlocks}
 **__ARABULUCULUK KONUSU UYUŞMAZLIK__**
  
-${v(c.uyusmazlikKonusu)}
+${buildUyusmazlikKonusuCumlesi(c)}
  
 **Arabuluculuk Bürosuna Başvuru Tarihi\t\t\t: ${v(c.basvuruTarihi)}**
 **Arabulucunun Görevlendirildiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}**
 **Tutanağının Düzenlendiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
 `;
+}
+
+// Uyuşmazlık konusu artık kullanıcının yazdığı metin OLDUĞU GİBİ
+// yapıştırılmaz — resmi bir başvuru cümlesi kalıbına yerleştirilir:
+// "Başvurucu [AD] ve vekili Av. [VEKIL] tarafından yapılan "[KONU]"
+// konulu başvurudur."
+function buildUyusmazlikKonusuCumlesi(c: MediationCaseData): string {
+  const basvurucuAd = v(c.basvurucuAd);
+  const vekilCumle = c.basvurucuVekilAd && c.basvurucuVekilAd.trim()
+    ? ` ve vekili Av. ${c.basvurucuVekilAd.trim()}`
+    : "";
+  const konu = v(c.uyusmazlikKonusu, "……………");
+  return `Başvurucu ${basvurucuAd}${vekilCumle} tarafından yapılan "${konu}" konulu başvurudur.`;
 }
 
 // İmza bloğu — Başvurucu tarafında vekil varsa vekil adı + "Başvurucu
