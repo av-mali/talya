@@ -411,8 +411,13 @@ model SupportMessage {
 model MediationCase {
   id                    String   @id @default(cuid())
   durum                 String   @default("acik") // "acik" | "kapali" — sürükle-bırakla değiştirilir
-  dosyaNo               String?
-  basvurucuAd           String?
+  dosyaNo               String?  // Arabuluculuk Bilgi Sistemi (UYAP) dosya numarası
+  buroDosyaNo           String?  // büronun kendi iç dosya numarası — UYAP numarasından ayrı, opsiyonel
+  basvurucuTip          String   @default("sahis") // "sahis" | "tuzel"
+  basvurucuAd           String?  // şahıs ise Ad Soyad, tüzel ise Unvan
+  basvurucuTC           String?  // şahıs ise TC Kimlik No
+  basvurucuVergiMersis  String?  // tüzel ise Vergi/Mersis No
+  basvurucuYetkiliAd    String?  // tüzel ise Şirket Yetkilisi
   basvurucuAdres        String?
   basvurucuVekilAd      String?
   basvurucuBaroSicil    String?
@@ -435,11 +440,14 @@ model MediationCase {
 // şirket), her karşı taraf ayrı bir satır olarak tutulur.
 model MediationParty {
   id           String   @id @default(cuid())
-  ad           String?
+  tip          String   @default("sahis") // "sahis" | "tuzel"
+  ad           String?  // şahıs ise Ad Soyad, tüzel ise Unvan
+  tcKimlik     String?  // şahıs ise TC Kimlik No
   adres        String?
   vergiMersis  String?  // tüzel kişi ise vergi/mersis no
   yetkiliAd    String?  // tüzel kişi ise şirket yetkilisi
   vekilAd      String?  // varsa vekili
+  vekilBaroSicil String? // vekilin baro/sicil numarası
   telefon      String?
   sira         Int      @default(0)
   case         MediationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)

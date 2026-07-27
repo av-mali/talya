@@ -49,7 +49,12 @@ export async function POST(req: Request) {
     data: {
       userId,
       dosyaNo: body.dosyaNo || null,
+      buroDosyaNo: body.buroDosyaNo || null,
+      basvurucuTip: body.basvurucuTip === "tuzel" ? "tuzel" : "sahis",
       basvurucuAd: stripTcFromName(body.basvurucuAd) || null,
+      basvurucuTC: body.basvurucuTC || null,
+      basvurucuVergiMersis: body.basvurucuVergiMersis || null,
+      basvurucuYetkiliAd: body.basvurucuYetkiliAd || null,
       basvurucuAdres: body.basvurucuAdres || null,
       basvurucuVekilAd: body.basvurucuVekilAd || null,
       basvurucuBaroSicil: body.basvurucuBaroSicil || null,
@@ -60,11 +65,14 @@ export async function POST(req: Request) {
       gorevlendirmeTarihi: body.gorevlendirmeTarihi || null,
       karsiTaraflar: {
         create: karsiTaraflar.map((p: any, i: number) => ({
+          tip: p.tip === "tuzel" ? "tuzel" : "sahis",
           ad: stripTcFromName(p.ad) || null,
+          tcKimlik: p.tcKimlik || null,
           adres: p.adres || null,
           vergiMersis: p.vergiMersis || null,
           yetkiliAd: p.yetkiliAd || null,
           vekilAd: p.vekilAd || null,
+          vekilBaroSicil: p.vekilBaroSicil || null,
           telefon: p.telefon || null,
           sira: i,
         })),

@@ -43,12 +43,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const body = await req.json();
   const data: any = {};
   const fields = [
-    "dosyaNo", "basvurucuAd", "basvurucuAdres", "basvurucuVekilAd", "basvurucuBaroSicil",
+    "dosyaNo", "buroDosyaNo", "basvurucuTip", "basvurucuAd", "basvurucuTC", "basvurucuVergiMersis",
+    "basvurucuYetkiliAd", "basvurucuAdres", "basvurucuVekilAd", "basvurucuBaroSicil",
     "basvurucuTelefon", "uyusmazlikKonusu", "uyusmazlikTuru", "basvuruTarihi", "gorevlendirmeTarihi",
   ];
   for (const f of fields) {
     if (body[f] !== undefined) data[f] = body[f] || null;
   }
+  if (data.basvurucuTip !== undefined) data.basvurucuTip = data.basvurucuTip === "tuzel" ? "tuzel" : "sahis";
   if (data.basvurucuAd) data.basvurucuAd = stripTcFromName(data.basvurucuAd);
 
   // İlk Oturum / Son Tutanak tarihleri — belge oluşturmadan BAĞIMSIZ
@@ -70,11 +72,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     await prisma.mediationParty.deleteMany({ where: { caseId: params.id } });
     data.karsiTaraflar = {
       create: body.karsiTaraflar.map((p: any, i: number) => ({
+        tip: p.tip === "tuzel" ? "tuzel" : "sahis",
         ad: stripTcFromName(p.ad) || null,
+        tcKimlik: p.tcKimlik || null,
         adres: p.adres || null,
         vergiMersis: p.vergiMersis || null,
         yetkiliAd: p.yetkiliAd || null,
         vekilAd: p.vekilAd || null,
+        vekilBaroSicil: p.vekilBaroSicil || null,
         telefon: p.telefon || null,
         sira: i,
       })),

@@ -24,8 +24,24 @@ window.CURRENT_MODULE = {
           <div id="ar-autofill-status" style="font-size:11px;color:var(--t3);margin-top:6px;"></div>
         </div>
 
-        <div class="fg"><div class="fl">Dosya Numarası</div><input type="text" id="ar-dosyano" placeholder="2026/1329"></div>
-        <div class="fg"><div class="fl">Başvurucu Adı</div><input type="text" id="ar-bas-ad" placeholder="Ad Soyad - TC..."></div>
+        <div class="fg"><div class="fl">Dosya Numarası <span class="opt">(Arabuluculuk Bilgi Sistemi)</span></div><input type="text" id="ar-dosyano" placeholder="2026/1329"></div>
+        <div class="fg"><div class="fl">Büro Dosya Numarası <span class="opt">(iç takip için, opsiyonel)</span></div><input type="text" id="ar-buro-dosyano" placeholder="ör. 2026/45"></div>
+
+        <div class="fg"><div class="fl">Başvurucu Türü</div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" id="ar-bas-tip-sahis" class="pop-cta-btn g" style="width:auto;flex:1;padding:7px;" onclick="arSetBasvurucuTip('sahis')"><span>Şahıs</span></button>
+            <button type="button" id="ar-bas-tip-tuzel" class="pop-cta-btn" style="width:auto;flex:1;padding:7px;background:var(--bg2);color:var(--t2);" onclick="arSetBasvurucuTip('tuzel')"><span>Tüzel Kişilik</span></button>
+          </div>
+        </div>
+        <div id="ar-bas-sahis-alanlari">
+          <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="ar-bas-ad" placeholder="Ad Soyad"></div>
+          <div class="fg"><div class="fl">TC Kimlik No</div><input type="text" id="ar-bas-tc" placeholder="11 haneli TC kimlik no"></div>
+        </div>
+        <div id="ar-bas-tuzel-alanlari" style="display:none;">
+          <div class="fg"><div class="fl">Unvan</div><input type="text" id="ar-bas-unvan" placeholder="… Ltd. Şti. / A.Ş."></div>
+          <div class="fg"><div class="fl">Vergi/Mersis No</div><input type="text" id="ar-bas-vergimersis"></div>
+          <div class="fg"><div class="fl">Şirket Yetkilisi</div><input type="text" id="ar-bas-yetkili"></div>
+        </div>
         <div class="fg"><div class="fl">Başvurucu Adresi</div><input type="text" id="ar-bas-adres"></div>
         <div class="fg"><div class="fl">Başvurucu Vekili <span class="opt">(varsa)</span></div><input type="text" id="ar-bas-vekil" placeholder="Av. ..."></div>
         <div class="fg"><div class="fl">Vekil Baro/Sicil</div><input type="text" id="ar-bas-barosicil"></div>
@@ -36,14 +52,16 @@ window.CURRENT_MODULE = {
         <button class="pop-cta-btn b" style="width:100%;margin-bottom:14px;" onclick="arAddKarsiRow()" type="button"><i class="fa-solid fa-plus"></i><span>Karşı Taraf Ekle</span></button>
 
         <div class="fg"><div class="fl">Uyuşmazlık Türü</div>
-          <select id="ar-uyusmazlik-tur" onchange="document.getElementById('ar-uyusmazlik-tur-diger').style.display = this.value === 'Diğer' ? '' : 'none'">
-            <option value="İş Hukuku">İş Hukuku</option>
-            <option value="Ticaret Hukuku">Ticaret Hukuku</option>
-            <option value="Tüketici Hukuku">Tüketici Hukuku</option>
-            <option value="Kira Hukuku">Kira Hukuku</option>
-            <option value="Ortaklığın Giderilmesi">Ortaklığın Giderilmesi</option>
-            <option value="Diğer">Diğer</option>
-          </select>
+          <div class="sw">
+            <select id="ar-uyusmazlik-tur" onchange="document.getElementById('ar-uyusmazlik-tur-diger').style.display = this.value === 'Diğer' ? '' : 'none'">
+              <option value="İş Hukuku">İş Hukuku</option>
+              <option value="Ticaret Hukuku">Ticaret Hukuku</option>
+              <option value="Tüketici Hukuku">Tüketici Hukuku</option>
+              <option value="Kira Hukuku">Kira Hukuku</option>
+              <option value="Ortaklığın Giderilmesi">Ortaklığın Giderilmesi</option>
+              <option value="Diğer">Diğer</option>
+            </select>
+          </div>
           <input type="text" id="ar-uyusmazlik-tur-diger" placeholder="Uyuşmazlık türünü yazın…" style="display:none;margin-top:6px;">
         </div>
         <div class="fg"><div class="fl">Uyuşmazlık Konusu</div><textarea id="ar-uyusmazlik" rows="3" placeholder="Kısa açıklama, madde madde olabilir…"></textarea></div>
@@ -66,29 +84,58 @@ let arCasesCache = [];
 let arSelectedCaseId = null;
 let arKarsiTarafRows = []; // form üzerindeki karşı taraf satırlarının verisi
 
+let arBasvurucuTip = 'sahis';
+function arSetBasvurucuTip(tip) {
+  arBasvurucuTip = tip;
+  document.getElementById('ar-bas-sahis-alanlari').style.display = tip === 'sahis' ? '' : 'none';
+  document.getElementById('ar-bas-tuzel-alanlari').style.display = tip === 'tuzel' ? '' : 'none';
+  const sahisBtn = document.getElementById('ar-bas-tip-sahis');
+  const tuzelBtn = document.getElementById('ar-bas-tip-tuzel');
+  if (sahisBtn) { sahisBtn.className = 'pop-cta-btn ' + (tip === 'sahis' ? 'g' : ''); sahisBtn.style.background = tip === 'sahis' ? '' : 'var(--bg2)'; sahisBtn.style.color = tip === 'sahis' ? '' : 'var(--t2)'; }
+  if (tuzelBtn) { tuzelBtn.className = 'pop-cta-btn ' + (tip === 'tuzel' ? 'g' : ''); tuzelBtn.style.background = tip === 'tuzel' ? '' : 'var(--bg2)'; tuzelBtn.style.color = tip === 'tuzel' ? '' : 'var(--t2)'; }
+}
+
 function arRenderKarsiRows() {
   const box = document.getElementById('ar-karsi-list');
   if (!box) return;
-  box.innerHTML = arKarsiTarafRows.map((row, i) => `
+  box.innerHTML = arKarsiTarafRows.map((row, i) => {
+    const tip = row.tip || 'sahis';
+    return `
     <div style="background:var(--bg2);border-radius:var(--r);padding:10px;margin-bottom:8px;position:relative;">
       ${arKarsiTarafRows.length > 1 ? `<span style="position:absolute;top:8px;right:8px;cursor:pointer;color:var(--t3);" onclick="arRemoveKarsiRow(${i})"><i class="fa-solid fa-xmark"></i></span>` : ''}
       <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Karşı Taraf ${arKarsiTarafRows.length > 1 ? (i + 1) : ''}</div>
-      <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Adı / Unvanı" value="${(row.ad||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].ad=this.value"></div>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <button type="button" onclick="arSetKarsiTip(${i},'sahis')" style="flex:1;padding:6px;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;background:${tip === 'sahis' ? 'var(--gold)' : 'var(--card)'};color:${tip === 'sahis' ? '#fff' : 'var(--t2)'};">Şahıs</button>
+        <button type="button" onclick="arSetKarsiTip(${i},'tuzel')" style="flex:1;padding:6px;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;background:${tip === 'tuzel' ? 'var(--gold)' : 'var(--card)'};color:${tip === 'tuzel' ? '#fff' : 'var(--t2)'};">Tüzel Kişilik</button>
+      </div>
+      ${tip === 'sahis' ? `
+        <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Ad Soyad" value="${(row.ad||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].ad=this.value"></div>
+        <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="TC Kimlik No" value="${(row.tcKimlik||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].tcKimlik=this.value"></div>
+      ` : `
+        <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Unvan" value="${(row.ad||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].ad=this.value"></div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <input type="text" placeholder="Vergi/Mersis No" value="${(row.vergiMersis||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].vergiMersis=this.value" style="flex:1;">
+          <input type="text" placeholder="Şirket Yetkilisi" value="${(row.yetkiliAd||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].yetkiliAd=this.value" style="flex:1;">
+        </div>
+      `}
       <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Adres" value="${(row.adres||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].adres=this.value"></div>
       <div style="display:flex;gap:6px;margin-bottom:6px;">
-        <input type="text" placeholder="Vergi/Mersis No" value="${(row.vergiMersis||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].vergiMersis=this.value" style="flex:1;">
-        <input type="text" placeholder="Şirket Yetkilisi" value="${(row.yetkiliAd||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].yetkiliAd=this.value" style="flex:1;">
-      </div>
-      <div style="display:flex;gap:6px;">
         <input type="text" placeholder="Vekili (varsa)" value="${(row.vekilAd||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].vekilAd=this.value" style="flex:1;">
-        <input type="text" placeholder="Telefon" value="${(row.telefon||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].telefon=this.value" style="flex:1;">
+        <input type="text" placeholder="Vekil Baro/Sicil" value="${(row.vekilBaroSicil||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].vekilBaroSicil=this.value" style="flex:1;">
       </div>
+      <div class="fg"><input type="text" placeholder="Telefon" value="${(row.telefon||'').replace(/"/g,'&quot;')}" oninput="arKarsiTarafRows[${i}].telefon=this.value"></div>
     </div>
-  `).join('');
+  `;
+  }).join('');
+}
+
+function arSetKarsiTip(index, tip) {
+  arKarsiTarafRows[index].tip = tip;
+  arRenderKarsiRows();
 }
 
 function arAddKarsiRow() {
-  arKarsiTarafRows.push({ ad: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', telefon: '' });
+  arKarsiTarafRows.push({ tip: 'sahis', ad: '', tcKimlik: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', vekilBaroSicil: '', telefon: '' });
   arRenderKarsiRows();
 }
 
@@ -104,7 +151,8 @@ function arGetPane() {
 }
 
 async function arOnOpen() {
-  arKarsiTarafRows = [{ ad: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', telefon: '' }];
+  arKarsiTarafRows = [{ tip: 'sahis', ad: '', tcKimlik: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', vekilBaroSicil: '', telefon: '' }];
+  arBasvurucuTip = 'sahis';
   arRenderKarsiRows();
   arGetPane().innerHTML = skeletonLines(3);
   await arLoadCases();
@@ -136,7 +184,7 @@ function arCaseCardHtml(c) {
          ondragstart="event.dataTransfer.setData('text/plain','${c.id}')"
          onclick="arSelectCase(${idx})"
          style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
-      <div style="font-size:12.5px;">${c.dosyaNo || 'Dosya No yok'}</div>
+      <div style="font-size:12.5px;">${c.dosyaNo || 'Dosya No yok'}${c.buroDosyaNo ? ` <span style="color:var(--t3);font-weight:400;">(${c.buroDosyaNo})</span>` : ''}</div>
       <div style="font-size:10.5px;color:var(--t3);margin-top:2px;">${c.basvurucuAd || '?'} / ${c.uyusmazlikTuru || '?'}</div>
     </div>
   `;
@@ -237,7 +285,7 @@ async function arSelectCase(index) {
   pane.innerHTML = `
     <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="arRenderCaseList()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.dosyaNo || 'Dosya No yok'}</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.dosyaNo || 'Dosya No yok'}${c.buroDosyaNo ? ` <span style="font-size:12px;color:var(--t3);font-family:'Inter',sans-serif;">— Büro Dosya No: ${c.buroDosyaNo}</span>` : ''}</div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${c.basvurucuAd || '?'} — ${karsiOzet}</div>
 
       <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:16px;">
@@ -546,7 +594,18 @@ async function arAutoFillFromFile() {
 
     const setIf = (id, val) => { if (val) document.getElementById(id).value = val; };
     setIf('ar-dosyano', p.dosyaNo);
-    setIf('ar-bas-ad', p.basvurucuAd);
+    setIf('ar-buro-dosyano', p.buroDosyaNo);
+    // AI, vergi/mersis no bulduysa tüzel kişilik olarak varsayıyoruz.
+    if (p.basvurucuVergiMersis || p.basvurucuYetkiliAd) {
+      arSetBasvurucuTip('tuzel');
+      setIf('ar-bas-unvan', p.basvurucuAd);
+      setIf('ar-bas-vergimersis', p.basvurucuVergiMersis);
+      setIf('ar-bas-yetkili', p.basvurucuYetkiliAd);
+    } else {
+      arSetBasvurucuTip('sahis');
+      setIf('ar-bas-ad', p.basvurucuAd);
+      setIf('ar-bas-tc', p.basvurucuTC);
+    }
     setIf('ar-bas-adres', p.basvurucuAdres);
     setIf('ar-bas-vekil', p.basvurucuVekilAd);
     setIf('ar-bas-barosicil', p.basvurucuBaroSicil);
@@ -556,8 +615,9 @@ async function arAutoFillFromFile() {
 
     if (Array.isArray(p.karsiTaraflar) && p.karsiTaraflar.length) {
       arKarsiTarafRows = p.karsiTaraflar.map(k => ({
-        ad: k.ad || '', adres: k.adres || '', vergiMersis: k.vergiMersis || '',
-        yetkiliAd: k.yetkiliAd || '', vekilAd: k.vekilAd || '', telefon: k.telefon || '',
+        tip: (k.vergiMersis || k.yetkiliAd) ? 'tuzel' : 'sahis',
+        ad: k.ad || '', tcKimlik: k.tcKimlik || '', adres: k.adres || '', vergiMersis: k.vergiMersis || '',
+        yetkiliAd: k.yetkiliAd || '', vekilAd: k.vekilAd || '', vekilBaroSicil: k.vekilBaroSicil || '', telefon: k.telefon || '',
       }));
       arRenderKarsiRows();
       statusEl.innerHTML = `<span style="color:var(--success);"><i class="fa-solid fa-check"></i> Form dolduruldu (${p.karsiTaraflar.length} karşı taraf bulundu) — kaydetmeden önce kontrol edin.</span>`;
@@ -572,7 +632,12 @@ async function arAutoFillFromFile() {
 async function arSaveCase() {
   const body = {
     dosyaNo: document.getElementById('ar-dosyano').value,
-    basvurucuAd: document.getElementById('ar-bas-ad').value,
+    buroDosyaNo: document.getElementById('ar-buro-dosyano').value,
+    basvurucuTip: arBasvurucuTip,
+    basvurucuAd: arBasvurucuTip === 'sahis' ? document.getElementById('ar-bas-ad').value : document.getElementById('ar-bas-unvan').value,
+    basvurucuTC: arBasvurucuTip === 'sahis' ? document.getElementById('ar-bas-tc').value : '',
+    basvurucuVergiMersis: arBasvurucuTip === 'tuzel' ? document.getElementById('ar-bas-vergimersis').value : '',
+    basvurucuYetkiliAd: arBasvurucuTip === 'tuzel' ? document.getElementById('ar-bas-yetkili').value : '',
     basvurucuAdres: document.getElementById('ar-bas-adres').value,
     basvurucuVekilAd: document.getElementById('ar-bas-vekil').value,
     basvurucuBaroSicil: document.getElementById('ar-bas-barosicil').value,
@@ -614,7 +679,16 @@ function arEditCase(id) {
 
   const setIf = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val || ''; };
   setIf('ar-dosyano', c.dosyaNo);
-  setIf('ar-bas-ad', c.basvurucuAd);
+  setIf('ar-buro-dosyano', c.buroDosyaNo);
+  arSetBasvurucuTip(c.basvurucuTip === 'tuzel' ? 'tuzel' : 'sahis');
+  if (c.basvurucuTip === 'tuzel') {
+    setIf('ar-bas-unvan', c.basvurucuAd);
+    setIf('ar-bas-vergimersis', c.basvurucuVergiMersis);
+    setIf('ar-bas-yetkili', c.basvurucuYetkiliAd);
+  } else {
+    setIf('ar-bas-ad', c.basvurucuAd);
+    setIf('ar-bas-tc', c.basvurucuTC);
+  }
   setIf('ar-bas-adres', c.basvurucuAdres);
   setIf('ar-bas-vekil', c.basvurucuVekilAd);
   setIf('ar-bas-barosicil', c.basvurucuBaroSicil);
@@ -636,8 +710,8 @@ function arEditCase(id) {
   }
 
   arKarsiTarafRows = (c.karsiTaraflar && c.karsiTaraflar.length)
-    ? c.karsiTaraflar.map(p => ({ ad: p.ad || '', adres: p.adres || '', vergiMersis: p.vergiMersis || '', yetkiliAd: p.yetkiliAd || '', vekilAd: p.vekilAd || '', telefon: p.telefon || '' }))
-    : [{ ad: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', telefon: '' }];
+    ? c.karsiTaraflar.map(p => ({ tip: p.tip || 'sahis', ad: p.ad || '', tcKimlik: p.tcKimlik || '', adres: p.adres || '', vergiMersis: p.vergiMersis || '', yetkiliAd: p.yetkiliAd || '', vekilAd: p.vekilAd || '', vekilBaroSicil: p.vekilBaroSicil || '', telefon: p.telefon || '' }))
+    : [{ tip: 'sahis', ad: '', tcKimlik: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', vekilBaroSicil: '', telefon: '' }];
   arRenderKarsiRows();
 
   const saveBtn = document.getElementById('ar-save-btn');
