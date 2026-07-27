@@ -80,15 +80,6 @@ function v(val?: string | null, fallback = "……………") {
   return out.replace(/^\[|\]$/g, "").trim();
 }
 
-// Tüm "Etiket: değer" satırlarında ":" işaretlerinin ALT ALTA hizalı
-// durması için, her etiketi SABİT bir genişliğe (belgedeki en uzun
-// etiket olan "Vergi/Mersis/Detsis No" uzunluğuna) normal boşlukla
-// (sekme DEĞİL — sekme genişliği öngörülemez olduğu için) tamamlar.
-const LABEL_WIDTH = 22;
-function lbl(text: string): string {
-  return text.length >= LABEL_WIDTH ? text : text + " ".repeat(LABEL_WIDTH - text.length);
-}
-
 function partiesList(c: MediationCaseData): MediationParty[] {
   return c.karsiTaraflar && c.karsiTaraflar.length ? c.karsiTaraflar : [{}];
 }
@@ -102,20 +93,20 @@ function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): 
   const label = total > 1 ? `KARŞI TARAF ${index + 1}` : "KARŞI TARAF";
   const isTuzel = p.tip === "tuzel";
   const lines = [
-    `  ${lbl(isTuzel ? "Unvanı" : "Adı ve Soyadı")}: ${v(p.ad)}`,
+    `\t${isTuzel ? "Unvanı" : "Adı ve Soyadı"}\t: ${v(p.ad)}`,
   ];
   if (isTuzel) {
-    lines.push(`  ${lbl("Vergi/Mersis/Detsis No")}: ${v(p.vergiMersis)}`);
-    if (p.yetkiliAd && p.yetkiliAd.trim()) lines.push(`  ${lbl("Şirket Yetkilisi")}: ${v(p.yetkiliAd)}`);
+    lines.push(`\tVergi/Mersis/Detsis No\t: ${v(p.vergiMersis)}`);
+    if (p.yetkiliAd && p.yetkiliAd.trim()) lines.push(`\tŞirket Yetkilisi\t: ${v(p.yetkiliAd)}`);
   } else {
-    lines.push(`  ${lbl("T.C. Kimlik No")}: ${v(p.tcKimlik)}`);
+    lines.push(`\tT.C. Kimlik No\t: ${v(p.tcKimlik)}`);
   }
-  lines.push(`  ${lbl("Adres")}: ${v(p.adres)}`);
+  lines.push(`\tAdres\t: ${v(p.adres)}`);
   if (p.vekilAd && p.vekilAd.trim()) {
-    lines.push(`  ${lbl("Vekili")}: ${v(p.vekilAd)}`);
-    if (p.vekilBaroSicil && p.vekilBaroSicil.trim()) lines.push(`  ${lbl("Baro/Sicil No")}: ${v(p.vekilBaroSicil)}`);
+    lines.push(`\tVekili\t: ${v(p.vekilAd)}`);
+    if (p.vekilBaroSicil && p.vekilBaroSicil.trim()) lines.push(`\tBaro/Sicil No\t: ${v(p.vekilBaroSicil)}`);
   }
-  lines.push(`  ${lbl("Telefon")}: ${v(p.telefon)}`);
+  lines.push(`\tTelefon\t: ${v(p.telefon)}`);
 
   return `**__${label}__**\t\t\t
 
@@ -142,36 +133,36 @@ export function buildHeaderBlock(
 
   const basvurucuTuzel = c.basvurucuTip === "tuzel";
   const basvurucuLines = [
-    `  ${lbl(basvurucuTuzel ? "Unvanı" : "Adı Soyadı")}: ${v(c.basvurucuAd)}`,
+    `\t${basvurucuTuzel ? "Unvanı" : "Adı Soyadı"}\t: ${v(c.basvurucuAd)}`,
   ];
   if (basvurucuTuzel) {
-    basvurucuLines.push(`  ${lbl("Vergi/Mersis No")}: ${v(c.basvurucuVergiMersis)}`);
-    if (c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()) basvurucuLines.push(`  ${lbl("Şirket Yetkilisi")}: ${v(c.basvurucuYetkiliAd)}`);
+    basvurucuLines.push(`\tVergi/Mersis No\t: ${v(c.basvurucuVergiMersis)}`);
+    if (c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()) basvurucuLines.push(`\tŞirket Yetkilisi\t: ${v(c.basvurucuYetkiliAd)}`);
   } else {
-    basvurucuLines.push(`  ${lbl("T.C. Kimlik No")}: ${v(c.basvurucuTC)}`);
+    basvurucuLines.push(`\tT.C. Kimlik No\t: ${v(c.basvurucuTC)}`);
   }
-  basvurucuLines.push(`  ${lbl("Adresi")}: ${v(c.basvurucuAdres)}`);
+  basvurucuLines.push(`\tAdresi\t: ${v(c.basvurucuAdres)}`);
   if (c.basvurucuVekilAd && c.basvurucuVekilAd.trim()) {
-    basvurucuLines.push(`  ${lbl("Vekili")}: ${v(c.basvurucuVekilAd)}`);
-    if (c.basvurucuBaroSicil && c.basvurucuBaroSicil.trim()) basvurucuLines.push(`  ${lbl("Baro/Sicil No")}: ${v(c.basvurucuBaroSicil)}`);
+    basvurucuLines.push(`\tVekili\t: ${v(c.basvurucuVekilAd)}`);
+    if (c.basvurucuBaroSicil && c.basvurucuBaroSicil.trim()) basvurucuLines.push(`\tBaro/Sicil No\t: ${v(c.basvurucuBaroSicil)}`);
   }
-  basvurucuLines.push(`  ${lbl("Telefon")}: ${v(c.basvurucuTelefon)}`);
+  basvurucuLines.push(`\tTelefon\t: ${v(c.basvurucuTelefon)}`);
 
   return `**__ARABULUCULUK BÜROSU__**\t\t\t\t  
  
-  ${lbl("Arabuluculuk Bürosu")}: ${v(a.arabuluculukBurosu)}
-  ${lbl("Dosya Numarası")}: ${dosyaNoGosterim}
+\tArabuluculuk Bürosu\t: ${v(a.arabuluculukBurosu)}
+ \tDosya Numarası\t: ${dosyaNoGosterim}
 
 **__${arabulucuLabel}__**\t\t\t\t\t
-
-  ${lbl("Adı ve Soyadı")}: ${v(a.name)}
-  ${lbl("Sicil Numarası")}: ${v(a.arabulucuSicilNo)}
-  ${lbl("Telefon")}: ${v(a.phone)}
-  ${lbl("UETS")}: ${v(a.arabulucuUets)}
-  ${lbl("E-Posta")}: ${v(a.email)}
+\t
+\tAdı ve Soyadı\t: ${v(a.name)}
+\tSicil Numarası\t: ${v(a.arabulucuSicilNo)}
+\tTelefon\t: ${v(a.phone)}
+\tUETS\t: ${v(a.arabulucuUets)}
+\tE-Posta\t: ${v(a.email)}
 
 **__BAŞVURUCU__**\t\t\t
-
+\t
 ${basvurucuLines.join("\n")}
 
 ${karsiTarafBlocks}
@@ -179,9 +170,9 @@ ${karsiTarafBlocks}
  
 ${buildUyusmazlikKonusuCumlesi(c)}
  
-**Arabuluculuk Bürosuna Başvuru Tarihi\t\t\t: ${v(c.basvuruTarihi)}**
-**Arabulucunun Görevlendirildiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}**
-**Tutanağının Düzenlendiği Tarih\t\t\t: ${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
+**Arabuluculuk Bürosuna Başvuru Tarihi\t\t: ${v(c.basvuruTarihi)}**
+**Arabulucunun Görevlendirildiği Tarih\t\t: ${v(c.gorevlendirmeTarihi)}**
+**Tutanağının Düzenlendiği Tarih\t\t: ${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
 `;
 }
 
