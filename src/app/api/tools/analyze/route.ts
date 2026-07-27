@@ -46,25 +46,30 @@ Emin olmadığın alanları uydurma — null bırak. Belgede müvekkil kimin tar
   "mediation-extract": `Sana bir arabuluculuk başvuru evrakı veriliyor. Bu belgede BİRDEN FAZLA karşı taraf/diğer taraf olabilir (ör. "DİĞER TARAF BİLGİLERİ" başlığı birden fazla kez tekrar edebilir) — hepsini bul, hiçbirini atlama. Belgeden aşağıdaki bilgileri çıkar ve SADECE geçerli bir JSON nesnesi olarak döndür — başka hiçbir açıklama, markdown işareti eklemeden, sadece ham JSON:
 {
   "dosyaNo": "varsa dosya/başvuru numarası (yoksa null)",
-  "basvurucuAd": "başvurucunun/başvuru sahibinin SADECE adı soyadı — TC kimlik numarasını KESİNLİKLE bu alana ekleme, isim ne ise sadece o (yoksa null)",
+  "basvurucuAd": "başvurucunun/başvuru sahibinin SADECE adı soyadı (şahıssa) ya da unvanı (tüzel kişiyse) — TC kimlik numarasını KESİNLİKLE bu alana ekleme, isim ne ise sadece o (yoksa null)",
+  "basvurucuTC": "başvurucu gerçek kişiyse (şahıssa) TC kimlik numarası, belgede yazıyorsa MUTLAKA buraya yaz (yoksa null)",
+  "basvurucuVergiMersis": "başvurucu tüzel kişiyse (şirketse) vergi/mersis no (yoksa null)",
+  "basvurucuYetkiliAd": "başvurucu tüzel kişiyse şirket yetkilisinin adı (yoksa null)",
   "basvurucuAdres": "başvurucunun adresi (yoksa null)",
   "basvurucuVekilAd": "başvurucu vekili varsa adı (yoksa null)",
   "basvurucuBaroSicil": "başvurucu vekilinin baro/sicil no varsa (yoksa null)",
   "basvurucuTelefon": "başvurucunun telefonu (yoksa null)",
   "karsiTaraflar": [
     {
-      "ad": "bu karşı tarafın SADECE adı/unvanı — TC kimlik numarasını KESİNLİKLE bu alana ekleme",
+      "ad": "bu karşı tarafın SADECE adı (şahıssa) ya da unvanı (tüzel kişiyse) — TC kimlik numarasını KESİNLİKLE bu alana ekleme",
+      "tcKimlik": "bu karşı taraf gerçek kişiyse (şahıssa) TC kimlik numarası, belgede yazıyorsa MUTLAKA buraya yaz (yoksa null)",
       "adres": "adresi (yoksa null)",
       "vergiMersis": "tüzel kişiyse vergi/mersis no (yoksa null)",
       "yetkiliAd": "tüzel kişiyse şirket yetkilisinin adı (yoksa null)",
       "vekilAd": "vekili varsa adı (yoksa null)",
+      "vekilBaroSicil": "vekilin baro/sicil no varsa (yoksa null)",
       "telefon": "telefonu (yoksa null)"
     }
   ],
   "uyusmazlikKonusu": "uyuşmazlık konusunun kısa özeti, maddeler halinde olabilir (yoksa null)",
   "basvuruTarihi": "başvuru tarihi varsa GG.AA.YYYY formatında (yoksa null)"
 }
-"karsiTaraflar" dizisine belgede geçen HER "diğer taraf / karşı taraf" için AYRI bir nesne ekle — bir kişi sadece isim biliniyor bile olsa (adres/telefon boşsa) yine de listeye ekle, atlama. Emin olmadığın alanları uydurma — null bırak.`,
+Her taraf (başvurucu ya da karşı taraf) için: belgede TC kimlik numarası (11 haneli) görüyorsan bu KİŞİNİN gerçek kişi (şahıs) olduğu anlamına gelir — TC'yi ilgili "TC" alanına yaz. Vergi/Mersis numarası görüyorsan bu tüzel kişi (şirket) demektir — o zaman vergiMersis alanını doldur, TC alanını null bırak. "karsiTaraflar" dizisine belgede geçen HER "diğer taraf / karşı taraf" için AYRI bir nesne ekle — bir kişi sadece isim biliniyor bile olsa (adres/telefon boşsa) yine de listeye ekle, atlama. Emin olmadığın alanları uydurma — null bırak.`,
 };
 
 function getExt(filename: string) {
