@@ -102,20 +102,20 @@ function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): 
   const label = total > 1 ? `KARŞI TARAF ${index + 1}` : "KARŞI TARAF";
   const isTuzel = p.tip === "tuzel";
   const lines = [
-    `\t${lbl(isTuzel ? "Unvanı" : "Adı ve Soyadı")}: ${v(p.ad)}`,
+    `  ${lbl(isTuzel ? "Unvanı" : "Adı ve Soyadı")}: ${v(p.ad)}`,
   ];
   if (isTuzel) {
-    lines.push(`\t${lbl("Vergi/Mersis/Detsis No")}: ${v(p.vergiMersis)}`);
-    if (p.yetkiliAd && p.yetkiliAd.trim()) lines.push(`\t${lbl("Şirket Yetkilisi")}: ${v(p.yetkiliAd)}`);
+    lines.push(`  ${lbl("Vergi/Mersis/Detsis No")}: ${v(p.vergiMersis)}`);
+    if (p.yetkiliAd && p.yetkiliAd.trim()) lines.push(`  ${lbl("Şirket Yetkilisi")}: ${v(p.yetkiliAd)}`);
   } else {
-    lines.push(`\t${lbl("T.C. Kimlik No")}: ${v(p.tcKimlik)}`);
+    lines.push(`  ${lbl("T.C. Kimlik No")}: ${v(p.tcKimlik)}`);
   }
-  lines.push(`\t${lbl("Adres")}: ${v(p.adres)}`);
+  lines.push(`  ${lbl("Adres")}: ${v(p.adres)}`);
   if (p.vekilAd && p.vekilAd.trim()) {
-    lines.push(`\t${lbl("Vekili")}: ${v(p.vekilAd)}`);
-    if (p.vekilBaroSicil && p.vekilBaroSicil.trim()) lines.push(`\t${lbl("Baro/Sicil No")}: ${v(p.vekilBaroSicil)}`);
+    lines.push(`  ${lbl("Vekili")}: ${v(p.vekilAd)}`);
+    if (p.vekilBaroSicil && p.vekilBaroSicil.trim()) lines.push(`  ${lbl("Baro/Sicil No")}: ${v(p.vekilBaroSicil)}`);
   }
-  lines.push(`\t${lbl("Telefon")}: ${v(p.telefon)}`);
+  lines.push(`  ${lbl("Telefon")}: ${v(p.telefon)}`);
 
   return `**__${label}__**\t\t\t
 
@@ -142,36 +142,36 @@ export function buildHeaderBlock(
 
   const basvurucuTuzel = c.basvurucuTip === "tuzel";
   const basvurucuLines = [
-    `\t${lbl(basvurucuTuzel ? "Unvanı" : "Adı Soyadı")}: ${v(c.basvurucuAd)}`,
+    `  ${lbl(basvurucuTuzel ? "Unvanı" : "Adı Soyadı")}: ${v(c.basvurucuAd)}`,
   ];
   if (basvurucuTuzel) {
-    basvurucuLines.push(`\t${lbl("Vergi/Mersis No")}: ${v(c.basvurucuVergiMersis)}`);
-    if (c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()) basvurucuLines.push(`\t${lbl("Şirket Yetkilisi")}: ${v(c.basvurucuYetkiliAd)}`);
+    basvurucuLines.push(`  ${lbl("Vergi/Mersis No")}: ${v(c.basvurucuVergiMersis)}`);
+    if (c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()) basvurucuLines.push(`  ${lbl("Şirket Yetkilisi")}: ${v(c.basvurucuYetkiliAd)}`);
   } else {
-    basvurucuLines.push(`\t${lbl("T.C. Kimlik No")}: ${v(c.basvurucuTC)}`);
+    basvurucuLines.push(`  ${lbl("T.C. Kimlik No")}: ${v(c.basvurucuTC)}`);
   }
-  basvurucuLines.push(`\t${lbl("Adresi")}: ${v(c.basvurucuAdres)}`);
+  basvurucuLines.push(`  ${lbl("Adresi")}: ${v(c.basvurucuAdres)}`);
   if (c.basvurucuVekilAd && c.basvurucuVekilAd.trim()) {
-    basvurucuLines.push(`\t${lbl("Vekili")}: ${v(c.basvurucuVekilAd)}`);
-    if (c.basvurucuBaroSicil && c.basvurucuBaroSicil.trim()) basvurucuLines.push(`\t${lbl("Baro / Sicil Numarası")}: ${v(c.basvurucuBaroSicil)}`);
+    basvurucuLines.push(`  ${lbl("Vekili")}: ${v(c.basvurucuVekilAd)}`);
+    if (c.basvurucuBaroSicil && c.basvurucuBaroSicil.trim()) basvurucuLines.push(`  ${lbl("Baro/Sicil No")}: ${v(c.basvurucuBaroSicil)}`);
   }
-  basvurucuLines.push(`\t${lbl("Telefon")}: ${v(c.basvurucuTelefon)}`);
+  basvurucuLines.push(`  ${lbl("Telefon")}: ${v(c.basvurucuTelefon)}`);
 
   return `**__ARABULUCULUK BÜROSU__**\t\t\t\t  
  
-\t${lbl("Arabuluculuk Bürosu")}: ${v(a.arabuluculukBurosu)}
- \t${lbl("Dosya Numarası")}: ${dosyaNoGosterim}
+  ${lbl("Arabuluculuk Bürosu")}: ${v(a.arabuluculukBurosu)}
+  ${lbl("Dosya Numarası")}: ${dosyaNoGosterim}
 
 **__${arabulucuLabel}__**\t\t\t\t\t
-\t
-\t${lbl("Adı ve Soyadı")}: ${v(a.name)}
-\t${lbl("Sicil Numarası")}: ${v(a.arabulucuSicilNo)}
-\t${lbl("Telefon")}: ${v(a.phone)}
-\t${lbl("UETS")}: ${v(a.arabulucuUets)}
-\t${lbl("E-Posta")}: ${v(a.email)}
+
+  ${lbl("Adı ve Soyadı")}: ${v(a.name)}
+  ${lbl("Sicil Numarası")}: ${v(a.arabulucuSicilNo)}
+  ${lbl("Telefon")}: ${v(a.phone)}
+  ${lbl("UETS")}: ${v(a.arabulucuUets)}
+  ${lbl("E-Posta")}: ${v(a.email)}
 
 **__BAŞVURUCU__**\t\t\t
-\t
+
 ${basvurucuLines.join("\n")}
 
 ${karsiTarafBlocks}
