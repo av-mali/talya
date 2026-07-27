@@ -158,18 +158,25 @@ export default function DashboardShellClient({ children }: { children: React.Rea
         const slot = document.getElementById("talyaContentSlot");
         if (!slot) return;
 
+        // ÖNEMLİ: Ayrılmakta olduğumuz modülün CURRENT_MODULE'ünü HER
+        // navigasyonda (sadece Ana Sayfa'ya dönüşte değil, modülden
+        // modüle DİREKT geçişte de) kaydediyoruz. Eskiden bu SADECE
+        // Ana Sayfa'ya dönerken yapılıyordu — bu yüzden Arabuluculuk'tan
+        // Büro'ya, oradan tekrar Arabuluculuk'a (Ana Sayfa'ya hiç
+        // uğramadan) geçilince, Arabuluculuk'un script'i tekrar
+        // çalışmadığı için CURRENT_MODULE hâlâ BÜRO'nun bilgisini
+        // taşıyordu — bu da Arabuluculuk'un kendi verisini hiç
+        // gösterememesine (sürekli "yükleniyor" kalmasına) yol açıyordu.
+        if ((window as any).CURRENT_MODULE && loadedPath.current && loadedPath.current !== pathname) {
+          moduleConfigCache.current[loadedPath.current] = (window as any).CURRENT_MODULE;
+        }
+        (window as any).CURRENT_MODULE = null; // hedef modüle geçmeden önce ESKİ değeri her zaman temizle
+
         const res = await fetch(cfg.contentUrl, { cache: "no-store" });
         const html = await res.text();
         slot.innerHTML = html;
 
         if (pathname === "/dashboard") {
-          // Ayrılmadan önce, o an aktif olan modülün config'ini kaydet —
-          // ileride o modüle geri dönülünce script YENİDEN ÇALIŞMAYACAĞI
-          // için bu değeri elle geri yükleyeceğiz.
-          if ((window as any).CURRENT_MODULE) {
-            moduleConfigCache.current[loadedPath.current || ""] = (window as any).CURRENT_MODULE;
-          }
-          (window as any).CURRENT_MODULE = null;
           // NOT: sidebarLabel/sidebarName/sidebarTagline artık HİÇ
           // değiştirilmiyor — sidebar başlığı her sayfada SABİT kalıyor
           // (menünün yukarı/aşağı oynamaması için). Bkz. engine.js'teki
