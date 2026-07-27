@@ -93,20 +93,20 @@ function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): 
   const label = total > 1 ? `KARŞI TARAF ${index + 1}` : "KARŞI TARAF";
   const isTuzel = p.tip === "tuzel";
   const lines = [
-    `\t${isTuzel ? "Unvanı" : "Adı ve Soyadı"}\t: ${v(p.ad)}`,
+    `\t${isTuzel ? "Unvanı" : "Adı ve Soyadı"}: ${v(p.ad)}`,
   ];
   if (isTuzel) {
-    lines.push(`\tVergi/Mersis/Detsis No\t: ${v(p.vergiMersis)}`);
-    if (p.yetkiliAd && p.yetkiliAd.trim()) lines.push(`\tŞirket Yetkilisi\t: ${v(p.yetkiliAd)}`);
+    lines.push(`\tVergi/Mersis/Detsis No: ${v(p.vergiMersis)}`);
+    if (p.yetkiliAd && p.yetkiliAd.trim()) lines.push(`\tŞirket Yetkilisi: ${v(p.yetkiliAd)}`);
   } else {
-    lines.push(`\tT.C. Kimlik No\t: ${v(p.tcKimlik)}`);
+    lines.push(`\tT.C. Kimlik No: ${v(p.tcKimlik)}`);
   }
-  lines.push(`\tAdres\t: ${v(p.adres)}`);
+  lines.push(`\tAdres: ${v(p.adres)}`);
   if (p.vekilAd && p.vekilAd.trim()) {
-    lines.push(`\tVekili\t: ${v(p.vekilAd)}`);
-    if (p.vekilBaroSicil && p.vekilBaroSicil.trim()) lines.push(`\tVekilin Baro/Sicil No\t: ${v(p.vekilBaroSicil)}`);
+    lines.push(`\tVekili: ${v(p.vekilAd)}`);
+    if (p.vekilBaroSicil && p.vekilBaroSicil.trim()) lines.push(`\tVekilin Baro/Sicil No: ${v(p.vekilBaroSicil)}`);
   }
-  lines.push(`\tTelefon\t: ${v(p.telefon)}`);
+  lines.push(`\tTelefon: ${v(p.telefon)}`);
 
   return `**__${label}__**\t\t\t
 
@@ -133,33 +133,33 @@ export function buildHeaderBlock(
 
   const basvurucuTuzel = c.basvurucuTip === "tuzel";
   const basvurucuLines = [
-    `\t${basvurucuTuzel ? "Unvanı" : "Adı Soyadı"}\t: ${v(c.basvurucuAd)}`,
+    `\t${basvurucuTuzel ? "Unvanı" : "Adı Soyadı"}: ${v(c.basvurucuAd)}`,
   ];
   if (basvurucuTuzel) {
-    basvurucuLines.push(`\tVergi/Mersis No\t: ${v(c.basvurucuVergiMersis)}`);
-    if (c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()) basvurucuLines.push(`\tŞirket Yetkilisi\t: ${v(c.basvurucuYetkiliAd)}`);
+    basvurucuLines.push(`\tVergi/Mersis No: ${v(c.basvurucuVergiMersis)}`);
+    if (c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()) basvurucuLines.push(`\tŞirket Yetkilisi: ${v(c.basvurucuYetkiliAd)}`);
   } else {
-    basvurucuLines.push(`\tT.C. Kimlik No\t: ${v(c.basvurucuTC)}`);
+    basvurucuLines.push(`\tT.C. Kimlik No: ${v(c.basvurucuTC)}`);
   }
-  basvurucuLines.push(`\tAdresi\t: ${v(c.basvurucuAdres)}`);
+  basvurucuLines.push(`\tAdresi: ${v(c.basvurucuAdres)}`);
   if (c.basvurucuVekilAd && c.basvurucuVekilAd.trim()) {
-    basvurucuLines.push(`\tVekili\t: ${v(c.basvurucuVekilAd)}`);
-    if (c.basvurucuBaroSicil && c.basvurucuBaroSicil.trim()) basvurucuLines.push(`\tBaro / Sicil Numarası\t: ${v(c.basvurucuBaroSicil)}`);
+    basvurucuLines.push(`\tVekili: ${v(c.basvurucuVekilAd)}`);
+    if (c.basvurucuBaroSicil && c.basvurucuBaroSicil.trim()) basvurucuLines.push(`\tBaro / Sicil Numarası: ${v(c.basvurucuBaroSicil)}`);
   }
-  basvurucuLines.push(`\tTelefon\t: ${v(c.basvurucuTelefon)}`);
+  basvurucuLines.push(`\tTelefon: ${v(c.basvurucuTelefon)}`);
 
   return `**__ARABULUCULUK BÜROSU__**\t\t\t\t  
  
-\tArabuluculuk Bürosu\t: ${v(a.arabuluculukBurosu)}
- \tDosya Numarası\t: ${dosyaNoGosterim}
+\tArabuluculuk Bürosu: ${v(a.arabuluculukBurosu)}
+ \tDosya Numarası: ${dosyaNoGosterim}
 
 **__${arabulucuLabel}__**\t\t\t\t\t
 \t
-\tAdı ve Soyadı\t: ${v(a.name)}
-\tSicil Numarası\t: ${v(a.arabulucuSicilNo)}
-\tTelefon\t: ${v(a.phone)}
-\tUETS\t: ${v(a.arabulucuUets)}
-\tE-Posta\t: ${v(a.email)}
+\tAdı ve Soyadı: ${v(a.name)}
+\tSicil Numarası: ${v(a.arabulucuSicilNo)}
+\tTelefon: ${v(a.phone)}
+\tUETS: ${v(a.arabulucuUets)}
+\tE-Posta: ${v(a.email)}
 
 **__BAŞVURUCU__**\t\t\t
 \t
@@ -389,21 +389,21 @@ export function buildDavetMektubu(
 
 **__DAVETTE BULUNAN__**
 
-Arabulucu\t: Arb. **${v(a.name)}**
-TELFON\t: ${v(a.phone)}
-E-Mail\t: ${v(a.email)}
-Adres\t: ${v(a.arabulucuAdres)}
+Arabulucu: Arb. **${v(a.name)}**
+TELFON: ${v(a.phone)}
+E-Mail: ${v(a.email)}
+Adres: ${v(a.arabulucuAdres)}
 
 **__DAVET EDİLEN__**
 
-Adı / Soyadı\t: **${v(davetEdilenAd)}**
-Vekili\t: ${davetEdilenVekil ? `**Av. ${davetEdilenVekil}**` : ""}
-Baro / Sicil\t: ${v(davetEdilenBaroSicil, "")}
-Telefon\t: ${v(davetEdilenTelefon)}
+Adı / Soyadı: **${v(davetEdilenAd)}**
+Vekili: ${davetEdilenVekil ? `**Av. ${davetEdilenVekil}**` : ""}
+Baro / Sicil: ${v(davetEdilenBaroSicil, "")}
+Telefon: ${v(davetEdilenTelefon)}
 
-**__GÜN VE SAAT__**\t: ${v(gunSaat)}
+**__GÜN VE SAAT__**: ${v(gunSaat)}
 
-**__TOPLANTI YERİ__**\t: ${v(toplantiYeri)}
+**__TOPLANTI YERİ__**: ${v(toplantiYeri)}
 
 
 **__AÇIKLAMALAR VE BİLGİLENDİRMELER: __**
