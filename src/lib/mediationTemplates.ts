@@ -92,6 +92,16 @@ function v(val?: string | null, fallback = "……………") {
   return val.trim().replace(/^\[|\]$/g, "").trim();
 }
 
+// Vekil adının önüne "Av. " ekler — ama kullanıcı vekil adını zaten
+// "Av. ..." (ya da "Avukat ...") diye girmişse (form alanına öyle
+// yazılmış ya da belgeden öyle çıkarılmışsa) ÖNCE o ön eki temizler.
+// Aksi halde metnin dört ayrı yerinde "Av. " elle ekleniyor olduğundan
+// "Av. Av. İsim Soyisim" gibi çift görünüyordu.
+function avLabel(val?: string | null): string {
+  const clean = (val || "").trim().replace(/^Av(\.|ukat)?\s+/i, "");
+  return clean ? `Av. ${clean}` : "";
+}
+
 function partiesList(c: MediationCaseData): MediationParty[] {
   return c.karsiTaraflar && c.karsiTaraflar.length ? c.karsiTaraflar : [{}];
 }
@@ -179,12 +189,12 @@ ${basvurucuLines.join("\n")}
 
 ${karsiTarafBlocks}
 **__ARABULUCULUK KONUSU UYUŞMAZLIK__**
- 
-${buildUyusmazlikKonusuCumlesi(c)}
- 
-**Arabuluculuk Bürosuna Başvuru Tarihi\t\t: ${v(c.basvuruTarihi)}**
-**Arabulucunun Görevlendirildiği Tarih\t\t: ${v(c.gorevlendirmeTarihi)}**
-**Tutanağının Düzenlendiği Tarih\t\t: ${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
+
+\t${buildUyusmazlikKonusuCumlesi(c)}
+
+[[D]]**__Arabuluculuk Bürosuna Başvuru Tarihi__**\t**: ${v(c.basvuruTarihi)}**
+[[D]]**__Arabulucunun Görevlendirildiği Tarih__**\t**: ${v(c.gorevlendirmeTarihi)}**
+[[D]]**__Tutanağının Düzenlendiği Tarih__**\t**: ${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
 `;
 }
 
@@ -195,7 +205,7 @@ ${buildUyusmazlikKonusuCumlesi(c)}
 function buildUyusmazlikKonusuCumlesi(c: MediationCaseData): string {
   const basvurucuAd = v(c.basvurucuAd);
   const vekilCumle = c.basvurucuVekilAd && c.basvurucuVekilAd.trim()
-    ? ` ve vekili Av. ${c.basvurucuVekilAd.trim()}`
+    ? ` ve vekili ${avLabel(c.basvurucuVekilAd)}`
     : "";
   const konu = v(c.uyusmazlikKonusu, "……………");
   return `Başvurucu ${basvurucuAd}${vekilCumle} tarafından yapılan "${konu}" konulu başvurudur.`;
@@ -386,7 +396,7 @@ export function buildDavetMektubu(
   invitingBasvurucu: boolean
 ): string {
   const digerTarafCumle = digerTarafVekil
-    ? `**${v(digerTarafAd)}** ve vekili Sayın **Av. ${digerTarafVekil}**`
+    ? `**${v(digerTarafAd)}** ve vekili Sayın **${avLabel(digerTarafVekil)}**`
     : `**${v(digerTarafAd)}**`;
 
   // Mektup BAŞVURUCU'nun kendisine gidiyorsa: "TARAFINIZCA yapılan
@@ -409,7 +419,7 @@ Adres: ${v(a.arabulucuAdres)}
 **__DAVET EDİLEN__**
 
 Adı / Soyadı: **${v(davetEdilenAd)}**
-Vekili: ${davetEdilenVekil ? `**Av. ${davetEdilenVekil}**` : ""}
+Vekili: ${davetEdilenVekil ? `**${avLabel(davetEdilenVekil)}**` : ""}
 Baro / Sicil: ${v(davetEdilenBaroSicil, "")}
 Telefon: ${v(davetEdilenTelefon)}
 
@@ -420,7 +430,7 @@ Telefon: ${v(davetEdilenTelefon)}
 
 **__AÇIKLAMALAR VE BİLGİLENDİRMELER: __**
 
-Sayın **${v(davetEdilenAd)}**${davetEdilenVekil ? ` ve vekili Sayın **Av. ${davetEdilenVekil}**` : ""},
+Sayın **${v(davetEdilenAd)}**${davetEdilenVekil ? ` ve vekili Sayın **${avLabel(davetEdilenVekil)}**` : ""},
 
 ${basvuruCumlesi}
 

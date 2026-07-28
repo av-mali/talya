@@ -15,7 +15,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
 
   const paragraphs = lines.map((rawLine) => {
-    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow } = parseLineMarkup(rawLine);
+    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow, dateRow } = parseLineMarkup(rawLine);
 
     // Biçimli kısımları ve düz kısımları, orijinal sırayla ayrı
     // TextRun'lar olarak oluştur — aynı satırda hem düz hem kalın/altı
@@ -58,11 +58,19 @@ export async function generateDocx(text: string): Promise<Buffer> {
       // İmza satırları (sigRow) ise farklı bir düzen kullanır: her isim,
       // sayfanın dörtte bir ve dörtte üç noktalarında ORTALANIR (CENTER
       // tipi sekme) — birbirine yakın durmasınlar diye geniş aralıklı.
+      // Tarih/sonuç satırları (dateRow — "Arabuluculuk Bürosuna Başvuru
+      // Tarihi" gibi) etiketleri normal etiket-değer satırlarından ÇOK
+      // daha uzun olduğundan, 3200'lük normal durak onlara YETMİYOR
+      // (etiket zaten o noktayı geçmiş oluyor, değer sütunu satır satır
+      // KAYIYOR) — bu yüzden en uzun etiğin bile sığacağı, tek ve geniş
+      // bir durak (6000) kullanılır.
       tabStops: sigRow
         ? [
             { type: TabStopType.CENTER, position: 2400 },
             { type: TabStopType.CENTER, position: 7200 },
           ]
+        : dateRow
+        ? [{ type: TabStopType.LEFT, position: 6000 }]
         : [
             { type: TabStopType.LEFT, position: 400 },
             { type: TabStopType.LEFT, position: 3200 },

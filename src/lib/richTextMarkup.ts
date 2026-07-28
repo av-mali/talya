@@ -9,6 +9,11 @@
 //   satırın EN BAŞINDA "[[R]]" -> o paragraf SAĞA YASLI olur (ör. imza alanı)
 //   satırın EN BAŞINDA "[[S]]" -> o paragraf bir İMZA SATIRIDIR (dar,
 //     3 sütuna sığacak şekilde ÖZEL bir sekme düzeni kullanır)
+//   satırın EN BAŞINDA "[[D]]" -> o paragraf bir TARİH/SONUÇ SATIRIDIR
+//     ("Arabuluculuk Bürosuna Başvuru Tarihi : ..." gibi) — etiketler
+//     normal etiket-değer satırlarından ÇOK daha uzun olduğundan, değer
+//     sütununun her satırda AYNI (ve etiketin sığacağı kadar geniş) yerde
+//     başlaması için ayrı/geniş bir sekme durağı kullanır
 //   satırın EN BAŞINDA "[[N1]]" / "[[N2]]" -> o paragraf NUMARALI bir
 //     liste öğesidir ("1-", "2-" şeklinde) — N1 ve N2 birbirinden
 //     BAĞIMSIZ iki ayrı liste (biri 1'den, diğeri de kendi başına 1'den
@@ -23,12 +28,13 @@
 
 export type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
 
-export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; numbered: 1 | 2 | 0 } {
+export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; dateRow: boolean; numbered: 1 | 2 | 0 } {
   let line = rawLine;
   let centered = false;
   let right = false;
   let bulleted = false;
   let sigRow = false;
+  let dateRow = false;
   let numbered: 1 | 2 | 0 = 0;
   if (line.startsWith("[[C]]")) {
     centered = true;
@@ -40,6 +46,10 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
   }
   if (line.startsWith("[[S]]")) {
     sigRow = true;
+    line = line.slice(5);
+  }
+  if (line.startsWith("[[D]]")) {
+    dateRow = true;
     line = line.slice(5);
   }
   if (line.startsWith("[[N1]]")) {
@@ -91,7 +101,7 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
     out += line[i];
     i++;
   }
-  return { text: out, runs, centered, right, bulleted, sigRow, numbered };
+  return { text: out, runs, centered, right, bulleted, sigRow, dateRow, numbered };
 }
 
 export function stripMarkup(text: string): string {
@@ -102,6 +112,7 @@ export function stripMarkup(text: string): string {
         .replace(/^\[\[C\]\]/, "")
         .replace(/^\[\[R\]\]/, "")
         .replace(/^\[\[S\]\]/, "")
+        .replace(/^\[\[D\]\]/, "")
         .replace(/^\[\[N1\]\]/, "")
         .replace(/^\[\[N2\]\]/, "")
         .replace(/^\[\[B\]\]/, "• ")

@@ -79,7 +79,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
 
   for (let i = 0; i < rawLines.length; i++) {
     const isLast = i === rawLines.length - 1;
-    const { text: lineText, runs, centered, bulleted, sigRow } = parseLineMarkup(rawLines[i]);
+    const { text: lineText, runs, centered, bulleted, sigRow, dateRow } = parseLineMarkup(rawLines[i]);
     const lengthWithBreak = lineText.length + (isLast ? 0 : 1);
 
     plainCdata += lineText + (isLast ? "" : "\n");
@@ -95,10 +95,18 @@ export async function generateUdf(text: string): Promise<Buffer> {
       // noktaları — etiketler ne kadar uzun olursa olsun, değerler hep
       // aynı hizada başlar. İmza satırları (3 sütun, sayfa genişliğine
       // sığması gereken dar sütunlar) AYRI bir sekme düzeni kullanır.
+      // Tarih/sonuç satırları (dateRow) çok daha uzun etiketler
+      // taşıdığından (ör. "Arabuluculuk Bürosuna Başvuru Tarihi"), normal
+      // 163.0'lık durak onlara yetmiyor — etiket zaten o noktayı geçmiş
+      // oluyor ve değer, satırdan satıra FARKLI bir yere düşüyordu
+      // (hizalanmama şikayetinin sebebi). En uzun etiketin bile sığacağı,
+      // tek ve geniş bir durak (300.0) kullanılır.
       const tabSetAttr = centered
         ? ` TabSet="38.0:0:0"`
         : sigRow
         ? ` TabSet="18.0:0:0,69.0:2:0,136.0:0:0,137.0:0:0"`
+        : dateRow
+        ? ` TabSet="300.0:0:0"`
         : ` TabSet="42.0:0:0,163.0:0:0,163.0:0:0"`;
       if (!runs.length) {
         elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
