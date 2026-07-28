@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasAiAccess } from "@/lib/workspace";
+import { callGemini } from "@/lib/gemini";
 
 // BU DOSYA SUNUCUDA ÇALIŞIR — tarayıcı buranın içeriğini asla göremez.
 // Gemini API anahtarı burada, process.env üzerinden okunur; hiçbir zaman
@@ -43,34 +44,26 @@ export async function POST(req: Request) {
   const recent = history.slice(-20);
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: recent.map((m) => ({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: m.content }],
-          })),
-        }),
-      }
-    );
+    const result = await callGemini({
+      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: recent.map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      })),
+    });
 
-    const data = await res.json();
-
-    if (!res.ok) {
+    if (!result.ok) {
       // Gemini API bir hata döndürdü (geçersiz anahtar, kota, vb.) —
       // bunu SESSİZCE "reply" olarak göstermek yerine gerçek hata olarak
       // döndürüyoruz ki ileride fark edilebilsin.
-      console.error("Gemini API hatası:", data);
+      console.error("Gemini API hatası:", result.data);
       return NextResponse.json(
-        { error: data?.error?.message || "Yapay zeka şu anda yanıt veremiyor." },
+        { error: result.friendlyError || "Yapay zeka şu anda yanıt veremiyor." },
         { status: 502 }
       );
     }
 
+    const data = result.data;
     const reply: string =
       data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("\n") ||
       "Bir cevap üretilemedi, lütfen tekrar deneyin.";

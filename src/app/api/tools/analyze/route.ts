@@ -6,6 +6,7 @@ import { generateDocx, generatePdf } from "@/lib/docExport";
 import mammoth from "mammoth";
 import sharp from "sharp";
 import { hasAiAccess, hasToolAccess } from "@/lib/workspace";
+import { callGemini } from "@/lib/gemini";
 
 // Bu uç nokta Belge & Analiz modülündeki "Dosya Analizi", "Sözleşme
 // İnceleme" ve "Dilekçe Sihirbazı" araçlarını besler. Google Gemini'nin
@@ -171,25 +172,17 @@ export async function POST(req: Request) {
     const finalInstruction = mode === "dilekce" ? instruction : `KULLANICI SORUSU: ${instruction}`;
     parts.push({ text: systemHint + "\n\n" + finalInstruction });
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          // Halüsinasyonu azaltmak için: AI, atıf yapmadan önce gerçekten
-          // web'de arayabilsin diye Google Arama aracını açıyoruz.
-          tools: [{ google_search: {} }],
-        }),
-      }
-    );
+    const geminiResult = await callGemini({
+      contents: [{ parts }],
+      // Halüsinasyonu azaltmak için: AI, atıf yapmadan önce gerçekten
+      // web'de arayabilsin diye Google Arama aracını açıyoruz.
+      tools: [{ google_search: {} }],
+    });
 
-    const geminiData = await geminiRes.json();
-    if (!geminiRes.ok) {
-      const msg = geminiData?.error?.message || "Gemini API hatası.";
-      return NextResponse.json({ error: msg }, { status: 502 });
+    if (!geminiResult.ok) {
+      return NextResponse.json({ error: geminiResult.friendlyError || "Gemini API hatası." }, { status: 502 });
     }
+    const geminiData = geminiResult.data;
 
     const analysis: string =
       geminiData?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("\n") ||

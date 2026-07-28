@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { hasToolAccess, hasAiAccess } from "@/lib/workspace";
 import { generateUdf } from "@/lib/udf";
 import { generateDocx } from "@/lib/docExport";
+import { callGemini } from "@/lib/gemini";
 import {
   buildHeaderBlock,
   buildSignatureBlock,
@@ -27,20 +28,12 @@ KESİN KURALLAR:
 
 async function generateNarrative(prompt: string): Promise<string> {
   if (!process.env.GEMINI_API_KEY) throw new Error("AI yapılandırması eksik (GEMINI_API_KEY tanımlı değil).");
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-    }
-  );
-  const data = await res.json();
+  const result = await callGemini({ contents: [{ parts: [{ text: prompt }] }] });
 
-  if (!res.ok) {
-    const msg = data?.error?.message || `HTTP ${res.status}`;
-    throw new Error(`AI servis hatası: ${msg}`);
+  if (!result.ok) {
+    throw new Error(result.friendlyError || "AI servis hatası.");
   }
+  const data = result.data;
 
   const candidate = data?.candidates?.[0];
   const text = candidate?.content?.parts?.map((p: any) => p.text).join("") || "";

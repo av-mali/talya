@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { callGemini } from "@/lib/gemini";
 
 // Eklenti (avukat.uyap.gov.tr üzerinde çalışıyor) farklı bir siteden bu
 // uç noktaya istek attığı için CORS izni gerekiyor.
@@ -206,23 +207,19 @@ export async function POST(req: Request) {
   const clipped = trimmed.slice(0, 12000);
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: [{ role: "user", parts: [{ text: clipped }] }],
-        }),
-      }
-    );
+    const result = await callGemini({
+      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: [{ role: "user", parts: [{ text: clipped }] }],
+    });
 
-    const data = await res.json();
-    if (!res.ok) {
-      console.error("Gemini API hatası (uyap-sync):", data);
-      return NextResponse.json({ error: data?.error?.message || "Yapay zeka şu anda yanıt veremiyor." }, { status: 502, headers: CORS_HEADERS });
+    if (!result.ok) {
+      console.error("Gemini API hatası (uyap-sync):", result.data);
+      return NextResponse.json(
+        { error: result.friendlyError || "Yapay zeka şu anda yanıt veremiyor." },
+        { status: 502, headers: CORS_HEADERS }
+      );
     }
+    const data = result.data;
     const raw: string = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("\n") || "[]";
     const jsonMatch = raw.match(/\[[\s\S]*\]/);
     let items: any[] = [];
