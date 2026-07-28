@@ -64,20 +64,32 @@ export function indentParagraphs(text: string): string {
 }
 
 // Bir isim alanının başına yanlışlıkla karışmış olabilecek 10-11 haneli
-// TC Kimlik/Vergi No gibi rakam dizilerini temizler. Hem belge üretirken
-// (v() içinde) hem de VERİ KAYDEDİLİRKEN (API'lerde) kullanılır — böylece
-// hatalı veri hiç veritabanına girmez, eski kayıtlar da temizlenebilir.
+// TC Kimlik/Vergi No gibi rakam dizilerini temizler. SADECE isim/unvan
+// alanları için kullanılır — VERİ KAYDEDİLİRKEN (API route'larında,
+// basvurucuAd/p.ad kaydedilirken ve okunurken) çağrılır. Belge üretirken
+// (v() içinde) ARTIK çağrılmıyor — bkz. v()'nin üstündeki not.
 export function stripTcFromName(val?: string | null): string {
   if (!val) return "";
   return val.trim().replace(/^\d{10,11}\s+/, "");
 }
 
+// NOT (düzeltme): v() ESKİDEN her alanda (telefon, adres, TC no, vergi/
+// mersis no, baro/sicil no dahil) stripTcFromName() çalıştırıyordu. Bu
+// fonksiyon "10-11 haneli bir rakam dizisi + boşluk + BAŞKA metin" gören
+// her alanın BAŞINDAKİ o rakam dizisini siliyor — isim alanları için
+// doğru (TC no'nun isme karışması), ama bir TELEFON numarası da (05XX
+// XXX XX XX -> boşluksuz yazılınca tam 11 hane) TC no ile AYNI uzunlukta
+// olduğundan, telefon alanında numaranın yanına küçük bir not/ek metin
+// varsa ("05321234567 (iş)" gibi) numaranın kendisi sessizce silinip
+// sadece o ek metin kalıyordu — "telefon tutanağa eklenmiyor" şikayetinin
+// kaynağı buydu. stripTcFromName SADECE isim alanlarında (ad/unvan)
+// çağrılmalı; onlar zaten API katmanında (kaydederken ve okurken) ayrıca
+// temizleniyor, o yüzden burada hiç çağırmaya gerek yok.
 function v(val?: string | null, fallback = "……………") {
   if (!val || !val.trim()) return fallback;
-  let out = stripTcFromName(val);
   // Başvuru formlarındaki "[Haksız Fiilden Kaynaklanan (Nisbi)]" gibi
   // ham köşeli parantezli metinleri de temizler.
-  return out.replace(/^\[|\]$/g, "").trim();
+  return val.trim().replace(/^\[|\]$/g, "").trim();
 }
 
 function partiesList(c: MediationCaseData): MediationParty[] {

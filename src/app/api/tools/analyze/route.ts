@@ -53,7 +53,7 @@ Emin olmadığın alanları uydurma — null bırak. Belgede müvekkil kimin tar
   "basvurucuAdres": "başvurucunun adresi (yoksa null)",
   "basvurucuVekilAd": "başvurucu vekili varsa adı (yoksa null)",
   "basvurucuBaroSicil": "başvurucu vekilinin baro/sicil no varsa (yoksa null)",
-  "basvurucuTelefon": "başvurucunun telefonu (yoksa null)",
+  "basvurucuTelefon": "başvurucunun telefon numarası — belgede 'Telefon', 'Tel', 'Tel No', 'Telefon No', 'Cep', 'Cep Tel', 'Cep Telefonu', 'GSM' veya 'İletişim' gibi FARKLI başlıklardan HERHANGİ biri altında yazılmış olabilir, hangi başlık altında geçiyorsa onu bul; birden fazla numara varsa (ev/cep gibi) ilkini yaz; rakamları belgede yazıldığı gibi (boşluk/tire dahil) aktar (yoksa null)",
   "karsiTaraflar": [
     {
       "ad": "bu karşı tarafın SADECE adı (şahıssa) ya da unvanı (tüzel kişiyse) — TC kimlik numarasını KESİNLİKLE bu alana ekleme",
@@ -63,13 +63,13 @@ Emin olmadığın alanları uydurma — null bırak. Belgede müvekkil kimin tar
       "yetkiliAd": "tüzel kişiyse şirket yetkilisinin adı (yoksa null)",
       "vekilAd": "vekili varsa adı (yoksa null)",
       "vekilBaroSicil": "vekilin baro/sicil no varsa (yoksa null)",
-      "telefon": "telefonu (yoksa null)"
+      "telefon": "bu tarafın telefon numarası — belgede 'Telefon', 'Tel', 'Tel No', 'Telefon No', 'Cep', 'Cep Tel', 'Cep Telefonu', 'GSM' veya 'İletişim' gibi FARKLI başlıklardan HERHANGİ biri altında yazılmış olabilir, hangi başlık altında geçiyorsa onu bul; rakamları belgede yazıldığı gibi (boşluk/tire dahil) aktar (yoksa null)"
     }
   ],
   "uyusmazlikKonusu": "uyuşmazlık konusunun kısa özeti, maddeler halinde olabilir (yoksa null)",
   "basvuruTarihi": "başvuru tarihi varsa GG.AA.YYYY formatında (yoksa null)"
 }
-Her taraf (başvurucu ya da karşı taraf) için: belgede TC kimlik numarası (11 haneli) görüyorsan bu KİŞİNİN gerçek kişi (şahıs) olduğu anlamına gelir — TC'yi ilgili "TC" alanına yaz. Vergi/Mersis numarası görüyorsan bu tüzel kişi (şirket) demektir — o zaman vergiMersis alanını doldur, TC alanını null bırak. "karsiTaraflar" dizisine belgede geçen HER "diğer taraf / karşı taraf" için AYRI bir nesne ekle — bir kişi sadece isim biliniyor bile olsa (adres/telefon boşsa) yine de listeye ekle, atlama. Emin olmadığın alanları uydurma — null bırak.`,
+Her taraf (başvurucu ya da karşı taraf) için: belgede TC kimlik numarası (11 haneli) görüyorsan bu KİŞİNİN gerçek kişi (şahıs) olduğu anlamına gelir — TC'yi ilgili "TC" alanına yaz. Vergi/Mersis numarası görüyorsan bu tüzel kişi (şirket) demektir — o zaman vergiMersis alanını doldur, TC alanını null bırak. "karsiTaraflar" dizisine belgede geçen HER "diğer taraf / karşı taraf" için AYRI bir nesne ekle — bir kişi sadece isim biliniyor bile olsa (adres/telefon boşsa) yine de listeye ekle, atlama. TELEFON NUMARASI İÇİN ÖZELLİKLE DİKKATLİ OL: belgenin tamamını (başlıklar, tablolar, imza bölümü dahil) tara — telefon numarası çoğu zaman isim/TC'nin hemen yanında değil, ayrı bir "İletişim Bilgileri" bölümünde veya sayfanın altında/kenarında olabilir; sırf yakınında görmedin diye o kişide telefon yok sanma. Emin olmadığın alanları uydurma — null bırak.`,
 };
 
 function getExt(filename: string) {
