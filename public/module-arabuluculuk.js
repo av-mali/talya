@@ -479,6 +479,13 @@ function arShowGenForm(docType) {
       <div style="font-size:10.5px;color:var(--t3);margin-bottom:6px;">Bu tarih, otomatik olarak Yaklaşan Süreler'e ve bildirim zilinize eklenecektir.</div>
       <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('sontutanak')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
     `;
+    // Sonuç <select>'i sayfa açılışında zaten "Anlaşma"ya sabit geliyor —
+    // ama alanların gösterilip gizlenmesi SADECE kullanıcı dropdown'u
+    // DEĞİŞTİRDİĞİNDE tetiklenen onchange'e bağlıydı. Kullanıcı hiç
+    // değiştirmeden ilk açılışta Ücret/Ödeyen alanı (ve öteki sonuç
+    // tipi alanları) hiç görünmüyordu — bu yüzden formu bastıktan hemen
+    // sonra durumu bir kez elle senkronize ediyoruz.
+    arToggleSontutanakFields();
   }
 }
 
