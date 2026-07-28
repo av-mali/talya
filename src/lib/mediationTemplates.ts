@@ -270,11 +270,18 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): 
   const rows: { name: string; role: string }[][] = balancedRows(shortSigns, 3);
   for (const s of longSigns) rows.push([s]);
 
+  // NOT: Her satırın BAŞINA da bir "\t" eklenir — böylece 1. sütun da
+  // (2./3. sütunlar gibi) kendi sekme durağında ORTALANIR; eskiden ilk
+  // isim hizasız biçimde doğrudan sayfa kenarından (sola yaslı) başlıyordu,
+  // bu da özellikle tek kişilik (taşan-uzun-isim) satırlarda ve 2 kişilik
+  // satırlarda sayfanın soluna YAPIŞIK görünmesine yol açıyordu. udf.ts /
+  // docExport.ts bu satırdaki tab SAYISINA göre (=sütun sayısı) sekme
+  // duraklarını sayfa genişliğine göre DİNAMİK olarak hesaplıyor.
   const rowsText = rows
     .map((row) => {
-      const nameLine = row.map((s) => `**${s.name}**`).join("\t");
-      const roleLine = row.map((s) => s.role).join("\t");
-      const markLine = row.map(() => "¸").join("\t");
+      const nameLine = "\t" + row.map((s) => `**${s.name}**`).join("\t");
+      const roleLine = "\t" + row.map((s) => s.role).join("\t");
+      const markLine = "\t" + row.map(() => "¸").join("\t");
       return `[[S]]${nameLine}\n[[S]]${roleLine}\n[[S]]${markLine}`;
     })
     .join("\n\n");

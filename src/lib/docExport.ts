@@ -45,6 +45,26 @@ function buildRuns(
   return children;
 }
 
+// İmza satırlarında (sigRow) kaç imzacı varsa (=satırdaki TAB sayısı,
+// satır başındaki tab da dahil — mediationTemplates.ts artık ilk sütun
+// için de baştan bir tab ekliyor), her isim KENDİ sütununun TAM
+// ORTASINA denk gelecek CENTER sekme durakları üretilir: sayfa, sütun
+// sayısı kadar EŞİT dilime bölünür, her durak kendi diliminin
+// ortasındadır — udf.ts'teki aynı mantığın DOCX karşılığı (aynı sayfa
+// genişliği oranlarını kullanır, birimi twips).
+const DOCX_SIGROW_CONTENT_WIDTH_TWIPS = 10080; // Letter (12240) - 2 * 1080 kenar boşluğu
+function sigRowTabStops(lineText: string) {
+  const cols = Math.max((lineText.match(/\t/g) || []).length, 1);
+  const stops: { type: (typeof TabStopType)[keyof typeof TabStopType]; position: number }[] = [];
+  for (let k = 1; k <= cols; k++) {
+    stops.push({
+      type: TabStopType.CENTER,
+      position: Math.round((DOCX_SIGROW_CONTENT_WIDTH_TWIPS * (2 * k - 1)) / (2 * cols)),
+    });
+  }
+  return stops;
+}
+
 export async function generateDocx(text: string): Promise<Buffer> {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
 
@@ -71,20 +91,17 @@ export async function generateDocx(text: string): Promise<Buffer> {
       // için) ve 3200 ("Etiket\t: değer" tarzı satırlarda değerlerin
       // hepsinin AYNI dikey hizada başlaması için — etiket zaten 400'ü
       // geçtiğinden otomatik olarak ikinci noktaya atlar).
-      // İmza satırları (sigRow) ise farklı bir düzen kullanır: her isim,
-      // sayfanın dörtte bir ve dörtte üç noktalarında ORTALANIR (CENTER
-      // tipi sekme) — birbirine yakın durmasınlar diye geniş aralıklı.
-      // Tarih/sonuç satırları (dateRow — "Arabuluculuk Bürosuna Başvuru
-      // Tarihi" gibi) etiketleri normal etiket-değer satırlarından ÇOK
-      // daha uzun olduğundan, 3200'lük normal durak onlara YETMİYOR
-      // (etiket zaten o noktayı geçmiş oluyor, değer sütunu satır satır
-      // KAYIYOR) — bu yüzden en uzun etiğin bile sığacağı, tek ve geniş
-      // bir durak (6000) kullanılır.
+      // İmza satırları (sigRow) ise farklı bir düzen kullanır: satırdaki
+      // imzacı SAYISINA göre DİNAMİK olarak hesaplanan CENTER sekme
+      // durakları — her isim kendi eşit dilimin ortasında durur (bkz.
+      // yukarıdaki sigRowTabStops). Tarih/sonuç satırları (dateRow —
+      // "Arabuluculuk Bürosuna Başvuru Tarihi" gibi) etiketleri normal
+      // etiket-değer satırlarından ÇOK daha uzun olduğundan, 3200'lük
+      // normal durak onlara YETMİYOR (etiket zaten o noktayı geçmiş
+      // oluyor, değer sütunu satır satır KAYIYOR) — bu yüzden en uzun
+      // etiğin bile sığacağı, tek ve geniş bir durak (6000) kullanılır.
       tabStops: sigRow
-        ? [
-            { type: TabStopType.CENTER, position: 2400 },
-            { type: TabStopType.CENTER, position: 7200 },
-          ]
+        ? sigRowTabStops(lineText)
         : dateRow
         ? [{ type: TabStopType.LEFT, position: 6000 }]
         : [

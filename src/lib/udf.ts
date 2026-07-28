@@ -70,6 +70,29 @@ export async function readUdfText(buffer: Buffer): Promise<string> {
 // "[[C]]" varsa o paragraf ORTALANMIŞ olur. Gerçek bir örnek UDF
 // dosyasının <elements> yapısı incelenerek (paragraf başına Alignment +
 // karakter aralığı bazlı biçim "run"ları) birebir uyumlu üretiliyor.
+// İmza satırlarında (sigRow) kaç imzacı varsa (=satırdaki TAB sayısı,
+// satır başındaki tab da dahil — mediationTemplates.ts artık ilk sütun
+// için de baştan bir tab ekliyor), her isim KENDİ sütununun TAM
+// ORTASINA denk gelecek şekilde CENTER (type=2 — UYAP'ın Java Swing
+// tabanlı editöründe javax.swing.text.TabStop.ALIGN_CENTER değeri)
+// sekme durakları üretilir: sayfa, sütun sayısı kadar EŞİT dilime
+// bölünür, her durak kendi diliminin ortasındadır. Böylece 1, 2 veya 3
+// imzacılı satırlar HER ZAMAN sayfa genişliğine düzgün yayılır.
+// ÖNCEKİ sabit değer (TabSet="18.0:0:0,69.0:2:0,136.0:0:0,137.0:0:0"),
+// v276'dan miras kalmış ve en fazla 137pt'ye kadar gidiyordu — 510pt'lik
+// gerçek sayfa genişliğinde isimler birbirine neredeyse yapışık
+// görünüyordu (kullanıcının ekran görüntüsüyle doğrulandı).
+const UDF_CONTENT_WIDTH_PT = 510.24; // A4 (595.28pt) - 2 * 42.52pt kenar boşluğu (leftMargin/rightMargin ile aynı)
+function sigRowTabSet(lineText: string): string {
+  const cols = Math.max((lineText.match(/\t/g) || []).length, 1);
+  const stops: string[] = [];
+  for (let k = 1; k <= cols; k++) {
+    const pos = (UDF_CONTENT_WIDTH_PT * (2 * k - 1)) / (2 * cols);
+    stops.push(`${pos.toFixed(1)}:2:0`);
+  }
+  return stops.join(",");
+}
+
 export async function generateUdf(text: string): Promise<Buffer> {
   const rawLines = text.replace(/\r\n/g, "\n").split("\n");
 
@@ -118,7 +141,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
       const tabSetAttr = centered
         ? ` TabSet="38.0:0:0"`
         : sigRow
-        ? ` TabSet="18.0:0:0,69.0:2:0,136.0:0:0,137.0:0:0"`
+        ? ` TabSet="${sigRowTabSet(lineText)}"`
         : dateRow
         ? ` TabSet="300.0:0:0"`
         : ` TabSet="42.0:0:0,163.0:0:0,163.0:0:0"`;
