@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
 import { requireWorkspace, shouldRestrictToOwnItems } from "@/lib/workspace";
-import { stripTcFromName } from "@/lib/mediationTemplates";
+import { stripTcFromName, sonucKisaLabel } from "@/lib/mediationTemplates";
 
 // Önümüzdeki 14 gün içindeki (ve geçmiş, henüz görülmemiş) duruşma/ödeme
 // tarihlerini VE süresi yaklaşan görevleri bildirim olarak döndürür —
@@ -193,7 +193,7 @@ export async function GET() {
       });
     };
     pushNotif(m.ilkOturumTarihi, "Bilgilendirme ve İlk Oturum", "ilk");
-    pushNotif(m.sonTutanakTarihi, `Son Oturum (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`, "son");
+    pushNotif(m.sonTutanakTarihi, `Son Oturum (${sonucKisaLabel(m.sonTutanakSonucu)})`, "son");
   });
 
   const feePaymentNotifs = feePayments.map((p) => {

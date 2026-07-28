@@ -1,5 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { avLabel, v, balancedRows, buildSignatureBlock, buildHeaderBlock } from "./mediationTemplates";
+import {
+  avLabel,
+  v,
+  balancedRows,
+  buildSignatureBlock,
+  buildHeaderBlock,
+  buildAnlasamamaNarrative,
+  buildKismiAnlasmaNarrative,
+  buildGorusmeYapilmadanNarrative,
+  buildUcretCumlesi,
+  sonucKisaLabel,
+} from "./mediationTemplates";
 
 describe("avLabel", () => {
   it("önek yoksa ekler, zaten varsa TEKRARLAMAZ (Av. Av. hatası)", () => {
@@ -127,5 +138,127 @@ describe("buildHeaderBlock — 'Tutanağının Düzenlendiği Tarih'", () => {
     const header = buildHeaderBlock(c, a, "ARABULUCU");
     const line = header.split("\n").find((l) => l.includes("Tutanağının Düzenlendiği Tarih"));
     expect(line).toContain("01.01.2026");
+  });
+});
+
+describe("buildAnlasamamaNarrative — 'ikinci toplantı' ibaresi kaldırıldı", () => {
+  const c: any = { basvurucuAd: "Ali Veli", karsiTaraflar: [{ ad: "Ayşe Yılmaz" }] };
+
+  it("artık 2. parametre almıyor ve metinde 'ikinci' kelimesi hiç geçmiyor (süreç zaten sabit 2 oturumlu)", () => {
+    const text = buildAnlasamamaNarrative(c, true);
+    expect(text).not.toContain("ikinci");
+    expect(text).not.toContain("toplantı istemediklerini");
+  });
+
+  it("tam anlaşamama etiketi artık 'HİÇBİR KONUDA ANLAŞAMAMA' (Kısmi Anlaşma'dan ayırt etmek için)", () => {
+    const text = buildAnlasamamaNarrative(c, false);
+    expect(text).toContain('"HİÇBİR KONUDA ANLAŞAMAMA"');
+  });
+
+  it("karşı teklif seçeneği hâlâ çalışıyor", () => {
+    expect(buildAnlasamamaNarrative(c, true)).toContain("karşı tekliflerinin olduğunu");
+    expect(buildAnlasamamaNarrative(c, false)).toContain("herhangi bir karşı tekliflerinin olmadığını");
+  });
+});
+
+describe("buildKismiAnlasmaNarrative", () => {
+  const c: any = { basvurucuAd: "Ali Veli", karsiTaraflar: [{ ad: "Ayşe Yılmaz" }] };
+
+  it("anlaşılan ve anlaşılamayan hususları AYRI AYRI ve BİREBİR (değiştirmeden) içerir", () => {
+    const text = buildKismiAnlasmaNarrative(c, "X konusunda anlaşıldı.", "Y konusunda anlaşılamadı.", "28.07.2026");
+    expect(text).toContain("X konusunda anlaşıldı.");
+    expect(text).toContain("Y konusunda anlaşılamadı.");
+    expect(text).toContain("KISMİ ANLAŞMA");
+  });
+
+  it("ücret cümlesi verilirse metne eklenir, verilmezse hiç eklenmez", () => {
+    const withFee = buildKismiAnlasmaNarrative(c, "X.", "Y.", "28.07.2026", "\tÜcret cümlesi burada.");
+    expect(withFee).toContain("Ücret cümlesi burada.");
+    const withoutFee = buildKismiAnlasmaNarrative(c, "X.", "Y.", "28.07.2026");
+    expect(withoutFee).not.toContain("Ücret cümlesi burada.");
+  });
+});
+
+describe("buildGorusmeYapilmadanNarrative", () => {
+  it("katılmayan taraf(lar)ı ve nedeni metne yazar, 'söz alarak' gibi bir görüşme anlatısı İÇERMEZ", () => {
+    const text = buildGorusmeYapilmadanNarrative(["Karşı Taraf Ayşe Yılmaz"], "Tebligata rağmen ulaşılamadı.");
+    expect(text).toContain("Karşı Taraf Ayşe Yılmaz");
+    expect(text).toContain("Tebligata rağmen ulaşılamadı.");
+    expect(text).toContain("GÖRÜŞME YAPILMADAN ANLAŞAMAMA");
+    expect(text).not.toContain("söz alarak");
+  });
+
+  it("birden fazla katılmayan taraf ', ... ve ...' şeklinde bağlanır", () => {
+    const text = buildGorusmeYapilmadanNarrative(["Başvurucu Ali Veli", "Karşı Taraf Ayşe Yılmaz"], "");
+    expect(text).toContain("Başvurucu Ali Veli ve Karşı Taraf Ayşe Yılmaz");
+  });
+});
+
+describe("buildUcretCumlesi", () => {
+  const c: any = {
+    basvurucuAd: "Ali Veli",
+    karsiTaraflar: [{ ad: "Ayşe Yılmaz" }, { ad: "Mehmet Can" }],
+  };
+  const a: any = { name: "Test Arabulucu", arabulucuIban: "TR000000000000000000000000" };
+
+  it("TEK ödeyen seçiliyse ismiyle yazar", () => {
+    const text = buildUcretCumlesi(c, a, "9.000", true, [false, false]);
+    expect(text).toContain("Ali Veli tarafından karşılanmak");
+    expect(text).not.toContain("eşit oranda");
+  });
+
+  it("BİRDEN FAZLA ödeyen seçiliyse 'eşit oranda' ifadesiyle yazar (sadece 'iki taraf' değil, N taraf genellenir)", () => {
+    const text = buildUcretCumlesi(c, a, "9.000", true, [true, true]);
+    expect(text).toContain("Ali Veli, Ayşe Yılmaz, Mehmet Can tarafından eşit oranda");
+  });
+
+  it("profildeki IBAN'ı kullanır, her belgede elle yazılmaz", () => {
+    const text = buildUcretCumlesi(c, a, "9.000", true, [false, false]);
+    expect(text).toContain("TR000000000000000000000000");
+  });
+
+  it("hiç ödeyen seçilmezse boş döner", () => {
+    expect(buildUcretCumlesi(c, a, "9.000", false, [false, false])).toBe("");
+  });
+});
+
+describe("buildSignatureBlock — 'Görüşme Yapılmadan Anlaşamama' katılmayan taraf imza satırı açılmaz", () => {
+  const c: any = {
+    basvurucuAd: "Ali Veli",
+    karsiTaraflar: [{ ad: "Ayşe Yılmaz" }, { ad: "Mehmet Can" }],
+  };
+  const a: any = { name: "Test Arabulucu", arabulucuSicilNo: "12345" };
+
+  it("attendance verilmezse (eski davranış) herkes imzalar", () => {
+    const block = buildSignatureBlock(c, a);
+    expect(block).toContain("Ali Veli");
+    expect(block).toContain("Ayşe Yılmaz");
+    expect(block).toContain("Mehmet Can");
+  });
+
+  it("katılmayan taraf attendance ile işaretlenirse imza satırından TAMAMEN çıkarılır", () => {
+    const block = buildSignatureBlock(c, a, { basvurucu: true, karsiTaraflar: [false, true] });
+    expect(block).not.toContain("Ayşe Yılmaz");
+    expect(block).toContain("Mehmet Can");
+    expect(block).toContain("Ali Veli");
+  });
+
+  it("başvurucu katılmadıysa başvurucu satırı da çıkarılır", () => {
+    const block = buildSignatureBlock(c, a, { basvurucu: false, karsiTaraflar: [true, true] });
+    expect(block).not.toContain("**Ali Veli**");
+  });
+});
+
+describe("sonucKisaLabel", () => {
+  it("4 sonuç türü için doğru kısa etiketi döner", () => {
+    expect(sonucKisaLabel("anlasma")).toBe("Anlaşma");
+    expect(sonucKisaLabel("kismi")).toBe("Kısmi Anlaşma");
+    expect(sonucKisaLabel("anlasamama")).toBe("Anlaşamama");
+    expect(sonucKisaLabel("gorusmesiz")).toBe("Görüşme Yapılmadan Anlaşamama");
+  });
+
+  it("bilinmeyen/boş değerde eski davranışla uyumlu olarak 'Anlaşamama' döner", () => {
+    expect(sonucKisaLabel(null)).toBe("Anlaşamama");
+    expect(sonucKisaLabel(undefined)).toBe("Anlaşamama");
   });
 });

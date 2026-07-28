@@ -47,7 +47,26 @@ export type ArabulucuProfile = {
   arabulucuSicilNo?: string | null;
   arabulucuUets?: string | null;
   arabulucuAdres?: string | null;
+  arabulucuIban?: string | null;
 };
+
+// Son Tutanak'ın 4 olası sonucu — takvim/bildirim/gündem gibi belge
+// ÜRETMEYEN yerlerde de aynı kısa etiketlerin gösterilmesi için tek bir
+// yerden tanımlanır (yoksa her yerde ayrı ayrı elle eşlenirdi).
+export function sonucKisaLabel(sonuc?: string | null): string {
+  switch (sonuc) {
+    case "anlasma":
+      return "Anlaşma";
+    case "kismi":
+      return "Kısmi Anlaşma";
+    case "gorusmesiz":
+      return "Görüşme Yapılmadan Anlaşamama";
+    case "anlasamama":
+      return "Anlaşamama";
+    default:
+      return "Anlaşamama";
+  }
+}
 
 export { stripMarkup } from "./richTextMarkup";
 
@@ -247,26 +266,41 @@ export function balancedRows<T>(items: T[], maxPerRow: number): T[][] {
   return rows;
 }
 
+// "Görüşme Yapılmadan Anlaşamama" durumunda toplantıya gelmeyen/kendisine
+// ulaşılamayan tarafın imza satırı tutanağa hiç açılmaz — bu yüzden
+// buildSignatureBlock'a opsiyonel bir "kimler katıldı" bilgisi geçilebilir.
+// Belirtilmezse (davet/ilk oturum/anlaşma gibi tüm normal akışlarda
+// olduğu gibi) herkes katılmış varsayılır — geriye dönük uyum bozulmaz.
+export type SignatureAttendance = {
+  basvurucu?: boolean; // varsayılan true
+  karsiTaraflar?: boolean[]; // index sırası partiesList(c) ile aynı, varsayılan hepsi true
+};
+
 // İmza bloğu — Başvurucu tarafında vekil varsa vekil adı + "Başvurucu
 // Vekili", yoksa başvurucunun kendisi; her karşı taraf için de aynı
 // mantıkla (vekil / şirket yetkilisi / kendisi) ayrı bir imza alanı.
 // NOT: Orijinal örnek belgelerde imza SATIRLARI (isim + rol + imza) 3'e
 // kadar TEK satırda yan yana durur; isimler KALIN yazılır, roller değil.
-export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): string {
+export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile, attendance?: SignatureAttendance): string {
+  const basvurucuKatildi = attendance?.basvurucu !== false;
   const basvurucuSign = c.basvurucuVekilAd
     ? { name: c.basvurucuVekilAd, role: "Başvurucu Vekili" }
     : { name: v(c.basvurucuAd), role: "Başvurucu" };
 
   const parties = partiesList(c);
-  const karsiSigns = parties.map((p, i) => {
-    const suffix = parties.length > 1 ? ` ${i + 1}` : "";
-    if (p.vekilAd) return { name: p.vekilAd, role: `Karşı Taraf${suffix} Vekili` };
-    if (p.yetkiliAd) return { name: p.yetkiliAd, role: `Karşı Taraf${suffix} (Şirket Yetkilisi)` };
-    return { name: v(p.ad), role: `Karşı Taraf${suffix}` };
-  });
+  const karsiSigns = parties
+    .map((p, i) => {
+      const suffix = parties.length > 1 ? ` ${i + 1}` : "";
+      const katildi = attendance?.karsiTaraflar?.[i] !== false;
+      if (!katildi) return null;
+      if (p.vekilAd) return { name: p.vekilAd, role: `Karşı Taraf${suffix} Vekili` };
+      if (p.yetkiliAd) return { name: p.yetkiliAd, role: `Karşı Taraf${suffix} (Şirket Yetkilisi)` };
+      return { name: v(p.ad), role: `Karşı Taraf${suffix}` };
+    })
+    .filter((s): s is { name: string; role: string } => s !== null);
 
   const arabulucuSign = { name: `Arb. ${v(a.name)}`, role: `(Sicil No: ${v(a.arabulucuSicilNo)})` };
-  const allSigns = [basvurucuSign, ...karsiSigns, arabulucuSign];
+  const allSigns = [...(basvurucuKatildi ? [basvurucuSign] : []), ...karsiSigns, arabulucuSign];
 
   // Önce kısa/normal isimleri (sırası korunarak) ayrı bir kümede topla ve
   // dengeli 3'lü gruplar hâlinde diz; taşacak kadar uzun isimler ise HİÇ
@@ -349,13 +383,14 @@ ${indentParagraphs(sartlarMetni.trim())}
 
 // ANLAŞAMAMA anlatısı — kullanıcının verdiği GERÇEK ÖRNEK cümle kalıbı
 // BİREBİR kullanılır (AI'a hiç yazdırılmaz, hata/sapma riski olmasın).
-// Sadece isimler ve iki basit seçenek (karşı teklif / ikinci toplantı)
-// değişir, cümle yapısı sabittir.
-export function buildAnlasamamaNarrative(
-  c: MediationCaseData,
-  karsiTeklifVar: boolean,
-  ikinciToplantiIsteniyor: boolean
-): string {
+// Sadece isimler ve "karşı teklif var mı" değişir, cümle yapısı sabittir.
+// NOT: Süreç zaten sabit iki oturumludur (ilk oturum + son tutanak) — bu
+// yüzden "ikinci bir toplantı istemediklerini" gibi bir ibare son
+// tutanakta anlamsızdır, ESKİDEN buradaydı, KALDIRILDI. Etiket de artık
+// "ANLAŞAMAMA" değil, "Kısmi Anlaşma"dan ayırt edilsin diye "HİÇBİR
+// KONUDA ANLAŞAMAMA" (bkz. sonucKisaLabel — kısa listelerde/takvimde hâlâ
+// sade "Anlaşamama" gösterilir, bu sadece TUTANAK METNİNDEKİ resmî ibare).
+export function buildAnlasamamaNarrative(c: MediationCaseData, karsiTeklifVar: boolean): string {
   const basvurucuTemsilci = c.basvurucuVekilAd
     ? `Başvurucu vekili ${c.basvurucuVekilAd}`
     : `Başvurucu ${v(c.basvurucuAd)}`;
@@ -367,23 +402,102 @@ export function buildAnlasamamaNarrative(
       const teklifCumlesi = karsiTeklifVar
         ? "karşı tekliflerinin olduğunu"
         : "herhangi bir karşı tekliflerinin olmadığını";
-      const toplantiCumlesi = ikinciToplantiIsteniyor
-        ? "ikinci bir toplantı istediklerini"
-        : "ikinci bir toplantı istemediklerini";
       // NOT: Buradaki "başvurucu yan ile" ifadesi, konuşan kişinin
       // KENDİ tarafını değil, KARŞISINDAKİ (başvurucu) tarafı işaret
       // eder — aksi halde "X, X ile anlaşamadı" gibi anlamsız bir
       // cümle çıkardı (daha önce yaşanan bir hataydı).
-      return `${temsilci} söz alarak başvurucunun taleplerini kabul etmediklerini, başvurucu yan ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, ${teklifCumlesi} ve ${toplantiCumlesi} beyan etti.`;
+      return `${temsilci} söz alarak başvurucunun taleplerini kabul etmediklerini, başvurucu yan ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, ${teklifCumlesi} beyan etti.`;
     })
     .join(" ");
 
   const basvurucuKapanisTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
-  const toplantiTaleb = ikinciToplantiIsteniyor
-    ? "ikinci bir toplantı talep ettiklerini"
-    : "ikinci bir toplantı taleplerinin olmadığını";
 
-  return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili taleplerini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak istediklerini, ${toplantiTaleb} beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
+  return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili taleplerini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak istediklerini beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde "HİÇBİR KONUDA ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
+}
+
+// KISMİ ANLAŞMA anlatısı — buildAnlasmaNarrative ile aynı üsluptaki bir
+// kalıp, ama anlaşılan VE anlaşılamayan hususlar AYRI AYRI kullanıcı
+// tarafından girilir ve ikisi de tutanağa BİREBİR (AI'sız) yazılır.
+// NOT: Bu şablon (buildGorusmeYapilmadanNarrative gibi) kullanıcının
+// verdiği gerçek bir örnek belgeden değil, mevcut Anlaşma/Anlaşamama
+// kalıplarının üslubuna göre tarafımca yazılmıştır — gözden geçirilmesi
+// önerilir.
+export function buildKismiAnlasmaNarrative(
+  c: MediationCaseData,
+  anlasilanHususlar: string,
+  anlasilamayanHususlar: string,
+  today: string,
+  ucretCumlesi?: string
+): string {
+  const basvurucuTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
+  const parties = partiesList(c);
+  const karsiIsimler = parties.map((p) => p.vekilAd || p.yetkiliAd || v(p.ad)).join(", ");
+
+  return `\t${today} günü taraflarla görüşmeler yapılmış, ${basvurucuTemsilci} ile ${karsiIsimler} arasında bir kısım hususlarda anlaşmaya varılmış, bir kısım hususlarda ise anlaşma sağlanamamıştır.
+
+\tAnlaşma Sağlanan Hususlar:
+
+${indentParagraphs(anlasilanHususlar.trim())}
+
+\tAnlaşma Sağlanamayan Hususlar:
+
+${indentParagraphs(anlasilamayanHususlar.trim())}
+${ucretCumlesi ? "\n" + indentParagraphs(ucretCumlesi.trim()) + "\n" : ""}
+\tTaraflar, üzerinde anlaşılan hususlar hakkında dava açılamayacağını anladıklarını ve bu durumu kabul ettiklerini, anlaşılamayan hususlar bakımından ise dava haklarının saklı olduğunu beyan ederek son tutanağın bu şekilde düzenlenmesini talep etmişlerdir. Tarafların isteği üzerine tüm hususlar son tutanağa yazılmış ve arabuluculuk süreci KISMİ ANLAŞMA ile sonuçlandırılmıştır.`;
+}
+
+// GÖRÜŞME YAPILMADAN ANLAŞAMAMA anlatısı — toplantıya hiç oturulamadığı
+// (bir/birden fazla taraf gelmedi ya da ulaşılamadı) için "söz alarak..."
+// gibi bir görüşme anlatısı YAZILMAZ; sadece kimin katılmadığı ve neden
+// görüşme yapılamadığı belirtilir. NOT: Bu şablon de kullanıcının verdiği
+// gerçek bir örnekten değil, mevcut kalıpların üslubuna göre tarafımca
+// yazılmıştır — gözden geçirilmesi önerilir.
+export function buildGorusmeYapilmadanNarrative(katilmayanlar: string[], sebep: string): string {
+  const katilmayanlarStr =
+    katilmayanlar.length > 1
+      ? katilmayanlar.slice(0, -1).join(", ") + " ve " + katilmayanlar[katilmayanlar.length - 1]
+      : katilmayanlar[0] || "taraflardan biri";
+
+  return `\tTaraflara usulüne uygun şekilde arabuluculuk toplantısına ilişkin bilgilendirme yapılmış ve davet gönderilmiş olmasına rağmen, ${katilmayanlarStr} toplantıya katılmamış veya kendisine ulaşılamamıştır.
+
+${indentParagraphs((sebep || "Katılmama/ulaşılamama nedenine ilişkin ayrıca bir bilgi verilmemiştir.").trim())}
+
+\tBu nedenle taraflar arasında bir görüşme yapılamamış olup, arabuluculuk süreci GÖRÜŞME YAPILMADAN ANLAŞAMAMA olarak sonuçlandırılmıştır.`;
+}
+
+// Anlaşma / Kısmi Anlaşma tutanaklarındaki ücret cümlesi — arabulucu
+// artık kendi IBAN'ını her belgede elle yazmaz, profiline BİR KEZ girer
+// (bkz. ArabulucuProfile.arabulucuIban) ve buradan otomatik çekilir.
+// Ödeyen taraf(lar) TEK seçiliyse isimle, BİRDEN FAZLA seçiliyse "eşit
+// oranda" ifadesiyle yazılır (sadece "iki taraf" değil, kaç taraf
+// seçiliyse hepsi arasında eşit bölünür).
+export function buildUcretCumlesi(
+  c: MediationCaseData,
+  a: ArabulucuProfile,
+  ucretTutari: string,
+  odeyenBasvurucu: boolean,
+  odeyenKarsiTaraflar: boolean[]
+): string {
+  const parties = partiesList(c);
+  const odeyenIsimler: string[] = [];
+  if (odeyenBasvurucu) odeyenIsimler.push(c.basvurucuVekilAd || v(c.basvurucuAd));
+  parties.forEach((p, i) => {
+    if (odeyenKarsiTaraflar[i]) odeyenIsimler.push(p.vekilAd || p.yetkiliAd || v(p.ad));
+  });
+
+  if (!odeyenIsimler.length) return "";
+
+  const odeyenCumlesi =
+    odeyenIsimler.length === 1
+      ? `${odeyenIsimler[0]} tarafından`
+      : `${odeyenIsimler.join(", ")} tarafından eşit oranda`;
+
+  // NOT: İsim + "'e/'a ait" gibi Türkçe ünlü uyumu gerektiren bir ek
+  // KASITLI OLARAK kullanılmıyor — isim rastgele/kullanıcı verisi olduğu
+  // için doğru eki programatik seçmek güvenilir değil ("...'e ait" her
+  // isimde doğru olmayabilir). Bunun yerine ek gerektirmeyen "adına
+  // açılan" ifadesi kullanılıyor.
+  return `\tArabuluculuk ücreti olan ${v(ucretTutari)} TL'nin ${odeyenCumlesi} karşılanmak suretiyle, arabulucu Arb. ${v(a.name)} adına açılan ${v(a.arabulucuIban)} numaralı IBAN hesabına ödenmesi hususunda taraflar mutabık kalmıştır.`;
 }
 
 // Davet Mektubu'nda hiç değişmeyen, uzun HUAK bilgilendirme metni —

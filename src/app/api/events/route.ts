@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { groupEventsByCaseAndDate } from "@/lib/groupEvents";
 import { requireWorkspace, shouldRestrictToOwnItems } from "@/lib/workspace";
-import { stripTcFromName } from "@/lib/mediationTemplates";
+import { stripTcFromName, sonucKisaLabel } from "@/lib/mediationTemplates";
 
 // Takvim VE ana sayfadaki "Yaklaşan Süreler" için: büronun tüm
 // müvekkillerindeki duruşma/ödeme tarihleri + büronun tarihi olan görevleri.
@@ -84,7 +84,7 @@ export async function GET() {
       mediationItems.push({
         id: "med-son-" + m.id,
         type: "durusma",
-        title: `Son Oturum (${m.sonTutanakSonucu === "anlasma" ? "Anlaşma" : "Anlaşamama"})`,
+        title: `Son Oturum (${sonucKisaLabel(m.sonTutanakSonucu)})`,
         dueDate: m.sonTutanakTarihi,
         clientId: null,
         clientName: `Arabuluculuk — ${stripTcFromName(m.basvurucuAd) || "?"}`,

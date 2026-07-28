@@ -141,6 +141,7 @@ async function profilOnOpen() {
       <div class="fg"><div class="fl">Kendi Büro Adresiniz <span class="opt">(davet mektubunda görünür)</span></div><input type="text" id="pf-arab-adres" value="${(u.arabulucuAdres||'').replace(/"/g,'&quot;')}" placeholder="ör. Kızılsaray Mah. ... No.107 K.4 D.19 Muratpaşa/Antalya"></div>
       <div class="fg"><div class="fl">Arabulucu Sicil No</div><input type="text" id="pf-arab-sicil" value="${(u.arabulucuSicilNo||'').replace(/"/g,'&quot;')}"></div>
       <div class="fg"><div class="fl">UETS No</div><input type="text" id="pf-arab-uets" value="${(u.arabulucuUets||'').replace(/"/g,'&quot;')}"></div>
+      <div class="fg"><div class="fl">IBAN <span class="opt">(anlaşma/kısmi anlaşma son tutanaklarında ücret cümlesinde otomatik kullanılır)</span></div><input type="text" id="pf-arab-iban" value="${(u.arabulucuIban||'').replace(/"/g,'&quot;')}" placeholder="TR__ ____ ____ ____ ____ ____ __"></div>
 
       <button class="pop-cta-btn g" style="width:100%;" onclick="profilSave()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
       <div id="profil-msg" style="font-size:12px;margin-top:10px;"></div>
@@ -186,11 +187,12 @@ async function profilSave() {
   const arabulucuAdres = document.getElementById('pf-arab-adres').value;
   const arabulucuSicilNo = document.getElementById('pf-arab-sicil').value;
   const arabulucuUets = document.getElementById('pf-arab-uets').value;
+  const arabulucuIban = document.getElementById('pf-arab-iban').value;
   const msg = document.getElementById('profil-msg');
 
   const res = await fetch('/api/profile', {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, phone, baro, sicilNo, officeAddress, arabuluculukBurosu, arabulucuSicilNo, arabulucuUets, arabulucuAdres })
+    body: JSON.stringify({ name, phone, baro, sicilNo, officeAddress, arabuluculukBurosu, arabulucuSicilNo, arabulucuUets, arabulucuAdres, arabulucuIban })
   });
   if (res.ok) {
     msg.style.color = 'var(--success)';

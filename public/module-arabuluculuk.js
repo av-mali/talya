@@ -403,7 +403,7 @@ function arShowGenForm(docType) {
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Davet Mektubu</div></div>
       <div class="fg"><div class="fl">Davet Edilecek Taraf</div>
-        <select id="ar-davet-taraf">${options.join('')}</select>
+        <div class="sw"><select id="ar-davet-taraf">${options.join('')}</select></div>
       </div>
       <div style="display:flex;gap:6px;">
         <div class="fg" style="flex:1;"><div class="fl">Tarih</div><input type="date" id="ar-davet-tarih"></div>
@@ -440,6 +440,10 @@ function arShowGenForm(docType) {
       <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('ilkoturum')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
     `;
   } else if (docType === 'sontutanak') {
+    const odeyenOptions = [`<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;"><input type="checkbox" id="ar-son-odeyen-basvurucu" checked><span style="font-size:12.5px;">Başvurucu — ${(c?.basvurucuAd)||''}</span></label>`]
+      .concat((c?.karsiTaraflar || []).map((p, i) => `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;"><input type="checkbox" id="ar-son-odeyen-karsi-${i}"><span style="font-size:12.5px;">${(c.karsiTaraflar.length > 1 ? 'Karşı Taraf ' + (i+1) + ' — ' : 'Karşı Taraf — ')}${p.ad||''}</span></label>`));
+    const katilmayanOptions = [`<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;"><input type="checkbox" id="ar-son-katilmayan-basvurucu"><span style="font-size:12.5px;">Başvurucu — ${(c?.basvurucuAd)||''}</span></label>`]
+      .concat((c?.karsiTaraflar || []).map((p, i) => `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;"><input type="checkbox" id="ar-son-katilmayan-karsi-${i}"><span style="font-size:12.5px;">${(c.karsiTaraflar.length > 1 ? 'Karşı Taraf ' + (i+1) + ' — ' : 'Karşı Taraf — ')}${p.ad||''}</span></label>`));
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Son Tutanak</div></div>
       <div style="display:flex;gap:6px;">
@@ -447,16 +451,30 @@ function arShowGenForm(docType) {
         <div class="fg" style="flex:1;"><div class="fl">Saati</div><input type="time" id="ar-son-saat" value="${c?.sonTutanakTarihi ? new Date(c.sonTutanakTarihi).toTimeString().slice(0,5) : '09:00'}"></div>
       </div>
       <div class="fg"><div class="fl">Sonuç</div>
-        <select id="ar-son-sonuc" onchange="arToggleSontutanakFields()">
+        <div class="sw"><select id="ar-son-sonuc" onchange="arToggleSontutanakFields()">
           <option value="anlasma">Anlaşma</option>
+          <option value="kismi">Kısmi Anlaşma</option>
           <option value="anlasamama">Anlaşamama</option>
-        </select>
+          <option value="gorusmesiz">Görüşme Yapılmadan Anlaşamama</option>
+        </select></div>
       </div>
       <div id="ar-son-anlasma-alan">
-        <div class="fg"><div class="fl">Anlaşma Şartları <span class="opt">(tutanağa BİREBİR bu şekilde yazılır, isimlere/tutarlara dikkat edin)</span></div><textarea id="ar-son-notlar" rows="6" placeholder="Örn: Taraflar, [X]'in [Y]'ye 06.10.2026 tarihine kadar taşınmazı boş olarak teslim etmesi konusunda anlaşmışlardır. Arabuluculuk ücreti olan 9.000 TL'nin başvurucu tarafından karşılanacağı..."></textarea></div>
+        <div class="fg"><div class="fl">Anlaşma Şartları <span class="opt">(tutanağa BİREBİR bu şekilde yazılır, isimlere/tutarlara dikkat edin)</span></div><textarea id="ar-son-notlar" rows="6" placeholder="Örn: Taraflar, [X]'in [Y]'ye 06.10.2026 tarihine kadar taşınmazı boş olarak teslim etmesi konusunda anlaşmışlardır..."></textarea></div>
+      </div>
+      <div id="ar-son-kismi-alan" style="display:none;">
+        <div class="fg"><div class="fl">Anlaşma Sağlanan Hususlar</div><textarea id="ar-son-anlasilan" rows="4" placeholder="Tutanağa BİREBİR bu şekilde yazılır…"></textarea></div>
+        <div class="fg"><div class="fl">Anlaşma Sağlanamayan Hususlar</div><textarea id="ar-son-anlasilamayan" rows="4" placeholder="Tutanağa BİREBİR bu şekilde yazılır…"></textarea></div>
+      </div>
+      <div id="ar-son-ucret-alan" style="display:none;">
+        <div class="fg"><div class="fl">Arabuluculuk Ücreti <span class="opt">(TL — boş bırakılırsa ücret cümlesi hiç eklenmez)</span></div><input type="text" id="ar-son-ucret" placeholder="ör. 9.000"></div>
+        <div class="fg"><div class="fl">Kim Ödeyecek <span class="opt">(birden fazla seçilirse eşit oranda paylaşılır)</span></div>${odeyenOptions.join('')}</div>
       </div>
       <div id="ar-son-anlasamama-alan" style="display:none;">
         <div style="font-size:11px;color:var(--t3);margin-bottom:10px;">Bu belge, standart bir "anlaşamama" cümle kalıbıyla otomatik oluşturulur — ek bir metin girmenize gerek yoktur.</div>
+      </div>
+      <div id="ar-son-gorusmesiz-alan" style="display:none;">
+        <div class="fg"><div class="fl">Toplantıya Katılmayan/Ulaşılamayan Taraf(lar)</div>${katilmayanOptions.join('')}</div>
+        <div class="fg"><div class="fl">Görüşmenin Yapılamama Nedeni</div><textarea id="ar-son-gorusmesizsebep" rows="3" placeholder="ör. Karşı tarafa usulüne uygun tebligat yapılmış olmasına rağmen kendisine ulaşılamamıştır…"></textarea></div>
       </div>
       <div style="font-size:10.5px;color:var(--t3);margin-bottom:6px;">Bu tarih, otomatik olarak Yaklaşan Süreler'e ve bildirim zilinize eklenecektir.</div>
       <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('sontutanak')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
@@ -472,9 +490,12 @@ async function arUseKayitliAdres() {
 }
 
 function arToggleSontutanakFields() {
-  const isAnlasma = document.getElementById('ar-son-sonuc').value === 'anlasma';
-  document.getElementById('ar-son-anlasma-alan').style.display = isAnlasma ? '' : 'none';
-  document.getElementById('ar-son-anlasamama-alan').style.display = isAnlasma ? 'none' : '';
+  const sonuc = document.getElementById('ar-son-sonuc').value;
+  document.getElementById('ar-son-anlasma-alan').style.display = sonuc === 'anlasma' ? '' : 'none';
+  document.getElementById('ar-son-kismi-alan').style.display = sonuc === 'kismi' ? '' : 'none';
+  document.getElementById('ar-son-ucret-alan').style.display = (sonuc === 'anlasma' || sonuc === 'kismi') ? '' : 'none';
+  document.getElementById('ar-son-anlasamama-alan').style.display = sonuc === 'anlasamama' ? '' : 'none';
+  document.getElementById('ar-son-gorusmesiz-alan').style.display = sonuc === 'gorusmesiz' ? '' : 'none';
 }
 
 function arToggleIlkOturumSonlandirmaNotu() {
@@ -514,11 +535,25 @@ async function arGenerate(docType) {
     body.karsiTeklifVar = document.getElementById('ar-ilk-karsiteklif').checked;
     body.ikinciToplantiIstenmiyor = document.getElementById('ar-ilk-ikincitoplanti-istenmiyor').checked;
   } else if (docType === 'sontutanak') {
+    const c = arCasesCache.find(cc => cc.id === arSelectedCaseId);
+    const karsiSayisi = (c?.karsiTaraflar || []).length;
     body.tutanakTarihi = document.getElementById('ar-son-tarih').value;
     body.tutanakSaati = document.getElementById('ar-son-saat').value;
     body.sonuc = document.getElementById('ar-son-sonuc').value;
     if (body.sonuc === 'anlasma') {
       body.notlar = document.getElementById('ar-son-notlar').value;
+    } else if (body.sonuc === 'kismi') {
+      body.anlasilanHususlar = document.getElementById('ar-son-anlasilan').value;
+      body.anlasilamayanHususlar = document.getElementById('ar-son-anlasilamayan').value;
+    } else if (body.sonuc === 'gorusmesiz') {
+      body.katilmayanBasvurucu = document.getElementById('ar-son-katilmayan-basvurucu').checked;
+      body.katilmayanKarsiTaraflar = Array.from({ length: karsiSayisi }, (_, i) => document.getElementById('ar-son-katilmayan-karsi-' + i).checked);
+      body.gorusmemeSebebi = document.getElementById('ar-son-gorusmesizsebep').value;
+    }
+    if (body.sonuc === 'anlasma' || body.sonuc === 'kismi') {
+      body.ucretTutari = document.getElementById('ar-son-ucret').value;
+      body.odeyenBasvurucu = document.getElementById('ar-son-odeyen-basvurucu').checked;
+      body.odeyenKarsiTaraflar = Array.from({ length: karsiSayisi }, (_, i) => document.getElementById('ar-son-odeyen-karsi-' + i).checked);
     }
   }
 

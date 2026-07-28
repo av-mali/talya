@@ -12,7 +12,7 @@ export async function GET() {
     where: { id: userId },
     select: {
       id: true, email: true, name: true, phone: true, baro: true, sicilNo: true,
-      arabuluculukBurosu: true, arabulucuSicilNo: true, arabulucuUets: true, arabulucuAdres: true,
+      arabuluculukBurosu: true, arabulucuSicilNo: true, arabulucuUets: true, arabulucuAdres: true, arabulucuIban: true,
       officeAddress: true, tevkilAlmaAcik: true,
       isAdmin: true, createdAt: true,
     },
@@ -27,8 +27,8 @@ export async function PUT(req: Request) {
   const userId = (session.user as any).id as string;
 
   const body = await req.json();
-  const { name, phone, baro, sicilNo, arabuluculukBurosu, arabulucuSicilNo, arabulucuUets, arabulucuAdres, officeAddress } = body;
-  const data: any = { name, phone, baro, sicilNo, arabuluculukBurosu, arabulucuSicilNo, arabulucuUets, arabulucuAdres, officeAddress };
+  const { name, phone, baro, sicilNo, arabuluculukBurosu, arabulucuSicilNo, arabulucuUets, arabulucuAdres, arabulucuIban, officeAddress } = body;
+  const data: any = { name, phone, baro, sicilNo, arabuluculukBurosu, arabulucuSicilNo, arabulucuUets, arabulucuAdres, arabulucuIban, officeAddress };
   if (body.tevkilAlmaAcik !== undefined) data.tevkilAlmaAcik = !!body.tevkilAlmaAcik;
 
   const user = await prisma.user.update({
@@ -36,7 +36,7 @@ export async function PUT(req: Request) {
     data,
     select: {
       id: true, email: true, name: true, phone: true, baro: true, sicilNo: true,
-      arabuluculukBurosu: true, arabulucuSicilNo: true, arabulucuUets: true, arabulucuAdres: true,
+      arabuluculukBurosu: true, arabulucuSicilNo: true, arabulucuUets: true, arabulucuAdres: true, arabulucuIban: true,
       officeAddress: true, tevkilAlmaAcik: true,
     },
   });

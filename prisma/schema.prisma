@@ -68,6 +68,7 @@ model User {
   arabulucuSicilNo   String?
   arabulucuUets      String?
   arabulucuAdres     String?
+  arabulucuIban      String? // Anlaşma/Kısmi Anlaşma son tutanaklarında ücret cümlesinde otomatik kullanılır — her belgede elle yazılmaz
   officeAddress      String? // genel büro adresi (Avukatlık Ücret Sözleşmesi gibi belgeler için)
   mediationCases     MediationCase[]
 }

@@ -12,6 +12,10 @@ import {
   buildDavetMektubu,
   buildAnlasmaNarrative,
   buildAnlasamamaNarrative,
+  buildKismiAnlasmaNarrative,
+  buildGorusmeYapilmadanNarrative,
+  buildUcretCumlesi,
+  sonucKisaLabel,
   ILK_OTURUM_BILGILENDIRME,
   stripMarkup,
   indentParagraphs,
@@ -106,7 +110,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const profile = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, phone: true, email: true, arabuluculukBurosu: true, arabulucuSicilNo: true, arabulucuUets: true, arabulucuAdres: true },
+    select: { name: true, phone: true, email: true, arabuluculukBurosu: true, arabulucuSicilNo: true, arabulucuUets: true, arabulucuAdres: true, arabulucuIban: true },
   });
   if (!profile) return NextResponse.json({ error: "Profil bulunamadı." }, { status: 404 });
 
@@ -200,7 +204,7 @@ Kullanıcının notu (görüşmelerin nasıl geçtiği, teyit süreci, toplantı
       // kalıptan (buildAnlasamamaNarrative) geliyor.
       let closing: string;
       if (sureBuradaBitiyor) {
-        closing = buildAnlasamamaNarrative(mediationCase, !!karsiTeklifVar, false);
+        closing = buildAnlasamamaNarrative(mediationCase, !!karsiTeklifVar);
       } else {
         const closingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı"nın KAPANIŞ paragrafını yazan bir asistansın.
 
@@ -227,9 +231,9 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       if (sureBuradaBitiyor) {
         // Tek belgede "Bilgilendirme ve Anlaşamama Son Tutanağı" — Son
         // Tutanak adımına ayrıca gerek yok.
-        const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: ANLAŞAMAMA**`;
+        const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: HİÇBİR KONUDA ANLAŞAMAMA**`;
         const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", extraLine, toplantiTarihiTr || undefined);
-        const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**"ANLAŞAMAMA" SON TUTANAĞI**\n\n\n`;
+        const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**"HİÇBİR KONUDA ANLAŞAMAMA" SON TUTANAĞI**\n\n\n`;
         finalText =
           title +
           header +
@@ -279,8 +283,22 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         }
       }
     } else if (docType === "sontutanak") {
-      const { sonuc, notlar, tutanakTarihi, tutanakSaati } = body;
-      const isAnlasma = sonuc === "anlasma";
+      // Sonuç artık 4 seçenekli: "anlasma" | "kismi" | "anlasamama" | "gorusmesiz".
+      const {
+        sonuc,
+        notlar,
+        anlasilanHususlar,
+        anlasilamayanHususlar,
+        ucretTutari,
+        odeyenBasvurucu,
+        odeyenKarsiTaraflar,
+        katilmayanBasvurucu,
+        katilmayanKarsiTaraflar,
+        gorusmemeSebebi,
+        tutanakTarihi,
+        tutanakSaati,
+      } = body;
+      const karsiTarafSayisi = mediationCase.karsiTaraflar.length || 1;
       // Aynı hata sınıfı burada da vardı: "tutanağın düzenlendiği tarih" ve
       // kapanış cümlesi, GÖRÜŞMENİN/TUTANAĞIN yapıldığı tarih yerine
       // sunucunun bugünkü tarihini kullanıyordu.
@@ -288,20 +306,61 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       const belgeTarihi = tutanakTarihiTr || new Date().toLocaleDateString("tr-TR");
 
       let narrative: string;
-      if (isAnlasma) {
+      let attendance: { basvurucu?: boolean; karsiTaraflar?: boolean[] } | undefined;
+      let sonucLabel: string;
+      let closingLine: string;
+
+      if (sonuc === "anlasma") {
         if (!notlar || !notlar.trim()) {
           return NextResponse.json({ error: "Anlaşma şartlarını yazmalısınız." }, { status: 400 });
         }
-        narrative = buildAnlasmaNarrative(mediationCase, notlar, belgeTarihi);
+        const ucretCumlesi =
+          ucretTutari && String(ucretTutari).trim()
+            ? buildUcretCumlesi(mediationCase, profile, ucretTutari, !!odeyenBasvurucu, odeyenKarsiTaraflar || [])
+            : "";
+        narrative = buildAnlasmaNarrative(mediationCase, notlar + (ucretCumlesi ? "\n\n" + ucretCumlesi : ""), belgeTarihi);
+        sonucLabel = "ANLAŞMA";
+        closingLine = `\tİşbu arabuluculuk anlaşma son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`;
+      } else if (sonuc === "kismi") {
+        if (!anlasilanHususlar || !anlasilanHususlar.trim() || !anlasilamayanHususlar || !anlasilamayanHususlar.trim()) {
+          return NextResponse.json({ error: "Anlaşma sağlanan ve sağlanamayan hususları yazmalısınız." }, { status: 400 });
+        }
+        const ucretCumlesi =
+          ucretTutari && String(ucretTutari).trim()
+            ? buildUcretCumlesi(mediationCase, profile, ucretTutari, !!odeyenBasvurucu, odeyenKarsiTaraflar || [])
+            : undefined;
+        narrative = buildKismiAnlasmaNarrative(mediationCase, anlasilanHususlar, anlasilamayanHususlar, belgeTarihi, ucretCumlesi);
+        sonucLabel = "KISMİ ANLAŞMA";
+        closingLine = `\tİşbu arabuluculuk kısmi anlaşma son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`;
+      } else if (sonuc === "gorusmesiz") {
+        const katilmayanKT: boolean[] = Array.from({ length: karsiTarafSayisi }, (_, i) => !!(katilmayanKarsiTaraflar || [])[i]);
+        const hicKatilmayanYok = !katilmayanBasvurucu && katilmayanKT.every((v) => !v);
+        if (hicKatilmayanYok) {
+          return NextResponse.json({ error: "Toplantıya katılmayan en az bir taraf seçmelisiniz." }, { status: 400 });
+        }
+        const katilmayanlar: string[] = [];
+        if (katilmayanBasvurucu) katilmayanlar.push(`Başvurucu ${mediationCase.basvurucuVekilAd || mediationCase.basvurucuAd || "……"}`);
+        mediationCase.karsiTaraflar.forEach((p, i) => {
+          if (katilmayanKT[i]) {
+            const suffix = karsiTarafSayisi > 1 ? ` ${i + 1}` : "";
+            katilmayanlar.push(`Karşı Taraf${suffix} ${p.vekilAd || p.yetkiliAd || p.ad || "……"}`);
+          }
+        });
+        narrative = buildGorusmeYapilmadanNarrative(katilmayanlar, gorusmemeSebebi || "");
+        sonucLabel = "GÖRÜŞME YAPILMADAN ANLAŞAMAMA";
+        closingLine = `\tİşbu arabuluculuk görüşme yapılmadan anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca katılan taraflarca imza altına alındı. ${belgeTarihi}`;
+        // Gelmeyen/ulaşılamayan tarafa imza satırı hiç açılmaz.
+        attendance = { basvurucu: !katilmayanBasvurucu, karsiTaraflar: katilmayanKT.map((v) => !v) };
       } else {
-        // Karşı teklif / ikinci toplantı seçenekleri artık İlk Oturum
-        // adımında sorulur (o oturumda "ikinci toplantı istenmiyor"
-        // işaretlenmediyse süreç buraya kadar gelir) — bu formda ayrıca
-        // sorulmuyor, sabit kalıp kullanılır.
-        narrative = buildAnlasamamaNarrative(mediationCase, false, false);
+        // "anlasamama" — karşı teklif seçeneği artık İlk Oturum adımında
+        // sorulur (o oturumda "ikinci toplantı istenmiyor" işaretlenmediyse
+        // süreç buraya kadar gelir) — bu formda ayrıca sorulmuyor, sabit
+        // kalıp kullanılır.
+        narrative = buildAnlasamamaNarrative(mediationCase, false);
+        sonucLabel = "HİÇBİR KONUDA ANLAŞAMAMA";
+        closingLine = `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`;
       }
 
-      const sonucLabel = isAnlasma ? "ANLAŞMA" : "ANLAŞAMAMA";
       const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
         .replace(/\s*hukuku\s*$/i, "")
         .toLocaleUpperCase("tr-TR") || "……";
@@ -312,9 +371,6 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: ${sonucLabel}**`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine, tutanakTarihiTr || undefined);
       const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
-      const closingLine = isAnlasma
-        ? `\tİşbu arabuluculuk anlaşma son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`
-        : `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`;
 
       finalText =
         title +
@@ -324,7 +380,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         "\n\n" +
         closingLine +
         "\n\n\n\n" +
-        buildSignatureBlock(mediationCase, profile);
+        buildSignatureBlock(mediationCase, profile, attendance);
 
       if (tutanakTarihi) {
         const dt = new Date(`${tutanakTarihi}T${tutanakSaati || "09:00"}:00+03:00`);
@@ -336,7 +392,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         }
       }
 
-      fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - ${isAnlasma ? "Anlaşma" : "Anlaşamama"} Son Tutanağı.udf`;
+      fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - ${sonucKisaLabel(sonuc)} Son Tutanağı.udf`;
     } else {
       return NextResponse.json({ error: "Geçersiz belge türü." }, { status: 400 });
     }
