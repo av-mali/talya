@@ -22,19 +22,25 @@
 //     öğesi) olarak işaretlenir — sadece görünüş değil, dosyanın kendi
 //     yapısında da gerçek bir liste öğesi (orijinal örnek belgelerde
 //     HUAK bilgilendirme paragrafları böyle işaretliydi)
+//   satırın EN BAŞINDA "[[F]]" -> o paragraf sayfanın gerçek ALT BİLGİ
+//     (footer) alanına yazılır — gövde metninin bir parçası DEĞİLDİR;
+//     orijinal örnek UYAP belgelerinde "Bu evrak ... imzalanmıştır."
+//     cümlesi ayrı, italik/kalın/küçük/mavi bir footer öğesi olarak
+//     saklanıyor, sıradan bir paragraf değil
 //
 // Bu işaretler olmayan satırlar İKİ YANA YASLI (justify) kabul edilir —
 // gerçek örnek UYAP belgelerinde gövde metninin tamamı böyledir.
 
 export type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
 
-export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; dateRow: boolean; numbered: 1 | 2 | 0 } {
+export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; dateRow: boolean; footer: boolean; numbered: 1 | 2 | 0 } {
   let line = rawLine;
   let centered = false;
   let right = false;
   let bulleted = false;
   let sigRow = false;
   let dateRow = false;
+  let footer = false;
   let numbered: 1 | 2 | 0 = 0;
   if (line.startsWith("[[C]]")) {
     centered = true;
@@ -50,6 +56,10 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
   }
   if (line.startsWith("[[D]]")) {
     dateRow = true;
+    line = line.slice(5);
+  }
+  if (line.startsWith("[[F]]")) {
+    footer = true;
     line = line.slice(5);
   }
   if (line.startsWith("[[N1]]")) {
@@ -101,7 +111,7 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
     out += line[i];
     i++;
   }
-  return { text: out, runs, centered, right, bulleted, sigRow, dateRow, numbered };
+  return { text: out, runs, centered, right, bulleted, sigRow, dateRow, footer, numbered };
 }
 
 export function stripMarkup(text: string): string {
@@ -113,6 +123,7 @@ export function stripMarkup(text: string): string {
         .replace(/^\[\[R\]\]/, "")
         .replace(/^\[\[S\]\]/, "")
         .replace(/^\[\[D\]\]/, "")
+        .replace(/^\[\[F\]\]/, "")
         .replace(/^\[\[N1\]\]/, "")
         .replace(/^\[\[N2\]\]/, "")
         .replace(/^\[\[B\]\]/, "• ")

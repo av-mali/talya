@@ -3,7 +3,7 @@
 // aldığı için (PDF'in aksine yazı tipini gömmek gerekmez), Türkçe
 // karakterler (ç, ğ, ı, ö, ş, ü) sorunsuz görünür.
 
-import { Document, Packer, Paragraph, TextRun, AlignmentType, TabStopType, LevelFormat } from "docx";
+import { Document, Packer, Paragraph, TextRun, AlignmentType, TabStopType, LevelFormat, Footer } from "docx";
 import { PDFDocument, rgb } from "pdf-lib";
 // @ts-ignore - @pdf-lib/fontkit için resmi TypeScript tip tanımı yok
 import fontkit from "@pdf-lib/fontkit";
@@ -11,42 +11,58 @@ import fs from "fs";
 import path from "path";
 import { parseLineMarkup } from "./richTextMarkup";
 
+// Bir satırın biçimli ("**kalın**", "__altı çizili__") ve düz kısımlarını,
+// orijinal sırayla ayrı TextRun'lar olarak üretir — aynı satırda hem düz
+// hem kalın/altı çizili metin bir arada olabiliyor (ör. "Vekili\t: Av. X").
+// "forceStyle" verilirse (footer satırı gibi) HER run'a o stil uygulanır
+// (satırın kendi bold/underline işaretlerinin üstüne yazar).
+function buildRuns(
+  lineText: string,
+  runs: { start: number; length: number; bold: boolean; underline: boolean }[],
+  forceStyle?: { italics?: boolean; bold?: boolean; size?: number; color?: string }
+): TextRun[] {
+  const mk = (t: string, bold: boolean, underline: boolean) =>
+    new TextRun({
+      text: t,
+      bold: forceStyle?.bold ?? bold,
+      underline: underline ? {} : undefined,
+      italics: forceStyle?.italics,
+      size: forceStyle?.size,
+      color: forceStyle?.color,
+    });
+
+  if (!runs.length) return [mk(lineText, false, false)];
+
+  const children: TextRun[] = [];
+  let cursor = 0;
+  const sorted = [...runs].sort((a, b) => a.start - b.start);
+  for (const r of sorted) {
+    if (r.start > cursor) children.push(mk(lineText.slice(cursor, r.start), false, false));
+    children.push(mk(lineText.slice(r.start, r.start + r.length), r.bold, r.underline));
+    cursor = r.start + r.length;
+  }
+  if (cursor < lineText.length) children.push(mk(lineText.slice(cursor), false, false));
+  return children;
+}
+
 export async function generateDocx(text: string): Promise<Buffer> {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
 
-  const paragraphs = lines.map((rawLine) => {
-    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow, dateRow } = parseLineMarkup(rawLine);
+  const paragraphs: Paragraph[] = [];
+  // Footer (ör. "Bu evrak ... imzalanmıştır.") satırları gövdeye DEĞİL,
+  // sayfanın gerçek Word footer'ına yazılır — orijinal örnek UYAP
+  // belgesinde bu cümle italik/kalın/10 punto/mavi bir sayfa altbilgisi
+  // olarak saklanıyor, sıradan bir gövde paragrafı değil.
+  const footerParagraphs: Paragraph[] = [];
 
-    // Biçimli kısımları ve düz kısımları, orijinal sırayla ayrı
-    // TextRun'lar olarak oluştur — aynı satırda hem düz hem kalın/altı
-    // çizili metin bir arada olabiliyor (ör. "Vekili\t: Av. X").
-    const children: TextRun[] = [];
-    if (!runs.length) {
-      children.push(new TextRun(lineText));
-    } else {
-      let cursor = 0;
-      const sorted = [...runs].sort((a, b) => a.start - b.start);
-      for (const r of sorted) {
-        if (r.start > cursor) {
-          children.push(new TextRun(lineText.slice(cursor, r.start)));
-        }
-        children.push(
-          new TextRun({
-            text: lineText.slice(r.start, r.start + r.length),
-            bold: r.bold,
-            underline: r.underline ? {} : undefined,
-          })
-        );
-        cursor = r.start + r.length;
-      }
-      if (cursor < lineText.length) {
-        children.push(new TextRun(lineText.slice(cursor)));
-      }
-    }
+  for (const rawLine of lines) {
+    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow, dateRow, footer } = parseLineMarkup(rawLine);
 
-    return new Paragraph({
-      children,
-      alignment: centered ? AlignmentType.CENTER : right ? AlignmentType.RIGHT : AlignmentType.JUSTIFIED,
+    const paragraph = new Paragraph({
+      children: footer
+        ? buildRuns(lineText, runs, { italics: true, bold: true, size: 20, color: "0080FF" })
+        : buildRuns(lineText, runs),
+      alignment: footer ? AlignmentType.CENTER : centered ? AlignmentType.CENTER : right ? AlignmentType.RIGHT : AlignmentType.JUSTIFIED,
       spacing: { after: 0, before: 0 },
       bullet: bulleted ? { level: 0 } : undefined,
       numbering: numbered === 1 ? { reference: "n1-list", level: 0 } : numbered === 2 ? { reference: "n2-list", level: 0 } : undefined,
@@ -76,7 +92,10 @@ export async function generateDocx(text: string): Promise<Buffer> {
             { type: TabStopType.LEFT, position: 3200 },
           ],
     });
-  });
+
+    if (footer) footerParagraphs.push(paragraph);
+    else paragraphs.push(paragraph);
+  }
 
   const doc = new Document({
     numbering: {
@@ -104,6 +123,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
             margin: { top: 720, bottom: 720, left: 1080, right: 1080 },
           },
         },
+        footers: footerParagraphs.length ? { default: new Footer({ children: footerParagraphs }) } : undefined,
         children: paragraphs,
       },
     ],

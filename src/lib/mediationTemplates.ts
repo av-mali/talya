@@ -211,14 +211,40 @@ function buildUyusmazlikKonusuCumlesi(c: MediationCaseData): string {
   return `Başvurucu ${basvurucuAd}${vekilCumle} tarafından yapılan "${konu}" konulu başvurudur.`;
 }
 
+// Bir imzacının satırı, aynı satırdaki diğer imzacılarla birlikte dar
+// sekme sütunlarına sığmayacak kadar uzunsa (ör. tek "Vekili" alanına
+// birden fazla avukadın adı/baro no'su sıkışmışsa — "Av. X Baro-1 / Av.
+// Y Baro-2" gibi) bu eşiği aşar. Böyle bir isim başka imzacılarla AYNI
+// satıra zorlanırsa, o hücre taşıp aynı satırdaki diğer isimlerin VE alt
+// satırdaki rol/imza satırlarının hizasını da bozuyordu (gerçek bir
+// örnekte görüldü) — bu yüzden bu tür isimler KENDİ satırında yalnız
+// bırakılır.
+const SIGN_OVERFLOW_THRESHOLD = 34;
+
+// Kalan (taşmayan) imzacılar 3'lü satırlara MÜMKÜN OLDUĞUNCA DENGELİ
+// dağıtılır — ör. 4 kişi varsa 3+1 (biri yalnız/"öksüz" kalır) DEĞİL,
+// 2+2 şeklinde bölünür. maxPerRow'u aşmayan en dengeli dağılım budur.
+function balancedRows<T>(items: T[], maxPerRow: number): T[][] {
+  if (!items.length) return [];
+  const rowCount = Math.ceil(items.length / maxPerRow);
+  const base = Math.floor(items.length / rowCount);
+  let extra = items.length % rowCount;
+  const rows: T[][] = [];
+  let idx = 0;
+  for (let r = 0; r < rowCount; r++) {
+    const size = base + (extra > 0 ? 1 : 0);
+    if (extra > 0) extra--;
+    rows.push(items.slice(idx, idx + size));
+    idx += size;
+  }
+  return rows;
+}
+
 // İmza bloğu — Başvurucu tarafında vekil varsa vekil adı + "Başvurucu
 // Vekili", yoksa başvurucunun kendisi; her karşı taraf için de aynı
 // mantıkla (vekil / şirket yetkilisi / kendisi) ayrı bir imza alanı.
-// NOT: Tek karşı taraf varsa yatay (yan yana) düzen kullanılır — orijinal
-// örnek belgelerdeki gibi. Birden fazla karşı taraf varsa (özellikle
-// uzun şirket unvanları taşabildiği için) her imza kendi satırında,
-// ALT ALTA dizilir — bu, uzun isimlerde satırın karmaşık/taşmış
-// görünmesini engeller.
+// NOT: Orijinal örnek belgelerde imza SATIRLARI (isim + rol + imza) 3'e
+// kadar TEK satırda yan yana durur; isimler KALIN yazılır, roller değil.
 export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): string {
   const basvurucuSign = c.basvurucuVekilAd
     ? { name: c.basvurucuVekilAd, role: "Başvurucu Vekili" }
@@ -235,18 +261,18 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): 
   const arabulucuSign = { name: `Arb. ${v(a.name)}`, role: `(Sicil No: ${v(a.arabulucuSicilNo)})` };
   const allSigns = [basvurucuSign, ...karsiSigns, arabulucuSign];
 
-  // İmza sayısı 3'e kadar (arabulucu dahil) TEK satırda yan yana; 4 ve
-  // üzeri olduğunda 3'lü gruplar halinde alt alta devam eder — bu, hem
-  // az taraflı dosyalarda orijinal görünümü korur hem de çok taraflı
-  // dosyalarda satırın taşmasını engeller.
-  const rows: { name: string; role: string }[][] = [];
-  for (let i = 0; i < allSigns.length; i += 3) {
-    rows.push(allSigns.slice(i, i + 3));
-  }
+  // Önce kısa/normal isimleri (sırası korunarak) ayrı bir kümede topla ve
+  // dengeli 3'lü gruplar hâlinde diz; taşacak kadar uzun isimler ise HİÇ
+  // BİR KISA İSİMLE AYNI SATIRA ZORLANMADAN, kendi (tek kişilik)
+  // satırlarında, en sona eklenir.
+  const shortSigns = allSigns.filter((s) => s.name.length <= SIGN_OVERFLOW_THRESHOLD);
+  const longSigns = allSigns.filter((s) => s.name.length > SIGN_OVERFLOW_THRESHOLD);
+  const rows: { name: string; role: string }[][] = balancedRows(shortSigns, 3);
+  for (const s of longSigns) rows.push([s]);
 
   const rowsText = rows
     .map((row) => {
-      const nameLine = row.map((s) => s.name).join("\t");
+      const nameLine = row.map((s) => `**${s.name}**`).join("\t");
       const roleLine = row.map((s) => s.role).join("\t");
       const markLine = row.map(() => "¸").join("\t");
       return `[[S]]${nameLine}\n[[S]]${roleLine}\n[[S]]${markLine}`;
@@ -254,10 +280,10 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): 
     .join("\n\n");
 
   return `${rowsText}
- 
 
-   
- Bu evrak 5070 sayılı Elektronik İmza Kanunu hükümlerine uygun olarak elektronik imza ile imzalanmıştır.
+
+
+[[F]]Bu evrak 5070 sayılı Elektronik İmza Kanunu hükümlerine uygun olarak elektronik imza ile imzalanmıştır.
 `;
 }
 

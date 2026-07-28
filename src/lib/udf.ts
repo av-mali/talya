@@ -75,14 +75,28 @@ export async function generateUdf(text: string): Promise<Buffer> {
 
   let plainCdata = "";
   let elementsXml = "";
+  // Footer (ör. "Bu evrak ... imzalanmıştır.") satırları gövde akışına
+  // DEĞİL, ayrı bir <footer> öğesine yazılır — gerçek UYAP belgelerinde
+  // bu cümle italik/kalın/10 punto/mavi (#0080FF) bir sayfa altbilgisi
+  // olarak saklanıyor, sıradan bir paragraf değil (ham örnek dosyadan
+  // doğrulandı). Metni yine de AYNI paylaşılan CDATA akışının parçası —
+  // sadece <elements> içindeki normal paragraf listesine değil, ayrı bir
+  // <footer><paragraph> öğesine referans veriyor.
+  let footerXml = "";
   let offset = 0;
 
   for (let i = 0; i < rawLines.length; i++) {
     const isLast = i === rawLines.length - 1;
-    const { text: lineText, runs, centered, bulleted, sigRow, dateRow } = parseLineMarkup(rawLines[i]);
+    const { text: lineText, runs, centered, bulleted, sigRow, dateRow, footer } = parseLineMarkup(rawLines[i]);
     const lengthWithBreak = lineText.length + (isLast ? 0 : 1);
 
     plainCdata += lineText + (isLast ? "" : "\n");
+
+    if (footer && lengthWithBreak > 0) {
+      footerXml += `<paragraph Alignment="1"><content italic="true" bold="true" size="10" foreground="-16744193" startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
+      offset += lengthWithBreak;
+      continue;
+    }
 
     if (lengthWithBreak > 0) {
       // Gerçek örnek belgelerde gövde metninin tamamı "iki yana yaslı"
@@ -141,7 +155,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
 
 <template format_id="1.8" >
 <content><![CDATA[${cdataContent}]]></content><properties><pageFormat mediaSizeName="1" leftMargin="42.51968479156494" rightMargin="42.51968479156494" topMargin="42.51968479156494" bottomMargin="42.51968479156494" paperOrientation="1" headerFOffset="20.0" footerFOffset="20.0" /></properties>
-<elements resolver="hvl-default" >${elementsXml}</elements>
+<elements resolver="hvl-default" >${elementsXml}${footerXml ? `<footer>${footerXml}</footer>` : ""}</elements>
 <styles><style name="default" description="Geçerli" family="Times New Roman" size="12" bold="false" italic="false" /><style name="hvl-default" family="Times New Roman" size="12" description="Gövde" /></styles>
 </template>
 `;

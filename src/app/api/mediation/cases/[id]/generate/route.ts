@@ -162,6 +162,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       const openingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı" hazırlayan bir asistansın.
 
 Şu ÜSLUP KURALINI izle: Resmi, üçüncü şahıs anlatımıyla, "[isim] ile yapılan görüşmede ... teyit edildi" ve "[isim ve isim]'in toplantı oturumunda oldukları görüldü ve müzakere süreci başladı" kalıplarını kullanarak İKİ ayrı paragraf yaz. Birden fazla karşı taraf varsa HER BİRİNİN katılım durumunu ayrı ayrı belirt.
+ÇOK ÖNEMLİ — İKİNCİ paragrafın SINIRI: İkinci paragraf SADECE toplantıya kimlerin hazır bulunduğunu/katıldığını belirtip "... müzakere süreci başladı." cümlesiyle BİTMELİDİR, tam orada dur. Ne birinci ne ikinci paragrafa; görüşmede NELERİN konuşulduğu, hangi tekliflerin verildiği, toplantının UZAYIP UZAMADIĞI, toplantının ne zaman/nasıl SONLANDIĞI veya bir SONRAKİ TOPLANTI ile ilgili HİÇBİR bilgiyi EKLEME — bunların hepsi ayrı, sana daha sonra sorulacak bir kapanış paragrafına ait, burada bunlardan hiç bahsetme. Kullanıcının notunda bu tür kapanış bilgileri geçiyor olsa bile, SEN o kısmı görmezden gel ve sadece katılım/teyit ile ilgili kısmı kullan.
 ${NARRATIVE_RULES}
 
 GERÇEK BİLGİLER:
