@@ -85,7 +85,7 @@ export function stripTcFromName(val?: string | null): string {
 // kaynağı buydu. stripTcFromName SADECE isim alanlarında (ad/unvan)
 // çağrılmalı; onlar zaten API katmanında (kaydederken ve okurken) ayrıca
 // temizleniyor, o yüzden burada hiç çağırmaya gerek yok.
-function v(val?: string | null, fallback = "……………") {
+export function v(val?: string | null, fallback = "……………") {
   if (!val || !val.trim()) return fallback;
   // Başvuru formlarındaki "[Haksız Fiilden Kaynaklanan (Nisbi)]" gibi
   // ham köşeli parantezli metinleri de temizler.
@@ -97,7 +97,7 @@ function v(val?: string | null, fallback = "……………") {
 // yazılmış ya da belgeden öyle çıkarılmışsa) ÖNCE o ön eki temizler.
 // Aksi halde metnin dört ayrı yerinde "Av. " elle ekleniyor olduğundan
 // "Av. Av. İsim Soyisim" gibi çift görünüyordu.
-function avLabel(val?: string | null): string {
+export function avLabel(val?: string | null): string {
   const clean = (val || "").trim().replace(/^Av(\.|ukat)?\s+/i, "");
   return clean ? `Av. ${clean}` : "";
 }
@@ -219,12 +219,12 @@ function buildUyusmazlikKonusuCumlesi(c: MediationCaseData): string {
 // satırdaki rol/imza satırlarının hizasını da bozuyordu (gerçek bir
 // örnekte görüldü) — bu yüzden bu tür isimler KENDİ satırında yalnız
 // bırakılır.
-const SIGN_OVERFLOW_THRESHOLD = 34;
+export const SIGN_OVERFLOW_THRESHOLD = 34;
 
 // Kalan (taşmayan) imzacılar 3'lü satırlara MÜMKÜN OLDUĞUNCA DENGELİ
 // dağıtılır — ör. 4 kişi varsa 3+1 (biri yalnız/"öksüz" kalır) DEĞİL,
 // 2+2 şeklinde bölünür. maxPerRow'u aşmayan en dengeli dağılım budur.
-function balancedRows<T>(items: T[], maxPerRow: number): T[][] {
+export function balancedRows<T>(items: T[], maxPerRow: number): T[][] {
   if (!items.length) return [];
   const rowCount = Math.ceil(items.length / maxPerRow);
   const base = Math.floor(items.length / rowCount);

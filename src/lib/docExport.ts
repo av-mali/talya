@@ -52,7 +52,13 @@ function buildRuns(
 // sayısı kadar EŞİT dilime bölünür, her durak kendi diliminin
 // ortasındadır — udf.ts'teki aynı mantığın DOCX karşılığı (aynı sayfa
 // genişliği oranlarını kullanır, birimi twips).
-const DOCX_SIGROW_CONTENT_WIDTH_TWIPS = 10080; // Letter (12240) - 2 * 1080 kenar boşluğu
+// ÖNEMLİ: Bu kütüphane sayfa boyutunu AÇIKÇA belirtmediğimiz için
+// kendi VARSAYILAN boyutunu kullanıyor — bu Letter DEĞİL, A4
+// (11906×16838 twips)! Gerçek `docx` çıktısı üretilip word/document.xml
+// içindeki <w:pgSz>/<w:pgMar> okunarak doğrulandı. Önceki sürümde bu
+// sabit yanlışlıkla Letter (12240) varsayıyordu — küçük ama gereksiz bir
+// sapmaydı (2400/7200 yerine 2520/7560 üretiyordu).
+const DOCX_SIGROW_CONTENT_WIDTH_TWIPS = 9746; // A4 (11906) - 2 * 1080 kenar boşluğu
 function sigRowTabStops(lineText: string) {
   const cols = Math.max((lineText.match(/\t/g) || []).length, 1);
   const stops: { type: (typeof TabStopType)[keyof typeof TabStopType]; position: number }[] = [];
