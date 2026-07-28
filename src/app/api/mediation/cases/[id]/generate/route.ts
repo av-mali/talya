@@ -162,10 +162,16 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       const docxBuffer = await generateDocx(finalText);
       return NextResponse.json({ text: stripMarkup(finalText), docxBase64: docxBuffer.toString("base64"), fileName });
     } else if (docType === "ilkoturum") {
-      const { notlar, toplantiTarihi, toplantiSaati } = body;
+      const { notlar, toplantiTarihi, toplantiSaati, karsiTeklifVar, ikinciToplantiIstenmiyor } = body;
       if (!notlar || !notlar.trim()) {
         return NextResponse.json({ error: "Kısa notlar girmelisiniz." }, { status: 400 });
       }
+      // "İkinci toplantı istenmiyor" işaretliyse, süreç bu oturumda
+      // anlaşmasız sona eriyor demektir — ayrı bir Son Tutanak adımına
+      // gerek kalmadan TEK belgede "Bilgilendirme ve Anlaşamama Son
+      // Tutanağı" üretiyoruz (kapanış kısmı AI'den değil, anlaşamama
+      // metnindeki SABİT kalıptan geliyor).
+      const sureBuradaBitiyor = !!ikinciToplantiIstenmiyor;
       // "YYYY-MM-DD" -> "DD.MM.YYYY" — hem AI anlatısında hem belge
       // başlığında/kapanışında GÖRÜŞMENİN yapıldığı tarih olarak kullanılır
       // (bugünün tarihi DEĞİL — "tutanağın düzenlendiği tarih" hatası buydu).
@@ -188,7 +194,15 @@ Kullanıcının notu (görüşmelerin nasıl geçtiği, teyit süreci, toplantı
 
       const narrative = indentParagraphs(await generateNarrative(openingPrompt));
 
-      const closingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı"nın KAPANIŞ paragrafını yazan bir asistansın.
+      // Kapanış: normal akışta AI'ye yazdırılır. Ama "ikinci toplantı
+      // istenmiyor" işaretliyse süreç burada anlaşmasız bittiği için,
+      // kapanış AI'den DEĞİL — Son Tutanak/Anlaşamama'daki ile AYNI SABİT
+      // kalıptan (buildAnlasamamaNarrative) geliyor.
+      let closing: string;
+      if (sureBuradaBitiyor) {
+        closing = buildAnlasamamaNarrative(mediationCase, !!karsiTeklifVar, false);
+      } else {
+        const closingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı"nın KAPANIŞ paragrafını yazan bir asistansın.
 
 Şu ÜSLUP KURALINI izle: "[isim] söz alarak taleplerini iletti. [isim] söz alarak ... beyan etti/süre talep etti." kalıbıyla, oturumda kimin ne söylediğini, sonunda ne karara varıldığını (ikinci toplantı mı, tutanağın ne zaman sonlandırıldığı) anlatan TEK bir paragraf yaz. Birden fazla karşı taraf varsa HER BİRİNİN ayrı ayrı söz aldığını yaz.
 ${NARRATIVE_RULES}
@@ -200,42 +214,72 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
 
 Şimdi bu bilgilerle TEK paragraf yaz.`;
 
-      const closing = indentParagraphs(await generateNarrative(closingPrompt));
+        closing = indentParagraphs(await generateNarrative(closingPrompt));
+      }
 
-      const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", undefined, toplantiTarihiTr || undefined);
       const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
         .replace(/\s*hukuku\s*$/i, "")
         .toLocaleUpperCase("tr-TR") || "……";
-      const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
       // Kapanış cümlesindeki tarih de GÖRÜŞMENİN yapıldığı tarih olmalı —
       // toplantı tarihi girilmediyse (nadiren) bugüne düşer.
       const belgeTarihi = toplantiTarihiTr || new Date().toLocaleDateString("tr-TR");
-      finalText =
-        title +
-        header +
-        "\n\n" +
-        narrative +
-        "\n\n" +
-        ILK_OTURUM_BILGILENDIRME +
-        "\n\n" +
-        closing +
-        `\n\t\n\tİşbu arabuluculuk bilgilendirme ve ilk oturum tutanağı üç sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}\n\n\n\n\n` +
-        buildSignatureBlock(mediationCase, profile);
+
+      if (sureBuradaBitiyor) {
+        // Tek belgede "Bilgilendirme ve Anlaşamama Son Tutanağı" — Son
+        // Tutanak adımına ayrıca gerek yok.
+        const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: ANLAŞAMAMA**`;
+        const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", extraLine, toplantiTarihiTr || undefined);
+        const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**"ANLAŞAMAMA" SON TUTANAĞI**\n\n\n`;
+        finalText =
+          title +
+          header +
+          "\n\n" +
+          narrative +
+          "\n\n" +
+          ILK_OTURUM_BILGILENDIRME +
+          "\n\n" +
+          closing +
+          `\n\t\n\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}\n\n\n\n\n` +
+          buildSignatureBlock(mediationCase, profile);
+
+        fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - Bilgilendirme ve Anlaşamama Son Tutanağı.udf`;
+      } else {
+        const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", undefined, toplantiTarihiTr || undefined);
+        const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
+        finalText =
+          title +
+          header +
+          "\n\n" +
+          narrative +
+          "\n\n" +
+          ILK_OTURUM_BILGILENDIRME +
+          "\n\n" +
+          closing +
+          `\n\t\n\tİşbu arabuluculuk bilgilendirme ve ilk oturum tutanağı üç sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}\n\n\n\n\n` +
+          buildSignatureBlock(mediationCase, profile);
+
+        fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - Bilgilendirme ve İlk Oturum Toplantısı.udf`;
+      }
 
       // Tarih/saat girildiyse dosyaya kaydet — bu, Yaklaşan Süreler ve
-      // bildirim ziliyle otomatik senkronize olur.
+      // bildirim ziliyle otomatik senkronize olur. Süreç burada
+      // anlaşmasız bittiyse Son Tutanak alanlarını da aynı anda dolduruyoruz
+      // (ayrı bir Son Tutanak adımı atlandığı için).
       if (toplantiTarihi) {
         // Sunucu UTC'de çalışabiliyor — Türkiye saatini (+03:00) açıkça
         // belirtmezsek, girilen saat yanlışlıkla UTC sanılıp 3 saat kayar.
         const dt = new Date(`${toplantiTarihi}T${toplantiSaati || "09:00"}:00+03:00`);
         if (!isNaN(dt.getTime())) {
-          await prisma.mediationCase.update({ where: { id: mediationCase.id }, data: { ilkOturumTarihi: dt } });
+          await prisma.mediationCase.update({
+            where: { id: mediationCase.id },
+            data: sureBuradaBitiyor
+              ? { ilkOturumTarihi: dt, sonTutanakTarihi: dt, sonTutanakSonucu: "anlasamama" }
+              : { ilkOturumTarihi: dt },
+          });
         }
       }
-
-      fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - Bilgilendirme ve İlk Oturum Toplantısı.udf`;
     } else if (docType === "sontutanak") {
-      const { sonuc, notlar, karsiTeklifVar, ikinciToplantiIsteniyor, tutanakTarihi, tutanakSaati } = body;
+      const { sonuc, notlar, tutanakTarihi, tutanakSaati } = body;
       const isAnlasma = sonuc === "anlasma";
       // Aynı hata sınıfı burada da vardı: "tutanağın düzenlendiği tarih" ve
       // kapanış cümlesi, GÖRÜŞMENİN/TUTANAĞIN yapıldığı tarih yerine
@@ -250,7 +294,11 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         }
         narrative = buildAnlasmaNarrative(mediationCase, notlar, belgeTarihi);
       } else {
-        narrative = buildAnlasamamaNarrative(mediationCase, !!karsiTeklifVar, !!ikinciToplantiIsteniyor);
+        // Karşı teklif / ikinci toplantı seçenekleri artık İlk Oturum
+        // adımında sorulur (o oturumda "ikinci toplantı istenmiyor"
+        // işaretlenmediyse süreç buraya kadar gelir) — bu formda ayrıca
+        // sorulmuyor, sabit kalıp kullanılır.
+        narrative = buildAnlasamamaNarrative(mediationCase, false, false);
       }
 
       const sonucLabel = isAnlasma ? "ANLAŞMA" : "ANLAŞAMAMA";

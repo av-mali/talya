@@ -427,6 +427,15 @@ function arShowGenForm(docType) {
         <div class="fg" style="flex:1;"><div class="fl">Toplantı Saati</div><input type="time" id="ar-ilk-saat" value="${c?.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toTimeString().slice(0,5) : '09:00'}"></div>
       </div>
       <div class="fg"><div class="fl">Kısa Notlar</div><textarea id="ar-ilk-notlar" rows="4" placeholder="Kiminle ne zaman görüşüldü, toplantı nasıl (yüz yüze/telekonferans) kararlaştırıldı, oturumda neler konuşuldu…"></textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
+        <input type="checkbox" id="ar-ilk-karsiteklif">
+        <span style="font-size:12.5px;">Karşı tarafın bir karşı teklifi vardı</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0 4px;cursor:pointer;">
+        <input type="checkbox" id="ar-ilk-ikincitoplanti-istenmiyor" onchange="arToggleIlkOturumSonlandirmaNotu()">
+        <span style="font-size:12.5px;">İkinci toplantı istenmiyor</span>
+      </label>
+      <div id="ar-ilk-sonlandirma-notu" style="display:none;font-size:11px;color:var(--t3);margin-bottom:6px;">Bu işaretlenirse süreç bu oturumda anlaşmasız sonlanmış sayılır — belge tek seferde "Bilgilendirme ve Anlaşamama Son Tutanağı" olarak, standart anlaşamama kalıbıyla oluşturulur; ayrıca Son Tutanak adımına gerek kalmaz.</div>
       <div style="font-size:10.5px;color:var(--t3);margin-bottom:6px;">Bu tarih, otomatik olarak Yaklaşan Süreler'e ve bildirim zilinize eklenecektir.</div>
       <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('ilkoturum')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
     `;
@@ -447,15 +456,7 @@ function arShowGenForm(docType) {
         <div class="fg"><div class="fl">Anlaşma Şartları <span class="opt">(tutanağa BİREBİR bu şekilde yazılır, isimlere/tutarlara dikkat edin)</span></div><textarea id="ar-son-notlar" rows="6" placeholder="Örn: Taraflar, [X]'in [Y]'ye 06.10.2026 tarihine kadar taşınmazı boş olarak teslim etmesi konusunda anlaşmışlardır. Arabuluculuk ücreti olan 9.000 TL'nin başvurucu tarafından karşılanacağı..."></textarea></div>
       </div>
       <div id="ar-son-anlasamama-alan" style="display:none;">
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
-          <input type="checkbox" id="ar-son-karsiteklif">
-          <span style="font-size:12.5px;">Karşı tarafın bir karşı teklifi vardı</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 0 12px;cursor:pointer;">
-          <input type="checkbox" id="ar-son-ikincitoplanti">
-          <span style="font-size:12.5px;">İkinci bir toplantı isteniyor</span>
-        </label>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:10px;">Bu belge, standart bir "anlaşamama" cümle kalıbıyla otomatik oluşturulur — yukarıdaki iki seçenek dışında bir metin girmenize gerek yoktur.</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:10px;">Bu belge, standart bir "anlaşamama" cümle kalıbıyla otomatik oluşturulur — ek bir metin girmenize gerek yoktur.</div>
       </div>
       <div style="font-size:10.5px;color:var(--t3);margin-bottom:6px;">Bu tarih, otomatik olarak Yaklaşan Süreler'e ve bildirim zilinize eklenecektir.</div>
       <button class="pop-cta-btn g" style="width:100%;" onclick="arGenerate('sontutanak')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
@@ -474,6 +475,12 @@ function arToggleSontutanakFields() {
   const isAnlasma = document.getElementById('ar-son-sonuc').value === 'anlasma';
   document.getElementById('ar-son-anlasma-alan').style.display = isAnlasma ? '' : 'none';
   document.getElementById('ar-son-anlasamama-alan').style.display = isAnlasma ? 'none' : '';
+}
+
+function arToggleIlkOturumSonlandirmaNotu() {
+  const el = document.getElementById('ar-ilk-sonlandirma-notu');
+  const checked = document.getElementById('ar-ilk-ikincitoplanti-istenmiyor').checked;
+  if (el) el.style.display = checked ? '' : 'none';
 }
 
 async function arRefreshCaseDatesQuietly() {
@@ -504,15 +511,14 @@ async function arGenerate(docType) {
     body.toplantiTarihi = document.getElementById('ar-ilk-tarih').value;
     body.toplantiSaati = document.getElementById('ar-ilk-saat').value;
     body.notlar = document.getElementById('ar-ilk-notlar').value;
+    body.karsiTeklifVar = document.getElementById('ar-ilk-karsiteklif').checked;
+    body.ikinciToplantiIstenmiyor = document.getElementById('ar-ilk-ikincitoplanti-istenmiyor').checked;
   } else if (docType === 'sontutanak') {
     body.tutanakTarihi = document.getElementById('ar-son-tarih').value;
     body.tutanakSaati = document.getElementById('ar-son-saat').value;
     body.sonuc = document.getElementById('ar-son-sonuc').value;
     if (body.sonuc === 'anlasma') {
       body.notlar = document.getElementById('ar-son-notlar').value;
-    } else {
-      body.karsiTeklifVar = document.getElementById('ar-son-karsiteklif').checked;
-      body.ikinciToplantiIsteniyor = document.getElementById('ar-son-ikincitoplanti').checked;
     }
   }
 
