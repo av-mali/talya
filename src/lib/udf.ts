@@ -12,6 +12,8 @@
 
 import JSZip from "jszip";
 import zlib from "zlib";
+import fs from "fs";
+import path from "path";
 import { parseLineMarkup } from "./richTextMarkup";
 
 // UYAP'ın ürettiği bazı UDF dosyaları, "streaming" (akış) modunda
@@ -93,6 +95,27 @@ function sigRowTabSet(lineText: string): string {
   return stops.join(",");
 }
 
+// [[SIMG]] imza görseli — kullanıcının gönderdiği, elle görsel eklenmiş
+// GERÇEK bir .udf dosyası (content.xml) incelenerek doğrulandı: UYAP
+// editörü bir görseli, paylaşılan CDATA metin akışında TEK BİR karaktere
+// ("¸" — CEDILLA, U+00B8) karşılık gelen bir <image> öğesiyle temsil
+// ediyor — <content> öğesinin resim halindeki karşılığı:
+//   <image imageData="BASE64_PNG" width="116.0" height="57.0"
+//          startOffset=".." length="1" />
+// width/height, görselin doğal piksel boyutuyla (116×57) BİREBİR aynı —
+// UYAP'ın kendisi de görseli eklerken bunu punto/point birimi olarak
+// kullanıyor, o yüzden biz de aynı değerleri kullanıyoruz (ölçeklemeye
+// gerek yok). mediationTemplates.ts, imza "mark" satırında her sütun
+// için tam olarak bu placeholder karakteri ("¸") üretir.
+let cachedEimzaBase64: string | null = null;
+function loadEimzaImageBase64(): string {
+  if (!cachedEimzaBase64) {
+    const imgPath = path.join(process.cwd(), "src/assets/images/eimza.png");
+    cachedEimzaBase64 = fs.readFileSync(imgPath).toString("base64");
+  }
+  return cachedEimzaBase64;
+}
+
 export async function generateUdf(text: string): Promise<Buffer> {
   const rawLines = text.replace(/\r\n/g, "\n").split("\n");
 
@@ -110,7 +133,7 @@ export async function generateUdf(text: string): Promise<Buffer> {
 
   for (let i = 0; i < rawLines.length; i++) {
     const isLast = i === rawLines.length - 1;
-    const { text: lineText, runs, centered, bulleted, sigRow, dateRow, footer } = parseLineMarkup(rawLines[i]);
+    const { text: lineText, runs, centered, bulleted, sigRow, sigImage, dateRow, footer } = parseLineMarkup(rawLines[i]);
     const lengthWithBreak = lineText.length + (isLast ? 0 : 1);
 
     plainCdata += lineText + (isLast ? "" : "\n");
@@ -145,7 +168,33 @@ export async function generateUdf(text: string): Promise<Buffer> {
         : dateRow
         ? ` TabSet="300.0:0:0"`
         : ` TabSet="42.0:0:0,163.0:0:0,163.0:0:0"`;
-      if (!runs.length) {
+      if (sigImage) {
+        // "¸" karakterlerinin her biri <image>'e, aralarındaki (tab gibi)
+        // diğer karakterler normal <content>'e çevrilir.
+        const eimzaBase64 = loadEimzaImageBase64();
+        let inner = "";
+        let plainStart = -1;
+        const flushPlain = (endIdx: number) => {
+          if (plainStart !== -1 && endIdx > plainStart) {
+            inner += `<content startOffset="${offset + plainStart}" length="${endIdx - plainStart}" />`;
+          }
+          plainStart = -1;
+        };
+        for (let ci = 0; ci < lineText.length; ci++) {
+          if (lineText[ci] === "¸") {
+            flushPlain(ci);
+            inner += `<image imageData="${eimzaBase64}" width="116.0" height="57.0" startOffset="${offset + ci}" length="1" />`;
+          } else if (plainStart === -1) {
+            plainStart = ci;
+          }
+        }
+        flushPlain(lineText.length);
+        if (!isLast) {
+          // Satır sonu ("\n") her zaman düz metin — offset lineText.length'te.
+          inner += `<content startOffset="${offset + lineText.length}" length="1" />`;
+        }
+        elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}>${inner}</paragraph>`;
+      } else if (!runs.length) {
         elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
       } else {
         // Biçimli kısımlar ile düz kısımları, orijinal sırayla ayrı

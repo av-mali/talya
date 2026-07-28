@@ -18,11 +18,19 @@ describe("parseLineMarkup", () => {
       centered: false,
       right: false,
       sigRow: false,
+      sigImage: false,
       dateRow: false,
       footer: false,
       bulleted: false,
       numbered: 0,
     });
+  });
+
+  it("[[SIMG]] hem sigImage HEM sigRow bayrağını true yapar (aynı sekme düzenini paylaşsın diye)", () => {
+    const r = parseLineMarkup("[[SIMG]]\t(e-imza)\t(e-imza)");
+    expect(r.sigImage).toBe(true);
+    expect(r.sigRow).toBe(true);
+    expect(r.text).toBe("\t(e-imza)\t(e-imza)");
   });
 
   it("**kalın**, __altı çizili__ ve **__ikisi birden__** biçimlerini doğru run'a çevirir", () => {

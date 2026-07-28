@@ -85,6 +85,25 @@ describe("buildSignatureBlock", () => {
     expect(nameLines[1]).toContain("**Arb. Mehmet Ali ŞAHİN**");
   });
 
+  it("isim/rol satırlarının altında [[SIMG]] ile işaretli, '¸' taşıyan bir imza görseli satırı üretir", () => {
+    const c: any = {
+      basvurucuVekilAd: "Mehmet Devran DEVRİM",
+      karsiTaraflar: [{ vekilAd: "Aylin BAHADIR" }, { vekilAd: "Ali ÇEKİÇ" }],
+    };
+    const a: any = { name: "Mehmet Ali ŞAHİN", arabulucuSicilNo: "35701" };
+    const block = buildSignatureBlock(c, a);
+
+    const imgLines = block.split("\n").filter((l) => l.startsWith("[[SIMG]]"));
+    expect(imgLines).toHaveLength(2); // 2x2 -> 2 satır
+    // "¸", her formatta (DOCX'te görsel, UDF'de <image>) doğru şekilde
+    // işlensin diye BİLEREK kullanılıyor — gerçek bir .udf örneğinde
+    // doğrulanan UYAP kuralı (bkz. udf.ts). Sıradan [[S]] satırlarında
+    // (isim/rol) GEÇMEMELİ.
+    for (const line of imgLines) {
+      expect(line).toContain("¸");
+    }
+  });
+
   it("kapanış cümlesini gerçek bir FOOTER (gövde değil) olarak işaretliyor", () => {
     const c: any = {};
     const a: any = { name: "Test Arabulucu" };

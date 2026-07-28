@@ -9,6 +9,16 @@
 //   satırın EN BAŞINDA "[[R]]" -> o paragraf SAĞA YASLI olur (ör. imza alanı)
 //   satırın EN BAŞINDA "[[S]]" -> o paragraf bir İMZA SATIRIDIR (dar,
 //     3 sütuna sığacak şekilde ÖZEL bir sekme düzeni kullanır)
+//   satırın EN BAŞINDA "[[SIMG]]" -> o paragraf bir İMZA GÖRSELİ
+//     SATIRIDIR — [[S]] ile AYNI sekme düzenini kullanır (sigRow=true de
+//     olur). Metindeki HER "¸" (CEDILLA) karakteri, gerçek "e-imza"
+//     görseliyle (src/assets/images/eimza.png) değiştirilir — hem
+//     DOCX'te (ImageRun, bkz. docExport.ts) hem UDF'de (<image
+//     imageData=".." startOffset=".." length="1" />, bkz. udf.ts).
+//     UDF'deki bu yapı, kullanıcının gönderdiği GERÇEK bir örnek .udf
+//     dosyası (elle görsel eklenmiş) incelenerek doğrulandı — UYAP,
+//     görseli paylaşılan metin akışında TEK KARAKTERLİK bir <image>
+//     öğesiyle temsil ediyor, tahmin/uydurma değil.
 //   satırın EN BAŞINDA "[[D]]" -> o paragraf bir TARİH/SONUÇ SATIRIDIR
 //     ("Arabuluculuk Bürosuna Başvuru Tarihi : ..." gibi) — etiketler
 //     normal etiket-değer satırlarından ÇOK daha uzun olduğundan, değer
@@ -33,16 +43,28 @@
 
 export type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
 
-export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; dateRow: boolean; footer: boolean; numbered: 1 | 2 | 0 } {
+export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; sigImage: boolean; dateRow: boolean; footer: boolean; numbered: 1 | 2 | 0 } {
   let line = rawLine;
   let centered = false;
   let right = false;
   let bulleted = false;
   let sigRow = false;
+  let sigImage = false;
   let dateRow = false;
   let footer = false;
   let numbered: 1 | 2 | 0 = 0;
-  if (line.startsWith("[[C]]")) {
+  // [[SIMG]] KONTROLÜ [[S]]'DEN ÖNCE gelmeli — ikisi de imza satırıyla
+  // ilgili ama farklı işaretler ("[[SIMG]]" zaten "[[S]]" ile
+  // BAŞLAMIYOR, o yüzden sıra aslında önemli değil, ama okunurluk için
+  // birlikte tutuluyor). sigImage=true olan satır AYNI ZAMANDA sigRow da
+  // sayılır — imza satırlarının ortak sekme durağı (TabSet/tabStops)
+  // mantığını (bkz. udf.ts/docExport.ts) olduğu gibi kullanır, sadece
+  // İÇERİĞİ (metin yerine gerçek e-imza görseli) farklı üretilir.
+  if (line.startsWith("[[SIMG]]")) {
+    sigImage = true;
+    sigRow = true;
+    line = line.slice(8);
+  } else if (line.startsWith("[[C]]")) {
     centered = true;
     line = line.slice(5);
   }
@@ -111,7 +133,7 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
     out += line[i];
     i++;
   }
-  return { text: out, runs, centered, right, bulleted, sigRow, dateRow, footer, numbered };
+  return { text: out, runs, centered, right, bulleted, sigRow, sigImage, dateRow, footer, numbered };
 }
 
 export function stripMarkup(text: string): string {
@@ -119,6 +141,7 @@ export function stripMarkup(text: string): string {
     .split("\n")
     .map((line) =>
       line
+        .replace(/^\[\[SIMG\]\]/, "")
         .replace(/^\[\[C\]\]/, "")
         .replace(/^\[\[R\]\]/, "")
         .replace(/^\[\[S\]\]/, "")

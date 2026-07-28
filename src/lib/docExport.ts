@@ -3,13 +3,54 @@
 // aldığı için (PDF'in aksine yazı tipini gömmek gerekmez), Türkçe
 // karakterler (ç, ğ, ı, ö, ş, ü) sorunsuz görünür.
 
-import { Document, Packer, Paragraph, TextRun, AlignmentType, TabStopType, LevelFormat, Footer } from "docx";
+import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, TabStopType, LevelFormat, Footer } from "docx";
 import { PDFDocument, rgb } from "pdf-lib";
 // @ts-ignore - @pdf-lib/fontkit için resmi TypeScript tip tanımı yok
 import fontkit from "@pdf-lib/fontkit";
 import fs from "fs";
 import path from "path";
 import { parseLineMarkup } from "./richTextMarkup";
+
+// İmza satırlarındaki ("[[SIMG]]") "e-imza" görseli — kullanıcının
+// verdiği gerçek örnek grafik, sadece bir kez diskten okunup önbelleğe
+// alınır (her belge üretiminde tekrar tekrar okumaya gerek yok).
+let cachedEimzaBytes: Buffer | null = null;
+function loadEimzaImage(): Buffer {
+  if (!cachedEimzaBytes) {
+    const imgPath = path.join(process.cwd(), "src/assets/images/eimza.png");
+    cachedEimzaBytes = fs.readFileSync(imgPath);
+  }
+  return cachedEimzaBytes;
+}
+// Orijinal görsel 116×57px — aynı en-boy oranını koruyarak belgeye uygun
+// küçük bir boyutta (isim/rol yazı boyutuna yakın) gömülür.
+const EIMZA_HEIGHT_PX = 28;
+const EIMZA_WIDTH_PX = Math.round(EIMZA_HEIGHT_PX * (116 / 57));
+
+// [[SIMG]] satırı: "\t(e-imza)\t(e-imza)" gibi bir metin yerine, her
+// sütuna GERÇEK bir görsel gömülür. Satırdaki tab'ların SAYISI ve
+// KONUMU aynen korunur (sigRowTabStops ile üretilen sekme duraklarına
+// görsel doğru hizada zıplasın diye) — sadece her tab'dan SONRAKİ
+// metin parçası, boşsa atlanır, doluysa (yer tutucu metin varsa) bir
+// ImageRun'a çevrilir.
+function buildSigImageChildren(lineText: string): (TextRun | ImageRun)[] {
+  const imgBuffer = loadEimzaImage();
+  const segments = lineText.split("\t");
+  const children: (TextRun | ImageRun)[] = [];
+  segments.forEach((seg, i) => {
+    if (i > 0) children.push(new TextRun({ text: "\t" }));
+    if (seg.trim()) {
+      children.push(
+        new ImageRun({
+          type: "png",
+          data: imgBuffer,
+          transformation: { width: EIMZA_WIDTH_PX, height: EIMZA_HEIGHT_PX },
+        })
+      );
+    }
+  });
+  return children;
+}
 
 // Bir satırın biçimli ("**kalın**", "__altı çizili__") ve düz kısımlarını,
 // orijinal sırayla ayrı TextRun'lar olarak üretir — aynı satırda hem düz
@@ -82,10 +123,12 @@ export async function generateDocx(text: string): Promise<Buffer> {
   const footerParagraphs: Paragraph[] = [];
 
   for (const rawLine of lines) {
-    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow, dateRow, footer } = parseLineMarkup(rawLine);
+    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow, sigImage, dateRow, footer } = parseLineMarkup(rawLine);
 
     const paragraph = new Paragraph({
-      children: footer
+      children: sigImage
+        ? buildSigImageChildren(lineText)
+        : footer
         ? buildRuns(lineText, runs, { italics: true, bold: true, size: 20, color: "0080FF" })
         : buildRuns(lineText, runs),
       alignment: footer ? AlignmentType.CENTER : centered ? AlignmentType.CENTER : right ? AlignmentType.RIGHT : AlignmentType.JUSTIFIED,

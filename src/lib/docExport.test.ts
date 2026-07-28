@@ -36,6 +36,31 @@ describe("generateDocx — imza satırı (sigRow) sekme durakları", () => {
   });
 });
 
+describe("generateDocx — [[SIMG]] (e-imza görseli)", () => {
+  it("her '¸' karakteri yerine gerçek bir görsel gömer (metin DEĞİL) ve aynı zamanda sigRow TabSet'ini kullanır", async () => {
+    // "¸", mediationTemplates.ts'in GERÇEKTEN ürettiği yer tutucu karakter
+    // (bkz. udf.ts'teki loadEimzaImageBase64 açıklaması — kullanıcının
+    // gönderdiği gerçek .udf örneğinde doğrulandı).
+    const buf = await generateDocx("[[SIMG]]\t¸\t¸\t¸");
+    const zip = await JSZip.loadAsync(buf);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    // 3 sütun -> 3 gömülü görsel (<w:drawing>), ve yer tutucu karakter
+    // ("¸") hiç gövdede DÜZ METİN olarak kalmamalı.
+    expect((xml.match(/<w:drawing>/g) || []).length).toBe(3);
+    expect(xml).not.toContain("¸");
+
+    // Aynı dinamik 3-sütun CENTER TabSet'i (sigRow ile birebir aynı).
+    expect(xml).toContain('<w:tab w:val="center" w:pos="1624"/>');
+    expect(xml).toContain('<w:tab w:val="center" w:pos="4873"/>');
+    expect(xml).toContain('<w:tab w:val="center" w:pos="8122"/>');
+
+    // Görsel gerçekten belgeye gömülmüş olmalı (word/media/*.png).
+    const mediaFile = Object.keys(zip.files).find((n) => /^word\/media\//.test(n) && n.endsWith(".png"));
+    expect(mediaFile).toBeTruthy();
+  });
+});
+
 describe("generateDocx — [[F]] footer", () => {
   it("footer satırı gövdeye değil, gerçek Word footer'ına (w:ftr) yazılır", async () => {
     const buf = await generateDocx(

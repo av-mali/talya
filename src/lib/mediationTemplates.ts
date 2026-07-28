@@ -277,12 +277,20 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile): 
   // satırlarda sayfanın soluna YAPIŞIK görünmesine yol açıyordu. udf.ts /
   // docExport.ts bu satırdaki tab SAYISINA göre (=sütun sayısı) sekme
   // duraklarını sayfa genişliğine göre DİNAMİK olarak hesaplıyor.
+  // İmza satırının altındaki üçüncü satır [[SIMG]] ile işaretlenir ve
+  // her sütun için "¸" (CEDILLA) karakteri taşır — bu, kullanıcının
+  // gönderdiği GERÇEK bir .udf örneğinde doğrulanan, UYAP'ın bir görseli
+  // paylaşılan metin akışında TEK KARAKTERLİK bir <image> öğesiyle temsil
+  // etme biçimi (bkz. udf.ts'teki loadEimzaImageBase64 açıklaması). Aynı
+  // "¸" karakteri DOCX çıktısında da (docExport.ts) gerçek "e-imza"
+  // görseliyle değiştirilir — yani metin İÇERİĞİ ("¸") HER İKİ formatta
+  // da aynı, sadece o karakterin YERİNE ne konduğu farklı.
   const rowsText = rows
     .map((row) => {
       const nameLine = "\t" + row.map((s) => `**${s.name}**`).join("\t");
       const roleLine = "\t" + row.map((s) => s.role).join("\t");
       const markLine = "\t" + row.map(() => "¸").join("\t");
-      return `[[S]]${nameLine}\n[[S]]${roleLine}\n[[S]]${markLine}`;
+      return `[[S]]${nameLine}\n[[S]]${roleLine}\n[[SIMG]]${markLine}`;
     })
     .join("\n\n");
 
