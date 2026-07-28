@@ -16,6 +16,7 @@ import {
   buildGorusmeYapilmadanNarrative,
   buildUcretCumlesi,
   sonucKisaLabel,
+  buildUyusmazlikBasligi,
   ILK_OTURUM_BILGILENDIRME,
   stripMarkup,
   indentParagraphs,
@@ -221,19 +222,19 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         closing = indentParagraphs(await generateNarrative(closingPrompt));
       }
 
-      const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
-        .replace(/\s*hukuku\s*$/i, "")
-        .toLocaleUpperCase("tr-TR") || "……";
       // Kapanış cümlesindeki tarih de GÖRÜŞMENİN yapıldığı tarih olmalı —
       // toplantı tarihi girilmediyse (nadiren) bugüne düşer.
       const belgeTarihi = toplantiTarihiTr || new Date().toLocaleDateString("tr-TR");
 
       if (sureBuradaBitiyor) {
         // Tek belgede "Bilgilendirme ve Anlaşamama Son Tutanağı" — Son
-        // Tutanak adımına ayrıca gerek yok.
-        const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: HİÇBİR KONUDA ANLAŞAMAMA**`;
+        // Tutanak adımına ayrıca gerek yok. "Arabuluculuk Sonucu" alanı ve
+        // başlık sade "ANLAŞAMAMA" gösterir — "hiçbir konuda" ibaresi
+        // SADECE narrative metninin son cümlesinde geçer (bkz.
+        // buildAnlasamamaNarrative).
+        const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: ANLAŞAMAMA**`;
         const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", extraLine, toplantiTarihiTr || undefined);
-        const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**"HİÇBİR KONUDA ANLAŞAMAMA" SON TUTANAĞI**\n\n\n`;
+        const title = `[[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**"ANLAŞAMAMA" SON TUTANAĞI**\n\n\n`;
         finalText =
           title +
           header +
@@ -249,7 +250,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - Bilgilendirme ve Anlaşamama Son Tutanağı.udf`;
       } else {
         const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", undefined, toplantiTarihiTr || undefined);
-        const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
+        const title = `[[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
         finalText =
           title +
           header +
@@ -357,20 +358,20 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         // süreç buraya kadar gelir) — bu formda ayrıca sorulmuyor, sabit
         // kalıp kullanılır.
         narrative = buildAnlasamamaNarrative(mediationCase, false);
-        sonucLabel = "HİÇBİR KONUDA ANLAŞAMAMA";
+        // "Arabuluculuk Sonucu" alanı ve başlık sade "ANLAŞAMAMA" gösterir
+        // — "hiçbir konuda" ibaresi SADECE narrative'in son cümlesinde
+        // (tırnağın dışında) geçer, bkz. buildAnlasamamaNarrative.
+        sonucLabel = "ANLAŞAMAMA";
         closingLine = `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`;
       }
 
-      const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
-        .replace(/\s*hukuku\s*$/i, "")
-        .toLocaleUpperCase("tr-TR") || "……";
       // NOT: [[D]] işareti ve tek "\t", buildHeaderBlock'taki tarih
       // satırlarıyla (Başvuru/Görevlendirme/Düzenlenme Tarihi) AYNI geniş
       // sekme durağını kullanır — bu satır onların hemen altına geldiği
       // için ":" işaretleri aynı dikey hizada durur.
       const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: ${sonucLabel}**`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine, tutanakTarihiTr || undefined);
-      const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
+      const title = `[[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
 
       finalText =
         title +

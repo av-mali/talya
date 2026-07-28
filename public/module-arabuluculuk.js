@@ -58,6 +58,7 @@ window.CURRENT_MODULE = {
               <option value="Ticaret Hukuku">Ticaret Hukuku</option>
               <option value="Tüketici Hukuku">Tüketici Hukuku</option>
               <option value="Kira Hukuku">Kira Hukuku</option>
+              <option value="Kat Mülkiyeti Kanunu">Kat Mülkiyeti Kanunu</option>
               <option value="Ortaklığın Giderilmesi">Ortaklığın Giderilmesi</option>
               <option value="Diğer">Diğer</option>
             </select>
@@ -747,7 +748,7 @@ function arEditCase(id) {
 
   const turSelect = document.getElementById('ar-uyusmazlik-tur');
   const turDiger = document.getElementById('ar-uyusmazlik-tur-diger');
-  const knownTurler = ['İş Hukuku', 'Ticaret Hukuku', 'Tüketici Hukuku', 'Kira Hukuku', 'Ortaklığın Giderilmesi'];
+  const knownTurler = ['İş Hukuku', 'Ticaret Hukuku', 'Tüketici Hukuku', 'Kira Hukuku', 'Kat Mülkiyeti Kanunu', 'Ortaklığın Giderilmesi'];
   if (c.uyusmazlikTuru && knownTurler.includes(c.uyusmazlikTuru)) {
     turSelect.value = c.uyusmazlikTuru;
     turDiger.style.display = 'none';

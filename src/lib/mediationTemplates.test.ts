@@ -10,6 +10,7 @@ import {
   buildGorusmeYapilmadanNarrative,
   buildUcretCumlesi,
   sonucKisaLabel,
+  buildUyusmazlikBasligi,
 } from "./mediationTemplates";
 
 describe("avLabel", () => {
@@ -150,9 +151,10 @@ describe("buildAnlasamamaNarrative — 'ikinci toplantı' ibaresi kaldırıldı"
     expect(text).not.toContain("toplantı istemediklerini");
   });
 
-  it("tam anlaşamama etiketi artık 'HİÇBİR KONUDA ANLAŞAMAMA' (Kısmi Anlaşma'dan ayırt etmek için)", () => {
+  it("son cümlede 'hiçbir konuda' tırnağın DIŞINDA, sadece 'ANLAŞAMAMA' tırnak içinde geçer (başlık/etiket alanlarında hâlâ sade 'ANLAŞAMAMA' kullanılır)", () => {
     const text = buildAnlasamamaNarrative(c, false);
-    expect(text).toContain('"HİÇBİR KONUDA ANLAŞAMAMA"');
+    expect(text).toContain('hiçbir konuda "ANLAŞAMAMA"');
+    expect(text).not.toContain('"HİÇBİR KONUDA ANLAŞAMAMA"');
   });
 
   it("karşı teklif seçeneği hâlâ çalışıyor", () => {
@@ -260,5 +262,22 @@ describe("sonucKisaLabel", () => {
   it("bilinmeyen/boş değerde eski davranışla uyumlu olarak 'Anlaşamama' döner", () => {
     expect(sonucKisaLabel(null)).toBe("Anlaşamama");
     expect(sonucKisaLabel(undefined)).toBe("Anlaşamama");
+  });
+});
+
+describe("buildUyusmazlikBasligi", () => {
+  it("'... Hukuku' ile bitenlerde 'Hukuku' atılır, 'HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA' eklenir", () => {
+    expect(buildUyusmazlikBasligi("İş Hukuku")).toBe("İŞ HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA");
+    expect(buildUyusmazlikBasligi("Kira Hukuku")).toBe("KİRA HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA");
+  });
+
+  it("'... Kanunu' ile bitenlerde 'HUKUKUNDAN' DEĞİL 'KANUNUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA' eklenir (Kat Mülkiyeti Kanunu)", () => {
+    expect(buildUyusmazlikBasligi("Kat Mülkiyeti Kanunu")).toBe("KAT MÜLKİYETİ KANUNUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA");
+    expect(buildUyusmazlikBasligi("Kat Mülkiyeti Kanunu")).not.toContain("KANUNU HUKUKUNDAN");
+  });
+
+  it("boş/tanımsız değerde sabit '……' fallback kullanır", () => {
+    expect(buildUyusmazlikBasligi("")).toBe("…… HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA");
+    expect(buildUyusmazlikBasligi(undefined)).toBe("…… HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA");
   });
 });

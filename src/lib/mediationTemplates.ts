@@ -50,6 +50,22 @@ export type ArabulucuProfile = {
   arabulucuIban?: string | null;
 };
 
+// Belge başlıklarındaki "... HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA"
+// satırını üretir. Çoğu uyuşmazlık türü "... Hukuku" ile bitiyor (İş
+// Hukuku, Kira Hukuku vb.) — bu durumda "Hukuku" eki atılıp yerine
+// "HUKUKUNDAN KAYNAKLANAN..." eklenir. Ama "Kat Mülkiyeti Kanunu" gibi
+// bir KANUN adı seçilmişse "... KANUNU HUKUKUNDAN..." diye anlamsız bir
+// tekrar oluşmasın diye "KANUNUNDAN KAYNAKLANAN..." bağlacı kullanılır
+// (ör. "KAT MÜLKİYETİ KANUNUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA").
+export function buildUyusmazlikBasligi(uyusmazlikTuru?: string | null): string {
+  const raw = (uyusmazlikTuru || "").trim();
+  if (!raw) return "…… HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA";
+  const upper = raw.toLocaleUpperCase("tr-TR");
+  if (/KANUNU$/.test(upper)) return `${upper}NDAN KAYNAKLANAN UYUŞMAZLIKLARDA`;
+  const stripped = upper.replace(/\s*HUKUKU\s*$/, "").trim();
+  return `${stripped || upper} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA`;
+}
+
 // Son Tutanak'ın 4 olası sonucu — takvim/bildirim/gündem gibi belge
 // ÜRETMEYEN yerlerde de aynı kısa etiketlerin gösterilmesi için tek bir
 // yerden tanımlanır (yoksa her yerde ayrı ayrı elle eşlenirdi).
@@ -386,10 +402,11 @@ ${indentParagraphs(sartlarMetni.trim())}
 // Sadece isimler ve "karşı teklif var mı" değişir, cümle yapısı sabittir.
 // NOT: Süreç zaten sabit iki oturumludur (ilk oturum + son tutanak) — bu
 // yüzden "ikinci bir toplantı istemediklerini" gibi bir ibare son
-// tutanakta anlamsızdır, ESKİDEN buradaydı, KALDIRILDI. Etiket de artık
-// "ANLAŞAMAMA" değil, "Kısmi Anlaşma"dan ayırt edilsin diye "HİÇBİR
-// KONUDA ANLAŞAMAMA" (bkz. sonucKisaLabel — kısa listelerde/takvimde hâlâ
-// sade "Anlaşamama" gösterilir, bu sadece TUTANAK METNİNDEKİ resmî ibare).
+// tutanakta anlamsızdır, ESKİDEN buradaydı, KALDIRILDI. "Arabuluculuk
+// Sonucu" alanı ve başlıkta hâlâ sade "ANLAŞAMAMA" yazar (bkz.
+// sonucKisaLabel) — SADECE bu anlatının son cümlesinde, Kısmi Anlaşma'dan
+// ayırt edilsin diye "hiçbir konuda" ibaresi tırnağın DIŞINA eklenir:
+// ...sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.
 export function buildAnlasamamaNarrative(c: MediationCaseData, karsiTeklifVar: boolean): string {
   const basvurucuTemsilci = c.basvurucuVekilAd
     ? `Başvurucu vekili ${c.basvurucuVekilAd}`
@@ -412,7 +429,7 @@ export function buildAnlasamamaNarrative(c: MediationCaseData, karsiTeklifVar: b
 
   const basvurucuKapanisTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
 
-  return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili taleplerini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak istediklerini beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde "HİÇBİR KONUDA ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
+  return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili taleplerini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak istediklerini beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
 }
 
 // KISMİ ANLAŞMA anlatısı — buildAnlasmaNarrative ile aynı üsluptaki bir
