@@ -19,6 +19,21 @@ import {
 
 export const maxDuration = 60;
 
+// HTML <input type="date"> alanları "YYYY-MM-DD" (ISO) formatında gelir —
+// bunu doğrudan metne/AI istemine yazarsak hem belgede hem AI'ın ürettiği
+// anlatıda "2026-07-08" gibi Türkçe olmayan bir biçimde görünüyordu
+// ("tutanağın düzenlendiği tarih" ve toplantı anlatısı satırlarındaki
+// hata buydu). Kasıtlı olarak new Date(...) KULLANILMIYOR — saf metin
+// ayrıştırma, projedeki diğer yerlerde görülen UTC/+03:00 kayması gibi
+// saat dilimi tuzaklarına hiç girmiyor.
+function formatTrDate(isoDate?: string | null): string | null {
+  if (!isoDate) return null;
+  const m = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  return `${d}.${mo}.${y}`;
+}
+
 const NARRATIVE_RULES = `
 KESİN KURALLAR:
 - Çıktında KÖŞELİ PARANTEZ ("[" veya "]") KULLANMA — hiçbir yer tutucu bırakma, sana verilen gerçek isim/tarih/saat bilgilerini doğrudan cümlenin içine yaz.
@@ -151,6 +166,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       if (!notlar || !notlar.trim()) {
         return NextResponse.json({ error: "Kısa notlar girmelisiniz." }, { status: 400 });
       }
+      // "YYYY-MM-DD" -> "DD.MM.YYYY" — hem AI anlatısında hem belge
+      // başlığında/kapanışında GÖRÜŞMENİN yapıldığı tarih olarak kullanılır
+      // (bugünün tarihi DEĞİL — "tutanağın düzenlendiği tarih" hatası buydu).
+      const toplantiTarihiTr = formatTrDate(toplantiTarihi);
 
       const openingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı" hazırlayan bir asistansın.
 
@@ -161,7 +180,7 @@ ${NARRATIVE_RULES}
 GERÇEK BİLGİLER:
 Başvurucu tarafı: ${basvurucuTemsilci(mediationCase)}
 Karşı taraf(lar): ${karsiTemsilciListesi(mediationCase)}
-Toplantı Tarihi: ${toplantiTarihi || "(belirtilmedi)"}
+Toplantı Tarihi: ${toplantiTarihiTr || "(belirtilmedi)"}
 Toplantı Saati: ${toplantiSaati || "(belirtilmedi)"}
 Kullanıcının notu (görüşmelerin nasıl geçtiği, teyit süreci, toplantı yöntemi vb.): ${notlar}
 
@@ -183,11 +202,14 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
 
       const closing = indentParagraphs(await generateNarrative(closingPrompt));
 
-      const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU");
+      const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", undefined, toplantiTarihiTr || undefined);
       const uyusmazlikTuruBaslik = (mediationCase.uyusmazlikTuru || "")
         .replace(/\s*hukuku\s*$/i, "")
         .toLocaleUpperCase("tr-TR") || "……";
       const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
+      // Kapanış cümlesindeki tarih de GÖRÜŞMENİN yapıldığı tarih olmalı —
+      // toplantı tarihi girilmediyse (nadiren) bugüne düşer.
+      const belgeTarihi = toplantiTarihiTr || new Date().toLocaleDateString("tr-TR");
       finalText =
         title +
         header +
@@ -197,7 +219,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         ILK_OTURUM_BILGILENDIRME +
         "\n\n" +
         closing +
-        `\n\t\n\tİşbu arabuluculuk bilgilendirme ve ilk oturum tutanağı üç sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${new Date().toLocaleDateString("tr-TR")}\n\n\n\n\n` +
+        `\n\t\n\tİşbu arabuluculuk bilgilendirme ve ilk oturum tutanağı üç sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}\n\n\n\n\n` +
         buildSignatureBlock(mediationCase, profile);
 
       // Tarih/saat girildiyse dosyaya kaydet — bu, Yaklaşan Süreler ve
@@ -215,13 +237,18 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
     } else if (docType === "sontutanak") {
       const { sonuc, notlar, karsiTeklifVar, ikinciToplantiIsteniyor, tutanakTarihi, tutanakSaati } = body;
       const isAnlasma = sonuc === "anlasma";
+      // Aynı hata sınıfı burada da vardı: "tutanağın düzenlendiği tarih" ve
+      // kapanış cümlesi, GÖRÜŞMENİN/TUTANAĞIN yapıldığı tarih yerine
+      // sunucunun bugünkü tarihini kullanıyordu.
+      const tutanakTarihiTr = formatTrDate(tutanakTarihi);
+      const belgeTarihi = tutanakTarihiTr || new Date().toLocaleDateString("tr-TR");
 
       let narrative: string;
       if (isAnlasma) {
         if (!notlar || !notlar.trim()) {
           return NextResponse.json({ error: "Anlaşma şartlarını yazmalısınız." }, { status: 400 });
         }
-        narrative = buildAnlasmaNarrative(mediationCase, notlar, new Date().toLocaleDateString("tr-TR"));
+        narrative = buildAnlasmaNarrative(mediationCase, notlar, belgeTarihi);
       } else {
         narrative = buildAnlasamamaNarrative(mediationCase, !!karsiTeklifVar, !!ikinciToplantiIsteniyor);
       }
@@ -235,12 +262,11 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       // sekme durağını kullanır — bu satır onların hemen altına geldiği
       // için ":" işaretleri aynı dikey hizada durur.
       const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: ${sonucLabel}**`;
-      const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine);
+      const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine, tutanakTarihiTr || undefined);
       const title = `[[C]]**${uyusmazlikTuruBaslik} HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
-      const today = new Date().toLocaleDateString("tr-TR");
       const closingLine = isAnlasma
-        ? `\tİşbu arabuluculuk anlaşma son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${today}`
-        : `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${today}`;
+        ? `\tİşbu arabuluculuk anlaşma son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15  uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`
+        : `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`;
 
       finalText =
         title +

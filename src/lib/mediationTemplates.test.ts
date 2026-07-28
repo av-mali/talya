@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { avLabel, v, balancedRows, buildSignatureBlock } from "./mediationTemplates";
+import { avLabel, v, balancedRows, buildSignatureBlock, buildHeaderBlock } from "./mediationTemplates";
 
 describe("avLabel", () => {
   it("önek yoksa ekler, zaten varsa TEKRARLAMAZ (Av. Av. hatası)", () => {
@@ -109,5 +109,23 @@ describe("buildSignatureBlock", () => {
     const a: any = { name: "Test Arabulucu" };
     const block = buildSignatureBlock(c, a);
     expect(block).toContain("[[F]]Bu evrak 5070 sayılı Elektronik İmza Kanunu");
+  });
+});
+
+describe("buildHeaderBlock — 'Tutanağının Düzenlendiği Tarih'", () => {
+  const c: any = { gorevlendirmeTarihi: "01.01.2026" };
+  const a: any = {};
+
+  it("duzenlemeTarihi verilirse ONU kullanır — gorevlendirmeTarihi'ni DEĞİL (görüşme günü ≠ görevlendirme günü)", () => {
+    const header = buildHeaderBlock(c, a, "ARABULUCU", undefined, "08.07.2026");
+    const line = header.split("\n").find((l) => l.includes("Tutanağının Düzenlendiği Tarih"));
+    expect(line).toContain("08.07.2026");
+    expect(line).not.toContain("01.01.2026");
+  });
+
+  it("duzenlemeTarihi verilmezse eskisi gibi gorevlendirmeTarihi'ne düşer (geriye dönük uyum)", () => {
+    const header = buildHeaderBlock(c, a, "ARABULUCU");
+    const line = header.split("\n").find((l) => l.includes("Tutanağının Düzenlendiği Tarih"));
+    expect(line).toContain("01.01.2026");
   });
 });

@@ -142,7 +142,14 @@ export function buildHeaderBlock(
   c: MediationCaseData,
   a: ArabulucuProfile,
   arabulucuLabel: string, // "ARABULUCU" veya "ARABULUCUNUN"
-  extraLine?: string // ör. "Arabuluculuk Sonucu\t\t\t: ANLAŞMA"
+  extraLine?: string, // ör. "Arabuluculuk Sonucu\t\t\t: ANLAŞMA"
+  // "Tutanağının Düzenlendiği Tarih" — VARSAYILAN olarak (bu parametre
+  // verilmezse) arabulucunun görevlendirildiği tarihe düşer, ama bu
+  // YANLIŞ bir varsayımdı: tutanak, GÖREVLENDİRME günü değil, GÖRÜŞMENİN
+  // (toplantının/son tutanağın) yapıldığı gün düzenlenir. Çağıran taraf
+  // (generate/route.ts) gerçek toplantı/tutanak tarihini buraya
+  // "DD.MM.YYYY" formatında geçmeli.
+  duzenlemeTarihi?: string
 ): string {
   const parties = partiesList(c);
   const karsiTarafBlocks = parties.map((p, i) => buildKarsiTarafBlock(p, i, parties.length)).join("\n");
@@ -194,7 +201,7 @@ ${karsiTarafBlocks}
 
 [[D]]**__Arabuluculuk Bürosuna Başvuru Tarihi__**\t**: ${v(c.basvuruTarihi)}**
 [[D]]**__Arabulucunun Görevlendirildiği Tarih__**\t**: ${v(c.gorevlendirmeTarihi)}**
-[[D]]**__Tutanağının Düzenlendiği Tarih__**\t**: ${v(c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
+[[D]]**__Tutanağının Düzenlendiği Tarih__**\t**: ${v(duzenlemeTarihi || c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
 `;
 }
 
