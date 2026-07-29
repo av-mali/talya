@@ -838,7 +838,7 @@ function arRenderHesapForm(yil) {
       </div>
       <div style="display:flex;gap:6px;">
         <div class="fg" style="flex:1;"><div class="fl">Taraf Sayısı</div><input type="number" id="ar-hs-taraf" min="2" step="1" value="2"></div>
-        <div class="fg" style="flex:1;"><div class="fl">Toplam Görüşme Saati</div><input type="number" id="ar-hs-saat" min="1" step="1" value="1"></div>
+        <div class="fg" style="flex:1;"><div class="fl">Toplam Görüşme Saati</div><input type="number" id="ar-hs-saat" min="1" step="1" value="2"></div>
       </div>
     </div>
 
@@ -922,14 +922,14 @@ async function arHesapCalc() {
   if (sonuc === 'anlasilamadi') {
     body.uyusmazlikKategori = document.getElementById('ar-hs-kategori').value;
     body.tarafSayisi = parseFloat(document.getElementById('ar-hs-taraf').value) || 2;
-    body.saat = parseFloat(document.getElementById('ar-hs-saat').value) || 1;
+    body.saat = parseFloat(document.getElementById('ar-hs-saat').value) || 2;
   } else {
     const parasal = document.getElementById('ar-hs-parasal').value;
     body.parasalMi = parasal === 'evet';
     if (!body.parasalMi) {
       body.uyusmazlikKategori = document.getElementById('ar-hs-kategori').value;
       body.tarafSayisi = parseFloat(document.getElementById('ar-hs-taraf').value) || 2;
-      body.saat = parseFloat(document.getElementById('ar-hs-saat').value) || 1;
+      body.saat = parseFloat(document.getElementById('ar-hs-saat').value) || 2;
     } else {
       const ozel = document.getElementById('ar-hs-ozel').value;
       body.ozelDurum = ozel;
