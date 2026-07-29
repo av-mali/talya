@@ -38,7 +38,8 @@ window.MODULES_INDEX = [
     "label": "Arabuluculuk",
     "color": "t",
     "items": [
-      {"id": "arabuluculuk", "icon": "fa-handshake", "name": "Dosyalarım"}
+      {"id": "arabuluculuk", "icon": "fa-handshake", "name": "Dosyalarım"},
+      {"id": "ucrethesapla", "icon": "fa-calculator", "name": "Ücret Hesaplama"}
     ]
   },
   {

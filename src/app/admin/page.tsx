@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { DEFAULT_TARIFF, type MediationFeeTariffData, type BirinciKisimRow, type IkinciKisimDilim } from "@/lib/feeTariff";
 
 type AdminUser = {
   id: string;
@@ -57,15 +58,21 @@ export default function AdminPage() {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [openTicketId, setOpenTicketId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [tarife, setTarife] = useState<MediationFeeTariffData | null>(null);
+  const [savingTarife, setSavingTarife] = useState(false);
+  const [extractingTarife, setExtractingTarife] = useState(false);
+  const [tarifeStatus, setTarifeStatus] = useState<string>("");
+  const tarifeFileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
-    const [uRes, sRes, cRes, pRes, wRes, tRes] = await Promise.all([
+    const [uRes, sRes, cRes, pRes, wRes, tRes, tfRes] = await Promise.all([
       fetch("/api/admin/users"),
       fetch("/api/admin/stats"),
       fetch("/api/constants"),
       fetch("/api/admin/pending-users"),
       fetch("/api/admin/workspaces"),
       fetch("/api/admin/support"),
+      fetch("/api/admin/tarife"),
     ]);
     if (uRes.status === 403 || sRes.status === 403) {
       setForbidden(true);
@@ -90,6 +97,10 @@ export default function AdminPage() {
     if (tRes.ok) {
       const tData = await tRes.json();
       setTickets(tData.tickets || []);
+    }
+    if (tfRes.ok) {
+      const tfData = await tfRes.json();
+      setTarife(tfData.data || DEFAULT_TARIFF);
     }
   }, []);
 
@@ -166,6 +177,90 @@ export default function AdminPage() {
     } else {
       alert("Güncellenemedi.");
     }
+  }
+
+  async function handleExtractTarife() {
+    const file = tarifeFileRef.current?.files?.[0];
+    if (!file) {
+      alert("Önce bir PDF veya görsel dosyası seçin.");
+      return;
+    }
+    setExtractingTarife(true);
+    setTarifeStatus("Yapay zeka tabloyu okuyor, bu biraz zaman alabilir…");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/admin/tarife/extract", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        setTarifeStatus(data.error || "Okunamadı.");
+        return;
+      }
+      const ex = data.extracted || {};
+      setTarife({
+        yil: ex.yil || tarife?.yil || DEFAULT_TARIFF.yil,
+        genelAsgariUcret: ex.genelAsgariUcret ?? tarife?.genelAsgariUcret ?? DEFAULT_TARIFF.genelAsgariUcret,
+        ortakligininGiderilmesiTicariAsgari: ex.ortakligininGiderilmesiTicariAsgari ?? tarife?.ortakligininGiderilmesiTicariAsgari ?? DEFAULT_TARIFF.ortakligininGiderilmesiTicariAsgari,
+        seriUyusmazlikTicari: ex.seriUyusmazlikTicari ?? tarife?.seriUyusmazlikTicari ?? DEFAULT_TARIFF.seriUyusmazlikTicari,
+        seriUyusmazlikDiger: ex.seriUyusmazlikDiger ?? tarife?.seriUyusmazlikDiger ?? DEFAULT_TARIFF.seriUyusmazlikDiger,
+        birinciKisim: Array.isArray(ex.birinciKisim) && ex.birinciKisim.length ? ex.birinciKisim : tarife?.birinciKisim || DEFAULT_TARIFF.birinciKisim,
+        ikinciKisim: Array.isArray(ex.ikinciKisim) && ex.ikinciKisim.length ? ex.ikinciKisim : tarife?.ikinciKisim || DEFAULT_TARIFF.ikinciKisim,
+      });
+      setTarifeStatus("Tablo dolduruldu — kaydetmeden önce rakamları belge ile karşılaştırıp kontrol edin.");
+    } catch (e) {
+      setTarifeStatus("Bir hata oluştu, tekrar deneyin.");
+    } finally {
+      setExtractingTarife(false);
+    }
+  }
+
+  async function handleSaveTarife() {
+    if (!tarife) return;
+    setSavingTarife(true);
+    const res = await fetch("/api/admin/tarife", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: tarife }),
+    });
+    setSavingTarife(false);
+    if (res.ok) {
+      const data = await res.json();
+      setTarife(data.data);
+      setTarifeStatus("Tarife kaydedildi — Ücret Hesaplama aracı artık bu değerleri kullanıyor.");
+      alert("Tarife kaydedildi. Ücret Hesaplama aracı artık yeni değerleri kullanıyor.");
+    } else {
+      alert("Kaydedilemedi.");
+    }
+  }
+
+  function updateBirinciRow(idx: number, patch: Partial<BirinciKisimRow>) {
+    if (!tarife) return;
+    const rows = tarife.birinciKisim.slice();
+    rows[idx] = { ...rows[idx], ...patch };
+    setTarife({ ...tarife, birinciKisim: rows });
+  }
+  function addBirinciRow() {
+    if (!tarife) return;
+    setTarife({ ...tarife, birinciKisim: [...tarife.birinciKisim, { key: `kategori_${tarife.birinciKisim.length + 1}`, label: "Yeni Kategori", iki: 0, uc5: 0, alti10: 0, onbirUstu: 0 }] });
+  }
+  function removeBirinciRow(idx: number) {
+    if (!tarife) return;
+    setTarife({ ...tarife, birinciKisim: tarife.birinciKisim.filter((_, i) => i !== idx) });
+  }
+
+  function updateIkinciRow(idx: number, patch: Partial<IkinciKisimDilim>) {
+    if (!tarife) return;
+    const rows = tarife.ikinciKisim.slice();
+    rows[idx] = { ...rows[idx], ...patch };
+    setTarife({ ...tarife, ikinciKisim: rows });
+  }
+  function addIkinciRow() {
+    if (!tarife) return;
+    setTarife({ ...tarife, ikinciKisim: [...tarife.ikinciKisim, { genislik: 0, tekOran: 0, cokluOran: 0 }] });
+  }
+  function removeIkinciRow(idx: number) {
+    if (!tarife) return;
+    setTarife({ ...tarife, ikinciKisim: tarife.ikinciKisim.filter((_, i) => i !== idx) });
   }
 
   async function handleDelete(id: string, email: string) {
@@ -295,6 +390,133 @@ export default function AdminPage() {
                   </button>
                 </div>
               </form>
+            )}
+          </div>
+
+          {/* ARABULUCULUK ÜCRET TARİFESİ */}
+          <div className="dash-card" style={{ marginTop: 24 }}>
+            <div className="dash-head">
+              <div className="dash-title"><i className="fa-solid fa-calculator"></i> Arabuluculuk Ücret Tarifesi{tarife ? ` (${tarife.yil})` : ""}</div>
+            </div>
+            <div style={{ padding: "4px 4px 16px", fontSize: 12.5, color: "var(--t2)" }}>
+              Bu tablo her yıl Resmî Gazete'de yayınlanan yeni Tebliğ ile değişir. Yeni tarifenin PDF'ini veya tablo ekran görüntüsünü yükleyip "AI ile Doldur"a basın, yapay zeka tabloyu otomatik doldursun — kaydetmeden önce rakamları belgeyle karşılaştırıp kontrol edin. Kaydettiğiniz an Arabuluculuk modülündeki "Ücret Hesaplama" aracı dahil sistemdeki her yer yeni değerleri kullanır.
+            </div>
+
+            {!tarife ? (
+              <div style={{ padding: 12, fontSize: 13, color: "var(--t3)" }}>Yükleniyor…</div>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14, padding: 12, background: "var(--bg2)", borderRadius: 8 }}>
+                  <input type="file" ref={tarifeFileRef} accept=".pdf,.jpg,.jpeg,.png,.webp" style={{ fontSize: 12.5 }} />
+                  <button type="button" style={styles.btn} disabled={extractingTarife} onClick={handleExtractTarife}>
+                    <i className="fa-solid fa-wand-magic-sparkles"></i> {extractingTarife ? "Okunuyor…" : "AI ile Doldur"}
+                  </button>
+                  {tarifeStatus && <span style={{ fontSize: 12, color: "var(--t2)" }}>{tarifeStatus}</span>}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <label style={styles.constLabel}>Tarife Yılı</label>
+                    <input type="number" style={styles.constInput} value={tarife.yil}
+                      onChange={(e) => setTarife({ ...tarife, yil: parseInt(e.target.value, 10) || tarife.yil })} />
+                  </div>
+                  <div>
+                    <label style={styles.constLabel}>Genel Asgari Ücret (TL)</label>
+                    <input type="number" step="0.01" style={styles.constInput} value={tarife.genelAsgariUcret}
+                      onChange={(e) => setTarife({ ...tarife, genelAsgariUcret: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div>
+                    <label style={styles.constLabel}>Ortaklığın Giderilmesi / Ticari Asgari (TL)</label>
+                    <input type="number" step="0.01" style={styles.constInput} value={tarife.ortakligininGiderilmesiTicariAsgari}
+                      onChange={(e) => setTarife({ ...tarife, ortakligininGiderilmesiTicariAsgari: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div>
+                    <label style={styles.constLabel}>Seri Uyuşmazlık — Ticari (TL/uyuşmazlık)</label>
+                    <input type="number" step="0.01" style={styles.constInput} value={tarife.seriUyusmazlikTicari}
+                      onChange={(e) => setTarife({ ...tarife, seriUyusmazlikTicari: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div>
+                    <label style={styles.constLabel}>Seri Uyuşmazlık — Diğer (TL/uyuşmazlık)</label>
+                    <input type="number" step="0.01" style={styles.constInput} value={tarife.seriUyusmazlikDiger}
+                      onChange={(e) => setTarife({ ...tarife, seriUyusmazlikDiger: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Birinci Kısım — Konusu Para Olmayan Uyuşmazlıklar (saatlik)</div>
+                <div style={{ overflowX: "auto", marginBottom: 10 }}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                        <th style={styles.th}>Uyuşmazlık Türü</th>
+                        <th style={styles.th}>2 Kişi (taraf başına)</th>
+                        <th style={styles.th}>3-5 Kişi (toplam)</th>
+                        <th style={styles.th}>6-10 Kişi (toplam)</th>
+                        <th style={styles.th}>11+ Kişi (toplam)</th>
+                        <th style={styles.th}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tarife.birinciKisim.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td style={styles.td}>
+                            <input type="text" style={{ ...styles.constInput, minWidth: 220 }} value={row.label}
+                              onChange={(e) => updateBirinciRow(i, { label: e.target.value })} />
+                          </td>
+                          <td style={styles.td}><input type="number" step="0.01" style={{ ...styles.constInput, width: 100 }} value={row.iki} onChange={(e) => updateBirinciRow(i, { iki: parseFloat(e.target.value) || 0 })} /></td>
+                          <td style={styles.td}><input type="number" step="0.01" style={{ ...styles.constInput, width: 100 }} value={row.uc5} onChange={(e) => updateBirinciRow(i, { uc5: parseFloat(e.target.value) || 0 })} /></td>
+                          <td style={styles.td}><input type="number" step="0.01" style={{ ...styles.constInput, width: 100 }} value={row.alti10} onChange={(e) => updateBirinciRow(i, { alti10: parseFloat(e.target.value) || 0 })} /></td>
+                          <td style={styles.td}><input type="number" step="0.01" style={{ ...styles.constInput, width: 100 }} value={row.onbirUstu} onChange={(e) => updateBirinciRow(i, { onbirUstu: parseFloat(e.target.value) || 0 })} /></td>
+                          <td style={styles.td}>
+                            <button type="button" style={styles.deleteBtn} onClick={() => removeBirinciRow(i)} title="Satırı sil"><i className="fa-solid fa-trash"></i></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <button type="button" style={{ ...styles.btn, padding: "6px 12px", fontSize: 12, background: "var(--bg2)", color: "var(--t1)", marginBottom: 20 }} onClick={addBirinciRow}>
+                  <i className="fa-solid fa-plus"></i> Kategori Ekle
+                </button>
+
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>İkinci Kısım — Konusu Para Olan Uyuşmazlıklar (kademeli %)</div>
+                <div style={{ overflowX: "auto", marginBottom: 10 }}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                        <th style={styles.th}>Dilim Genişliği (TL) — son dilim için boş bırakın</th>
+                        <th style={styles.th}>Tek Arabulucu (%)</th>
+                        <th style={styles.th}>Birden Fazla Arabulucu (%)</th>
+                        <th style={styles.th}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tarife.ikinciKisim.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td style={styles.td}>
+                            <input type="number" step="0.01" placeholder="sınırsız" style={{ ...styles.constInput, width: 140 }}
+                              value={row.genislik === null || row.genislik === undefined ? "" : row.genislik}
+                              onChange={(e) => updateIkinciRow(i, { genislik: e.target.value === "" ? null : parseFloat(e.target.value) || 0 })} />
+                          </td>
+                          <td style={styles.td}><input type="number" step="0.01" style={{ ...styles.constInput, width: 100 }} value={row.tekOran} onChange={(e) => updateIkinciRow(i, { tekOran: parseFloat(e.target.value) || 0 })} /></td>
+                          <td style={styles.td}><input type="number" step="0.01" style={{ ...styles.constInput, width: 100 }} value={row.cokluOran} onChange={(e) => updateIkinciRow(i, { cokluOran: parseFloat(e.target.value) || 0 })} /></td>
+                          <td style={styles.td}>
+                            <button type="button" style={styles.deleteBtn} onClick={() => removeIkinciRow(i)} title="Dilimi sil"><i className="fa-solid fa-trash"></i></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <button type="button" style={{ ...styles.btn, padding: "6px 12px", fontSize: 12, background: "var(--bg2)", color: "var(--t1)", marginBottom: 20 }} onClick={addIkinciRow}>
+                  <i className="fa-solid fa-plus"></i> Dilim Ekle
+                </button>
+
+                <div>
+                  <button type="button" style={styles.btn} disabled={savingTarife} onClick={handleSaveTarife}>
+                    {savingTarife ? "Kaydediliyor…" : "Tarifeyi Kaydet"}
+                  </button>
+                </div>
+              </>
             )}
           </div>
 

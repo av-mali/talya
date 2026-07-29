@@ -8,9 +8,18 @@ window.CURRENT_MODULE = {
   nameHtml: `<em class="g">Arabuluculuk</em>`,
   color: 't',
   items: [
-    {"id": "arabuluculuk", "icon": "fa-handshake", "name": "Dosyalarım"}
+    {"id": "arabuluculuk", "icon": "fa-handshake", "name": "Dosyalarım"},
+    {"id": "ucrethesapla", "icon": "fa-calculator", "name": "Ücret Hesaplama"}
   ],
   popups: {
+    ucrethesapla: {
+      badge: 'g', badgeText: 'Arabuluculuk Ücret Hesaplama', titleHtml: '<em class="g">Ücret Hesaplama</em>',
+      desc: 'Resmi Arabuluculuk Asgari Ücret Tarifesi\'ne göre tahmini arabuluculuk ücretini hesaplayın.',
+      btnClass: 'g', btnIco: 'fa-calculator', btnLbl: '', hideCta: true, hideChatInput: true, wideMode: true,
+      body: `<div id="ar-hesap-root" style="max-width:640px;margin:0 auto;padding:24px 4px;">${skeletonLines(4)}</div>`,
+      onOpen: () => arHesapOnOpen(),
+      prompt: () => ''
+    },
     arabuluculuk: {
       badge: 'g', badgeText: 'Arabuluculuk Belgeleri', titleHtml: '<em class="g">Arabuluculuk</em>',
       desc: 'Davet mektubu, ilk oturum ve son tutanağı otomatik oluşturun.',
@@ -774,4 +783,197 @@ async function arDeleteCase(id) {
   await fetch('/api/mediation/cases/' + id, { method: 'DELETE' });
   toast('Dosya silindi', 'fa-solid fa-trash');
   arLoadCases();
+}
+
+// ══════════════════════════════════════════════════════
+// ÜCRET HESAPLAMA — herhangi bir dosyaya/tutanağa bağlı olmayan, BAĞIMSIZ
+// bir araç. Resmi Arabuluculuk Asgari Ücret Tarifesi'ni (admin panelinden
+// güncellenebilir — bkz. /api/tarife) kullanarak tahmini ücreti hesaplar.
+// Son Tutanak'taki "Arabuluculuk Ücreti" alanıyla HİÇBİR bağlantısı yoktur.
+// ══════════════════════════════════════════════════════
+let arHesapTarife = null;
+
+async function arHesapOnOpen() {
+  const root = document.getElementById('ar-hesap-root');
+  try {
+    const res = await fetch('/api/tarife');
+    if (!res.ok) throw new Error('Tarife yüklenemedi');
+    const data = await res.json();
+    arHesapTarife = data.data;
+    arRenderHesapForm(data.yil);
+  } catch (e) {
+    if (root) root.innerHTML = `<div style="padding:20px;color:var(--danger);font-size:13px;">Ücret tarifesi yüklenemedi. Lütfen tekrar deneyin.</div>`;
+  }
+}
+
+function arRenderHesapForm(yil) {
+  const root = document.getElementById('ar-hesap-root');
+  if (!root) return;
+  const kategoriOptions = (arHesapTarife.birinciKisim || []).map(r => `<option value="${r.key}">${r.label}</option>`).join('');
+
+  root.innerHTML = `
+    <div class="ic" style="margin-bottom:14px;">
+      <div class="ic-t"><i class="fa-solid fa-calculator"></i> Arabuluculuk Ücret Hesaplama ${yil ? `(${yil} Tarifesi)` : ''}</div>
+      <p>Resmi Arabuluculuk Asgari Ücret Tarifesi'ne göre TAHMİNİ ücreti hesaplar — kesin ücret arabulucunun kendi değerlendirmesine tabidir. Bu araç herhangi bir dosya/tutanakla bağlantılı DEĞİLDİR.</p>
+    </div>
+
+    <div class="fg"><div class="fl">Arabuluculuk Süreci Sonucu</div>
+      <div class="sw"><select id="ar-hs-sonuc" onchange="arHesapToggle()">
+        <option value="anlasildi">Anlaşma Sağlandı</option>
+        <option value="anlasilamadi">Anlaşma Sağlanamadı</option>
+      </select></div>
+    </div>
+
+    <div id="ar-hs-blok-parasalsecim" class="fg">
+      <div class="fl">Uyuşmazlığın Konusu Para İle İlgili mi?</div>
+      <div class="sw"><select id="ar-hs-parasal" onchange="arHesapToggle()">
+        <option value="evet">Evet — konusu para olan/değerlendirilebilen bir uyuşmazlık</option>
+        <option value="hayir">Hayır — konusu para olmayan/değerlendirilemeyen bir uyuşmazlık</option>
+      </select></div>
+    </div>
+
+    <div id="ar-hs-blok-birincikisim">
+      <div class="fg"><div class="fl">Uyuşmazlık Türü</div>
+        <div class="sw"><select id="ar-hs-kategori">${kategoriOptions}</select></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <div class="fg" style="flex:1;"><div class="fl">Taraf Sayısı</div><input type="number" id="ar-hs-taraf" min="2" step="1" value="2"></div>
+        <div class="fg" style="flex:1;"><div class="fl">Toplam Görüşme Saati</div><input type="number" id="ar-hs-saat" min="1" step="1" value="1"></div>
+      </div>
+    </div>
+
+    <div id="ar-hs-blok-ozel" class="fg">
+      <div class="fl">Özel Durum</div>
+      <div class="sw"><select id="ar-hs-ozel" onchange="arHesapToggle()">
+        <option value="yok">Yok — genel parasal uyuşmazlık</option>
+        <option value="seri">Seri Uyuşmazlık (aynı ay içinde en az 10 uyuşmazlık)</option>
+        <option value="kira_tahliye">Kira — Tahliye Talepli</option>
+        <option value="kira_tespit">Kira — Kira Tespiti</option>
+        <option value="ortaklik_ticari">Ortaklığın Giderilmesi / Ticari Uyuşmazlık</option>
+      </select></div>
+    </div>
+
+    <div id="ar-hs-blok-tutar" class="fg">
+      <div class="fl">Anlaşma Tutarı (TL)</div>
+      <input type="number" id="ar-hs-tutar" min="0" step="0.01" placeholder="ör. 500000">
+    </div>
+
+    <div id="ar-hs-blok-seri">
+      <div class="fg"><div class="fl">Seri Uyuşmazlık Türü</div>
+        <div class="sw"><select id="ar-hs-seri-tur">
+          <option value="ticari">Ticari</option>
+          <option value="diger">Diğer</option>
+        </select></div>
+      </div>
+      <div class="fg"><div class="fl">Uyuşmazlık Adedi</div><input type="number" id="ar-hs-seri-adet" min="1" step="1" value="10"></div>
+    </div>
+
+    <div id="ar-hs-blok-kira" class="fg">
+      <div class="fl" id="ar-hs-kira-label">Bir Yıllık Kira Bedeli (TL)</div>
+      <input type="number" id="ar-hs-kira-bedel" min="0" step="0.01" placeholder="ör. 240000">
+    </div>
+
+    <div id="ar-hs-blok-arabulucusayisi" class="fg">
+      <div class="fl">Arabulucu Sayısı</div>
+      <div class="sw"><select id="ar-hs-arabulucusayisi">
+        <option value="tek">Tek Arabulucu</option>
+        <option value="coklu">Birden Fazla Arabulucu</option>
+      </select></div>
+    </div>
+
+    <button class="pop-cta-btn g" style="width:100%;margin-top:6px;" onclick="arHesapCalc()"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Hesapla</span></button>
+
+    <div id="ar-hesap-sonuc-kutu" style="margin-top:16px;"></div>
+  `;
+  arHesapToggle();
+}
+
+function arHesapToggle() {
+  const sonuc = document.getElementById('ar-hs-sonuc')?.value || 'anlasildi';
+  const parasal = document.getElementById('ar-hs-parasal')?.value || 'evet';
+  const ozel = document.getElementById('ar-hs-ozel')?.value || 'yok';
+
+  const showBirinciKisim = sonuc === 'anlasilamadi' || (sonuc === 'anlasildi' && parasal === 'hayir');
+  const showParasalSecim = sonuc === 'anlasildi';
+  const showOzel = sonuc === 'anlasildi' && parasal === 'evet';
+  const showTutar = showOzel && (ozel === 'yok' || ozel === 'ortaklik_ticari');
+  const showSeri = showOzel && ozel === 'seri';
+  const showKira = showOzel && (ozel === 'kira_tahliye' || ozel === 'kira_tespit');
+  const showArabulucuSayisi = showOzel && ozel !== 'seri';
+
+  const set = (id, show) => { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; };
+  set('ar-hs-blok-birincikisim', showBirinciKisim);
+  set('ar-hs-blok-parasalsecim', showParasalSecim);
+  set('ar-hs-blok-ozel', showOzel);
+  set('ar-hs-blok-tutar', showTutar);
+  set('ar-hs-blok-seri', showSeri);
+  set('ar-hs-blok-kira', showKira);
+  set('ar-hs-blok-arabulucusayisi', showArabulucuSayisi);
+
+  const kiraLabel = document.getElementById('ar-hs-kira-label');
+  if (kiraLabel) kiraLabel.textContent = ozel === 'kira_tespit' ? 'Tespit Olunan Kira Bedeli Farkının Bir Yıllık Tutarı (TL)' : 'Bir Yıllık Kira Bedeli (TL)';
+}
+
+async function arHesapCalc() {
+  const sonuc = document.getElementById('ar-hs-sonuc').value;
+  const sonucKutu = document.getElementById('ar-hesap-sonuc-kutu');
+  let body = { sonuc };
+
+  if (sonuc === 'anlasilamadi') {
+    body.uyusmazlikKategori = document.getElementById('ar-hs-kategori').value;
+    body.tarafSayisi = parseFloat(document.getElementById('ar-hs-taraf').value) || 2;
+    body.saat = parseFloat(document.getElementById('ar-hs-saat').value) || 1;
+  } else {
+    const parasal = document.getElementById('ar-hs-parasal').value;
+    body.parasalMi = parasal === 'evet';
+    if (!body.parasalMi) {
+      body.uyusmazlikKategori = document.getElementById('ar-hs-kategori').value;
+      body.tarafSayisi = parseFloat(document.getElementById('ar-hs-taraf').value) || 2;
+      body.saat = parseFloat(document.getElementById('ar-hs-saat').value) || 1;
+    } else {
+      const ozel = document.getElementById('ar-hs-ozel').value;
+      body.ozelDurum = ozel;
+      if (ozel === 'yok' || ozel === 'ortaklik_ticari') {
+        body.anlasmaTutari = parseFloat(document.getElementById('ar-hs-tutar').value) || 0;
+        body.arabulucuSayisi = document.getElementById('ar-hs-arabulucusayisi').value;
+      } else if (ozel === 'seri') {
+        body.seriTuru = document.getElementById('ar-hs-seri-tur').value;
+        body.seriAdedi = parseFloat(document.getElementById('ar-hs-seri-adet').value) || 1;
+      } else if (ozel === 'kira_tahliye' || ozel === 'kira_tespit') {
+        body.kiraBedeli = parseFloat(document.getElementById('ar-hs-kira-bedel').value) || 0;
+        body.arabulucuSayisi = document.getElementById('ar-hs-arabulucusayisi').value;
+      }
+    }
+  }
+
+  sonucKutu.innerHTML = `<div style="font-size:12.5px;color:var(--t3);">Hesaplanıyor…</div>`;
+  try {
+    const res = await fetch('/api/mediation/fee-calc', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      sonucKutu.innerHTML = `<div style="padding:12px;color:var(--danger);font-size:13px;">${data.error || 'Hesaplanamadı.'}</div>`;
+      return;
+    }
+    const r = data.result;
+    const tl = (n) => n.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+    sonucKutu.innerHTML = `
+      <div style="border:1px solid var(--border);border-radius:var(--r);padding:16px;background:var(--bg2);">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:4px;">Tahmini Arabuluculuk Ücreti (${data.tarifeYili})</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:28px;color:var(--gold);margin-bottom:10px;">${tl(r.toplamUcret)}</div>
+        <div style="font-size:12.5px;color:var(--t1);margin-bottom:8px;">${r.ozet}</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:10px;">${r.maddeAciklama}</div>
+        ${r.detaySatirlari && r.detaySatirlari.length ? `
+          <div style="border-top:1px solid var(--border);padding-top:8px;">
+            ${r.detaySatirlari.map(s => `<div style="font-size:11.5px;color:var(--t2);padding:2px 0;">• ${s}</div>`).join('')}
+          </div>` : ''}
+        <div style="font-size:10.5px;color:var(--t3);margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">
+          Bu tutar tahminidir, resmi tutanak/makbuz niteliği taşımaz ve KDV dahil değildir. Kesin ücret, arabulucu ile taraflar arasındaki sözleşmeye ve arabulucunun somut olaya ilişkin değerlendirmesine tabidir.
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    sonucKutu.innerHTML = `<div style="padding:12px;color:var(--danger);font-size:13px;">Bir hata oluştu, tekrar deneyin.</div>`;
+  }
 }

@@ -209,7 +209,7 @@ Kullanıcının notu (görüşmelerin nasıl geçtiği, teyit süreci, toplantı
       } else {
         const closingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı"nın KAPANIŞ paragrafını yazan bir asistansın.
 
-Şu ÜSLUP KURALINI izle: "[isim] söz alarak taleplerini iletti. [isim] söz alarak ... beyan etti/süre talep etti." kalıbıyla, oturumda kimin ne söylediğini, sonunda ne karara varıldığını (ikinci toplantı mı, tutanağın ne zaman sonlandırıldığı) anlatan TEK bir paragraf yaz. Birden fazla karşı taraf varsa HER BİRİNİN ayrı ayrı söz aldığını yaz.
+Şu ÜSLUP KURALINI izle: "[isim] söz alarak teklifini iletti. [isim] söz alarak ... beyan etti/süre talep etti." kalıbıyla, oturumda kimin ne söylediğini, sonunda ne karara varıldığını (ikinci toplantı mı, tutanağın ne zaman sonlandırıldığı) anlatan TEK bir paragraf yaz. Birden fazla karşı taraf varsa HER BİRİNİN ayrı ayrı söz aldığını yaz. "Talep" kelimesini KULLANMA — arabuluculukta karşı tarafa iletilen şey bir "teklif"tir. Bir tarafın söylediklerini aktarırken ("kabul etmediğini/etmediklerini", "istediğini/istediklerini" gibi) EĞER o taraf bir VEKİL (avukat) ile temsil ediliyorsa ÇOĞUL kip ("etmediklerini"), EĞER taraf vekilsiz TEK BAŞINA konuşuyorsa TEKİL kip ("etmediğini") kullan — GERÇEK BİLGİLER kısmındaki "(... vekili)" ifadesi varsa vekili var demektir.
 ${NARRATIVE_RULES}
 
 GERÇEK BİLGİLER:

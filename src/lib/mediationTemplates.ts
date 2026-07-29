@@ -408,13 +408,15 @@ ${indentParagraphs(sartlarMetni.trim())}
 // ayırt edilsin diye "hiçbir konuda" ibaresi tırnağın DIŞINA eklenir:
 // ...sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.
 export function buildAnlasamamaNarrative(c: MediationCaseData, karsiTeklifVar: boolean): string {
-  const basvurucuTemsilci = c.basvurucuVekilAd
+  const basvurucuHasVekil = !!(c.basvurucuVekilAd && c.basvurucuVekilAd.trim());
+  const basvurucuTemsilci = basvurucuHasVekil
     ? `Başvurucu vekili ${c.basvurucuVekilAd}`
     : `Başvurucu ${v(c.basvurucuAd)}`;
 
   const parties = partiesList(c);
   const karsiCumleler = parties
     .map((p) => {
+      const hasVekil = !!(p.vekilAd && p.vekilAd.trim());
       const temsilci = p.vekilAd || p.yetkiliAd || v(p.ad);
       const teklifCumlesi = karsiTeklifVar
         ? "karşı tekliflerinin olduğunu"
@@ -423,13 +425,21 @@ export function buildAnlasamamaNarrative(c: MediationCaseData, karsiTeklifVar: b
       // KENDİ tarafını değil, KARŞISINDAKİ (başvurucu) tarafı işaret
       // eder — aksi halde "X, X ile anlaşamadı" gibi anlamsız bir
       // cümle çıkardı (daha önce yaşanan bir hataydı).
-      return `${temsilci} söz alarak başvurucunun taleplerini kabul etmediklerini, başvurucu yan ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, ${teklifCumlesi} beyan etti.`;
+      // NOT (2): "talep" yerine "teklif" kullanılır (arabuluculukta
+      // karşı tarafa iletilen şey bir dava talebi değil, uzlaşma
+      // teklifidir). "kabul etmediklerini" ise sadece TEMSİLCİ bir
+      // VEKİL ise (kişi + avukatı birlikte anıldığı için) çoğuldur;
+      // taraf avukatsız TEK BAŞINA konuşuyorsa "kabul etmediğini"
+      // (tekil) doğru olan — "biri" için çoğul kip demek mantıksızdı.
+      const kabulEtmedi = hasVekil ? "kabul etmediklerini" : "kabul etmediğini";
+      return `${temsilci} söz alarak başvurucunun teklifini ${kabulEtmedi}, başvurucu yan ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, ${teklifCumlesi} beyan etti.`;
     })
     .join(" ");
 
   const basvurucuKapanisTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
+  const istedi = basvurucuHasVekil ? "istediklerini" : "istediğini";
 
-  return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili taleplerini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak istediklerini beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
+  return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili teklifini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak ${istedi} beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
 }
 
 // KISMİ ANLAŞMA anlatısı — buildAnlasmaNarrative ile aynı üsluptaki bir

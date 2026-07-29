@@ -161,6 +161,46 @@ describe("buildAnlasamamaNarrative — 'ikinci toplantı' ibaresi kaldırıldı"
     expect(buildAnlasamamaNarrative(c, true)).toContain("karşı tekliflerinin olduğunu");
     expect(buildAnlasamamaNarrative(c, false)).toContain("herhangi bir karşı tekliflerinin olmadığını");
   });
+
+  it("'talep' yerine 'teklif' kullanılır — arabuluculukta karşı tarafa iletilen şey dava talebi değil uzlaşma teklifidir", () => {
+    const text = buildAnlasamamaNarrative(c, true);
+    expect(text).not.toContain("talep");
+    expect(text).toContain("teklifini iletti");
+    expect(text).toContain("başvurucunun teklifini");
+  });
+
+  it("vekilsiz (tek başına konuşan) taraf için TEKİL kip kullanılır — 'kabul etmediklerini' değil 'kabul etmediğini'", () => {
+    const vekilsiz: any = { basvurucuAd: "Ali Veli", karsiTaraflar: [{ ad: "Ayşe Yılmaz" }] };
+    const text = buildAnlasamamaNarrative(vekilsiz, true);
+    expect(text).toContain("kabul etmediğini");
+    expect(text).not.toContain("kabul etmediklerini");
+    expect(text).toContain("çözüme kavuşturmak istediğini");
+    expect(text).not.toContain("çözüme kavuşturmak istediklerini");
+  });
+
+  it("vekilli (avukatla temsil edilen) taraf için ÇOĞUL kip kullanılır", () => {
+    const vekilli: any = {
+      basvurucuAd: "Ali Veli",
+      basvurucuVekilAd: "Av. Zeynep Kara",
+      karsiTaraflar: [{ ad: "Ayşe Yılmaz", vekilAd: "Av. Mert Demir" }],
+    };
+    const text = buildAnlasamamaNarrative(vekilli, true);
+    expect(text).toContain("kabul etmediklerini");
+    expect(text).toContain("çözüme kavuşturmak istediklerini");
+  });
+
+  it("her taraf BAĞIMSIZ değerlendirilir — başvurucu vekilsiz ama karşı taraf vekilliyse her biri kendi kipini kullanır", () => {
+    const karisik: any = {
+      basvurucuAd: "Ali Veli",
+      karsiTaraflar: [{ ad: "Ayşe Yılmaz", vekilAd: "Av. Mert Demir" }],
+    };
+    const text = buildAnlasamamaNarrative(karisik, true);
+    // Karşı taraf (vekilli) -> çoğul "kabul etmediklerini"
+    expect(text).toContain("kabul etmediklerini");
+    // Başvurucu (vekilsiz) -> tekil "istediğini"
+    expect(text).toContain("çözüme kavuşturmak istediğini");
+    expect(text).not.toContain("çözüme kavuşturmak istediklerini");
+  });
 });
 
 describe("buildKismiAnlasmaNarrative", () => {

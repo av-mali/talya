@@ -480,3 +480,16 @@ model LegalConstants {
   kiraTufeOrani   Float    @default(32.03)
   updatedAt       DateTime @updatedAt
 }
+
+// Arabuluculuk Asgari Ücret Tarifesi — HER SENE değişir (Resmî Gazete'de
+// yayınlanan yeni Tebliğ ile). Tek satırlık bir tablo — yönetici panelinden
+// (PDF/görsel yükleyip AI ile otomatik doldurarak veya elle) güncellenir;
+// güncelleme yapıldığı an "Ücret Hesaplama" aracı dahil sistemdeki HER YER
+// yeni değerleri kullanır. `data` alanının şekli src/lib/feeTariff.ts
+// içindeki MediationFeeTariffData tipiyle birebir eşleşir.
+model MediationFeeTariff {
+  id        String   @id @default("singleton")
+  yil       Int      @default(2026)
+  data      Json
+  updatedAt DateTime @updatedAt
+}
