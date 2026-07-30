@@ -371,6 +371,12 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile, a
 // mi yapılacağını belirtir — kullanıcının belirttiği gerçek uygulamaya
 // göre, taraflardan BİRİ bile telekonferans talep ettiyse toplantının
 // TAMAMI telekonferansa döner.
+// HTML <input type="time"> "16:00" (iki nokta üst üste) verir — resmi
+// belgelerde saat hep "16.00" (nokta) biçiminde yazılır.
+export function formatSaatTr(saat?: string | null): string {
+  return (saat || "").replace(":", ".");
+}
+
 export function buildKatilimTeyidiParagraph(
   c: MediationCaseData,
   telekonferansTalepEden: string | null | undefined, // "basvurucu" | "karsi-{i}" | "" | null/undefined
@@ -401,9 +407,7 @@ export function buildKatilimTeyidiParagraph(
   });
 
   const telekonferansMi = !!telekonferansTalepEden;
-  // HTML <input type="time"> "16:00" (iki nokta üst üste) verir — resmi
-  // belgelerde saat "16.00" (nokta) biçiminde yazılır.
-  const saatMetni = (toplantiSaati || "").replace(":", ".");
+  const saatMetni = formatSaatTr(toplantiSaati);
   const kararCumlesi = `Taraflarla yapılan karşılıklı görüşme sonunda bilgilendirme ve ilk oturum toplantısının ${toplantiTarihiTr || "……………"} günü saat ${saatMetni || "……"}'da ${telekonferansMi ? "telekonferans" : "yüz yüze"} şeklinde yapılmasına karar verildi ve taraflar bu konuda bilgilendirildi.`;
 
   return `${cumleler.join(" ")} ${kararCumlesi}`;
@@ -430,6 +434,22 @@ export const ILK_OTURUM_BILGILENDIRME = `\tTaraflara arabuluculuğun temel ilkel
 \tAyrıca, taraflara, kendilerinden arabuluculuk sürecinde birbirlerine karşı "siz"li hitap şeklini kullanmalarının ve söz verildiği zaman, sırayla ve sözleri kesilmeden konuşmalarının beklendiği, birbirlerinin sözünü kesmelerinin, söz veya hareketle diğer tarafı tahkir etmelerinin yasak olduğu, daha sonra eklemek istedikleri hususlar hakkında kendilerine konuşma olanağı tanınacağı, arabulucu tarafından da kendilerine sorular sorulabileceği hususları belirtilmiş; arabuluculuk sürecinde olabildiğince açık ve dürüst olunmasının ve işbirliği hâlinde hareket edilmesinin önemi vurgulanmış; arabuluculuk sürecinde belirtilen kurullara uymayı kabul edip etmedikleri kendilerine sorulmuştur.
 
 \tTaraflar söz alarak arabuluculuğun temel ilkelerini, arabuluculuk sürecini ve arabuluculuk süreci sonunda hazırlanan arabuluculuk son tutanağının ve anlaşma belgesinin hukuki ve mali yönlerden bütün sonuçlarını anladık, arabuluculuk sürecinde ve bu tutanakta belirtilen kurullara uymayı kabul ediyoruz dediler.`;
+
+// Son Tutanak'ın (İlk Oturum'dan AYRI bir adım olarak — ör. ilk oturumda
+// anlaşılamayıp ikinci bir oturuma bırakılan dosyalarda — üretildiği
+// durumda) anlaşma/anlaşamama anlatısından ÖNCE gelen AÇILIŞ paragrafı —
+// kullanıcının gönderdiği GERÇEK örnek belgeden birebir alınmıştır. Bu
+// paragraf eskiden TAMAMEN ATLANMIŞTI (Son Tutanak, header'dan direkt
+// "kim ne dedi" anlatısına atlıyordu) — kullanıcı bunu fark edip bir
+// örnekle bildirdi. NOT: "Görüşme Yapılmadan Anlaşamama" sonucunda
+// KULLANILMAZ — o durumda toplantı zaten hiç yapılamadı, taraflar hiç
+// "toplantı oturumuna gelmedi" (bkz. buildGorusmeYapilmadanNarrative).
+export function buildSonTutanakGirisParagrafi(tutanakTarihiTr: string, tutanakSaati: string): string {
+  const saatMetni = formatSaatTr(tutanakSaati);
+  return `\t${tutanakTarihiTr || "……………"} saat ${saatMetni || "……"}'da tarafların toplantı oturumuna geldiler. Taraflara arabuluculuğun temel ilkeleri, arabuluculuk süreci ve arabuluculuk süreci sonunda hazırlanan arabuluculuk son tutanağının hukuki ve mali yönlerden bütün sonuçları hakkında bilgi verildi.
+
+\tTaraflar söz alarak arabuluculuğun temel ilkelerini, arabuluculuk sürecini ve arabuluculuk süreci sonunda hazırlanan arabuluculuk son tutanağının hukuki ve mali yönlerden bütün sonuçlarını anladık dediler.`;
+}
 
 // Anlaşma Son Tutanağı'nda yer alan, kısa standart kapanış paragrafları.
 export const ANLASMA_KAPANIS = `\tTaraflara arabuluculuğun temel ilkeleri, arabuluculuk süreci ile arabuluculuk süreci sonunda hazırlanan son tutanağın hukuki ve mali sonuçları hakkında gerekli bilgiler verilmiştir.\t

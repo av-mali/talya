@@ -18,6 +18,7 @@ import {
   sonucKisaLabel,
   buildUyusmazlikBasligi,
   buildKatilimTeyidiParagraph,
+  buildSonTutanakGirisParagrafi,
   ILK_OTURUM_BILGILENDIRME,
   stripMarkup,
   indentParagraphs,
@@ -385,10 +386,20 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine, tutanakTarihiTr || undefined);
       const title = `[[SZ14]][[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[SZ14]][[C]]**DAVA ŞARTI ARABULUCULUK** \n[[SZ14]][[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
 
+      // "Görüşme Yapılmadan Anlaşamama" DIŞINDAKİ tüm sonuçlarda, anlatıdan
+      // ÖNCE tarafların toplantı oturumuna geldiğini/bilgilendirildiğini
+      // belirten bir açılış paragrafı gelir (daha önce ATLANMIŞTI, bkz.
+      // buildSonTutanakGirisParagrafi'nin üstündeki not). "Görüşme
+      // Yapılmadan Anlaşamama"da bu paragraf hiç YAZILMAZ — toplantı zaten
+      // hiç yapılamadı.
+      const girisParagrafi =
+        sonuc === "gorusmesiz" ? "" : buildSonTutanakGirisParagrafi(tutanakTarihiTr || "", tutanakSaati || "") + "\n\n";
+
       finalText =
         title +
         header +
         "\n\n\n\n\n" +
+        girisParagrafi +
         narrative +
         "\n\n" +
         closingLine +

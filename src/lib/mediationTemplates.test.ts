@@ -12,6 +12,8 @@ import {
   sonucKisaLabel,
   buildUyusmazlikBasligi,
   buildKatilimTeyidiParagraph,
+  buildSonTutanakGirisParagrafi,
+  formatSaatTr,
 } from "./mediationTemplates";
 
 describe("avLabel", () => {
@@ -414,6 +416,31 @@ describe("buildKatilimTeyidiParagraph (v293) — kullanıcının UYAP'ta elle d�
     const text = buildKatilimTeyidiParagraph(c, "", "01.01.2026", "09:30");
     expect(text).toContain("saat 09.30'da");
     expect(text).not.toContain("09:30");
+  });
+});
+
+describe("formatSaatTr", () => {
+  it("HTML time input 'HH:MM' -> resmi belge 'HH.MM'", () => {
+    expect(formatSaatTr("14:00")).toBe("14.00");
+    expect(formatSaatTr("")).toBe("");
+    expect(formatSaatTr(null)).toBe("");
+    expect(formatSaatTr(undefined)).toBe("");
+  });
+});
+
+describe("buildSonTutanakGirisParagrafi (v295) — Son Tutanak'ta daha önce ATLANMIŞ açılış paragrafı, kullanıcının GERÇEK örnek belgesiyle birebir doğrulandı", () => {
+  it("kullanıcının verdiği örnekle birebir eşleşir", () => {
+    const text = buildSonTutanakGirisParagrafi("15.07.2026", "14:00");
+    expect(text).toBe(
+      "\t15.07.2026 saat 14.00'da tarafların toplantı oturumuna geldiler. Taraflara arabuluculuğun temel ilkeleri, arabuluculuk süreci ve arabuluculuk süreci sonunda hazırlanan arabuluculuk son tutanağının hukuki ve mali yönlerden bütün sonuçları hakkında bilgi verildi.\n\n" +
+      "\tTaraflar söz alarak arabuluculuğun temel ilkelerini, arabuluculuk sürecini ve arabuluculuk süreci sonunda hazırlanan arabuluculuk son tutanağının hukuki ve mali yönlerden bütün sonuçlarını anladık dediler."
+    );
+  });
+
+  it("tarih/saat verilmezse sabit fallback kullanır (boş bırakmaz)", () => {
+    const text = buildSonTutanakGirisParagrafi("", "");
+    expect(text).toContain("……………");
+    expect(text).toContain("……'da");
   });
 });
 
