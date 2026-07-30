@@ -19,7 +19,33 @@ let cmdkSel = 0;
 // /src/app/dashboard/layout.tsx, window.__talyaSpaNav'a kendi
 // fonksiyonunu vererek etkinleştirir. O fonksiyon yoksa (henüz kalıcı
 // menüye taşınmamış bir sayfadaysak) eskisi gibi tam sayfa geçişi olur.
+// ── MOBİL SIDEBAR ÇEKMECESİ (720px altı ekranlar) ──
+// Masaüstünde bu fonksiyonlar no-op'a yakındır (.app-sidebar'da hiçbir
+// zaman .open sınıfı olmaz çünkü hamburger düğmesi orada görünmez) —
+// sadece mobil CSS (bkz. talya-original.css) devredeyken bir anlam ifade
+// eder. Her navigasyonda (goHome/openModule/bir araca tıklama) otomatik
+// kapatılır ki kullanıcı bir yere gidince menü açık kalmasın.
+function toggleMobileSidebar() {
+  const sb = document.querySelector('.app-sidebar');
+  if (!sb) return;
+  if (sb.classList.contains('open')) closeMobileSidebar();
+  else openMobileSidebar();
+}
+function openMobileSidebar() {
+  const sb = document.querySelector('.app-sidebar');
+  const scrim = document.getElementById('sidebarScrim');
+  if (sb) sb.classList.add('open');
+  if (scrim) scrim.classList.add('show');
+}
+function closeMobileSidebar() {
+  const sb = document.querySelector('.app-sidebar');
+  const scrim = document.getElementById('sidebarScrim');
+  if (sb) sb.classList.remove('open');
+  if (scrim) scrim.classList.remove('show');
+}
+
 function openModule(modId) {
+  closeMobileSidebar();
   const target = '/dashboard/' + modId.split('?')[0];
   // NOT: modId 'buro?open=ekip' formatında geliyor. Buradan SADECE
   // değeri ('ekip') çıkarmamız lazım — split('?')[1] 'open=ekip'i
@@ -34,6 +60,7 @@ function openModule(modId) {
   window.location.href = '/dashboard/' + modId;
 }
 function goHome() {
+  closeMobileSidebar();
   if (window.__talyaSpaNav && window.__talyaMigratedPaths?.includes('/dashboard')) {
     window.__talyaSpaNav('/dashboard', null);
     return;
@@ -194,6 +221,7 @@ async function renderAppSidebar() {
 // hatasının kökten çözümüdür — artık HİÇBİR tıklama, geçmişte
 // dondurulmuş bir karara güvenmiyor.
 function handleSidebarItemClick(modKey, itemId) {
+  closeMobileSidebar();
   const cfg = window.CURRENT_MODULE;
   if (cfg && cfg.key === modKey) {
     openPopup(itemId);

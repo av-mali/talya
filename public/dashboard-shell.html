@@ -6,7 +6,8 @@
 <div style="display:flex;flex-direction:column;width:100%;height:100%;">
   <div class="app-topbar">
     <div class="app-top-left">
-      <button class="home-btn" onclick="goHome()"><i class="fa-solid fa-house"></i> Ana Sayfa</button>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileSidebar()" title="Menü" aria-label="Menü"><i class="fa-solid fa-bars"></i></button>
+      <button class="home-btn" onclick="goHome()"><i class="fa-solid fa-house"></i> <span>Ana Sayfa</span></button>
       <div class="app-breadcrumb">
         <span id="appModuleName">…</span>
         <span style="opacity:.35" id="appBreadcrumbSep">›</span>
@@ -60,6 +61,10 @@
   </div>
 
   <div class="app-body">
+    <!-- Mobilde sidebar bir çekmece (drawer) olarak açılır — bu örtü
+         sadece o zaman görünür (bkz. talya-original.css .sidebar-scrim),
+         üzerine tıklanınca menüyü kapatır. -->
+    <div class="sidebar-scrim" id="sidebarScrim" onclick="closeMobileSidebar()"></div>
     <!-- SIDEBAR — artık sayfalar arası geçişte hiç yeniden çizilmez -->
     <div class="app-sidebar">
       <div class="sidebar-head">

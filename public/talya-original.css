@@ -266,6 +266,14 @@ body{font-family:'Inter',sans-serif;font-size:13px;color:var(--t0);background:va
 
 /* ── SIDEBAR ── */
 .app-sidebar{width:208px;background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;align-self:stretch;height:100%;}
+
+/* Mobil hamburger düğmesi ve sidebar arkaplan örtüsü (scrim) — masaüstünde
+   HİÇ görünmez, sadece 720px altı ekranlarda devreye girer (aşağıdaki
+   MOBİL UYUMLULUK media query'sinde display:flex/block yapılır). */
+.mobile-menu-btn{display:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--t2);cursor:pointer;flex-shrink:0;font-size:14px;}
+.mobile-menu-btn:hover{border-color:var(--gold-rule);color:var(--gold);}
+.sidebar-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:240;opacity:0;transition:opacity .18s ease;}
+.sidebar-scrim.show{opacity:1;}
 .sidebar-head{padding:14px 12px 10px;border-bottom:1px solid var(--border);}
 .sidebar-mod-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:8px;}
 .sidebar-mod-name{font-family:'Instrument Serif',serif;font-size:16px;color:var(--t0);}
@@ -567,9 +575,29 @@ textarea{resize:none;line-height:1.6;}
   .app-top-right .nav-pill.gold{font-size:10px;padding:5px 8px;}
   .app-top-right .nav-pill.always-show{font-size:10px;padding:5px 8px;}
 
-  /* 3 sütunlu uygulama düzeni → alt alta tek sütun */
-  .app-body{flex-direction:column;overflow-y:auto;}
-  .app-sidebar{width:100%;max-height:180px;border-right:none;border-bottom:1px solid var(--border);}
+  /* Hamburger düğmesi görünür olsun; "Ana Sayfa" yazısı yer kaplamasın
+     diye ikona indirgenir (sidebar zaten kendi "Ana Sayfa" satırını
+     içeriyor, tekrar yazıya gerek yok). */
+  .mobile-menu-btn{display:flex;}
+  .home-btn span{display:none;}
+  .home-btn{padding:5px 9px;}
+
+  /* Sidebar artık sayfayı aşağı itip yer kaplayan bir şerit DEĞİL —
+     soldan açılıp kapanan, içeriğin ÜSTÜNE binen bir çekmece (drawer).
+     Varsayılan: ekran dışında (translateX(-100%)); .open sınıfı ekleyince
+     (bkz. engine.js — toggleMobileSidebar) içeri kayar. */
+  .app-body{overflow-y:auto;position:relative;}
+  .app-sidebar{
+    position:fixed;top:0;left:0;bottom:0;z-index:250;
+    width:82vw;max-width:300px;max-height:none;
+    border-right:1px solid var(--border);border-bottom:none;
+    box-shadow:12px 0 32px rgba(0,0,0,.18);
+    transform:translateX(-100%);transition:transform .2s ease;
+  }
+  .app-sidebar.open{transform:translateX(0);}
+  .sidebar-scrim{display:block;pointer-events:none;}
+  .sidebar-scrim.show{pointer-events:auto;}
+
   .tool-panel{width:100% !important;max-width:100% !important;flex-shrink:0;border-right:none;border-bottom:1px solid var(--border);}
   .ai-pane{width:100%;min-height:60vh;}
 
