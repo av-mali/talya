@@ -83,3 +83,13 @@ describe("generateDocx — [[F]] footer", () => {
     expect(footerFile).toBeFalsy();
   });
 });
+
+describe("generateDocx — [[SZ14]] satır boyu punto (v293)", () => {
+  it("14 punto docx'in YARIM PUNTO biriminde 28 olarak yazılır, satırın kendi kalın işareti korunur", async () => {
+    const buf = await generateDocx("[[SZ14]][[C]]**Başlık Metni**");
+    const zip = await JSZip.loadAsync(buf);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    expect(xml).toContain('w:val="28"');
+    expect(xml).toContain("<w:b/>");
+  });
+});

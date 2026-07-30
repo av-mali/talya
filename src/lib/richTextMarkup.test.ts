@@ -78,4 +78,42 @@ describe("stripMarkup", () => {
     const out = stripMarkup(input);
     expect(out).toBe(["Başlık", "• Madde metni", "kalın altı ikisi ve düz"].join("\n"));
   });
+
+  it("[[SZ14]] (punto işareti) da temizlenir", () => {
+    expect(stripMarkup("[[SZ14]][[C]]**Başlık**")).toBe("Başlık");
+  });
+});
+
+describe("[[SZ14]] — satır boyu punto işareti", () => {
+  it("fontSize'ı doğru okur ve metinden çıkarır, diğer işaretlerle (ör. [[C]]) birlikte çalışır", () => {
+    const r = parseLineMarkup("[[SZ14]][[C]]**Başlık Metni**");
+    expect(r.fontSize).toBe(14);
+    expect(r.centered).toBe(true);
+    expect(r.text).toBe("Başlık Metni");
+    expect(r.runs).toEqual([{ start: 0, length: 12, bold: true, underline: false }]);
+  });
+
+  it("işaret yoksa fontSize tanımsız (undefined) kalır", () => {
+    expect(parseLineMarkup("düz metin").fontSize).toBeUndefined();
+  });
+});
+
+describe("tarih satırı — etiket VE ':' birlikte altı çizili, tab yok (v293)", () => {
+  it("'Etiket:__****  değer**' kalıbı, etiket+':' tek altı çizili+kalın run, değer (baştaki boşluk dahil) ayrı kalın-sadece run üretir", () => {
+    const r = parseLineMarkup("[[D]]**__Tutanağının Düzenlendiği Tarih:__**** 28.06.2026**");
+    expect(r.dateRow).toBe(true);
+    expect(r.text).toBe("Tutanağının Düzenlendiği Tarih: 28.06.2026");
+    expect(r.runs).toEqual([
+      { start: 0, length: 31, bold: true, underline: true },
+      { start: 31, length: 11, bold: true, underline: false },
+    ]);
+  });
+});
+
+describe("alt başlıklar (ARABULUCULUK BÜROSU vb.) — etiketten sonraki İLK tab da altı çizili run'a dahil (v293)", () => {
+  it("'**__Etiket\\t__**' kalıbında tab, altı çizili run'ın İÇİNDE kalır", () => {
+    const r = parseLineMarkup("**__ARABULUCULUK BÜROSU\t__**\t\t\t");
+    expect(r.text).toBe("ARABULUCULUK BÜROSU\t\t\t\t");
+    expect(r.runs).toEqual([{ start: 0, length: 20, bold: true, underline: true }]);
+  });
 });

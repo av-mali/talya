@@ -37,13 +37,19 @@
 //     orijinal örnek UYAP belgelerinde "Bu evrak ... imzalanmıştır."
 //     cümlesi ayrı, italik/kalın/küçük/mavi bir footer öğesi olarak
 //     saklanıyor, sıradan bir paragraf değil
+//   satırın EN BAŞINDA "[[SZ14]]" (veya başka bir sayı) -> o paragrafın
+//     TAMAMI belirtilen punto BÜYÜKLÜĞÜNDE yazılır (ör. sadece ana
+//     başlık satırları 14 punto, geri kalan gövde metni varsayılan
+//     boyutta kalır) — sadece kullanıcının AÇIKÇA "başlık 14 punto
+//     olacak" dediği satırlara uygulanır, alt başlıklara (ARABULUCU,
+//     BAŞVURUCU vb.) DEĞİL
 //
 // Bu işaretler olmayan satırlar İKİ YANA YASLI (justify) kabul edilir —
 // gerçek örnek UYAP belgelerinde gövde metninin tamamı böyledir.
 
 export type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
 
-export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; sigImage: boolean; dateRow: boolean; footer: boolean; numbered: 1 | 2 | 0 } {
+export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; sigImage: boolean; dateRow: boolean; footer: boolean; numbered: 1 | 2 | 0; fontSize?: number } {
   let line = rawLine;
   let centered = false;
   let right = false;
@@ -53,6 +59,12 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
   let dateRow = false;
   let footer = false;
   let numbered: 1 | 2 | 0 = 0;
+  let fontSize: number | undefined;
+  const szMatch = line.match(/^\[\[SZ(\d+)\]\]/);
+  if (szMatch) {
+    fontSize = parseInt(szMatch[1], 10);
+    line = line.slice(szMatch[0].length);
+  }
   // [[SIMG]] KONTROLÜ [[S]]'DEN ÖNCE gelmeli — ikisi de imza satırıyla
   // ilgili ama farklı işaretler ("[[SIMG]]" zaten "[[S]]" ile
   // BAŞLAMIYOR, o yüzden sıra aslında önemli değil, ama okunurluk için
@@ -133,7 +145,7 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
     out += line[i];
     i++;
   }
-  return { text: out, runs, centered, right, bulleted, sigRow, sigImage, dateRow, footer, numbered };
+  return { text: out, runs, centered, right, bulleted, sigRow, sigImage, dateRow, footer, numbered, fontSize };
 }
 
 export function stripMarkup(text: string): string {
@@ -142,6 +154,7 @@ export function stripMarkup(text: string): string {
     .map((line) =>
       line
         .replace(/^\[\[SIMG\]\]/, "")
+        .replace(/^\[\[SZ\d+\]\]/, "")
         .replace(/^\[\[C\]\]/, "")
         .replace(/^\[\[R\]\]/, "")
         .replace(/^\[\[S\]\]/, "")

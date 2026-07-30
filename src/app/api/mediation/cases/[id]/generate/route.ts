@@ -17,6 +17,7 @@ import {
   buildUcretCumlesi,
   sonucKisaLabel,
   buildUyusmazlikBasligi,
+  buildKatilimTeyidiParagraph,
   ILK_OTURUM_BILGILENDIRME,
   stripMarkup,
   indentParagraphs,
@@ -167,7 +168,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       const docxBuffer = await generateDocx(finalText);
       return NextResponse.json({ text: stripMarkup(finalText), docxBase64: docxBuffer.toString("base64"), fileName });
     } else if (docType === "ilkoturum") {
-      const { notlar, toplantiTarihi, toplantiSaati, karsiTeklifVar, ikinciToplantiIstenmiyor } = body;
+      const { notlar, toplantiTarihi, toplantiSaati, karsiTeklifVar, ikinciToplantiIstenmiyor, telekonferansTalepEden } = body;
       if (!notlar || !notlar.trim()) {
         return NextResponse.json({ error: "Kısa notlar girmelisiniz." }, { status: 400 });
       }
@@ -182,10 +183,21 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       // (bugünün tarihi DEĞİL — "tutanağın düzenlendiği tarih" hatası buydu).
       const toplantiTarihiTr = formatTrDate(toplantiTarihi);
 
+      // Açılış paragrafı ARTIK İKİYE bölündü: (1) "katılım teyidi" —
+      // kimin hangi GSM hattından arandığı, katılıma/telekonferansa dair
+      // ne beyan ettiği ve toplantının yüz yüze mi telekonferans mı
+      // yapılacağı — kullanıcının verdiği GERÇEK örnek cümle kalıbıyla
+      // SABİT/koddan üretilir (buildKatilimTeyidiParagraph, AI'a hiç
+      // yazdırılmaz — GSM numarası/isim hatası riski olmasın). (2)
+      // "oturum başladı" paragrafı ise hâlâ AI'ye yazdırılır (bkz. aşağı).
+      const teyitParagrafi = indentParagraphs(
+        buildKatilimTeyidiParagraph(mediationCase, telekonferansTalepEden, toplantiTarihiTr || "", toplantiSaati || "")
+      );
+
       const openingPrompt = `Sen bir arabuluculuk bürosu için "Bilgilendirme ve İlk Oturum Tutanağı" hazırlayan bir asistansın.
 
-Şu ÜSLUP KURALINI izle: Resmi, üçüncü şahıs anlatımıyla, "[isim] ile yapılan görüşmede ... teyit edildi" ve "[isim ve isim]'in toplantı oturumunda oldukları görüldü ve müzakere süreci başladı" kalıplarını kullanarak İKİ ayrı paragraf yaz. Birden fazla karşı taraf varsa HER BİRİNİN katılım durumunu ayrı ayrı belirt.
-ÇOK ÖNEMLİ — İKİNCİ paragrafın SINIRI: İkinci paragraf SADECE toplantıya kimlerin hazır bulunduğunu/katıldığını belirtip "... müzakere süreci başladı." cümlesiyle BİTMELİDİR, tam orada dur. Ne birinci ne ikinci paragrafa; görüşmede NELERİN konuşulduğu, hangi tekliflerin verildiği, toplantının UZAYIP UZAMADIĞI, toplantının ne zaman/nasıl SONLANDIĞI veya bir SONRAKİ TOPLANTI ile ilgili HİÇBİR bilgiyi EKLEME — bunların hepsi ayrı, sana daha sonra sorulacak bir kapanış paragrafına ait, burada bunlardan hiç bahsetme. Kullanıcının notunda bu tür kapanış bilgileri geçiyor olsa bile, SEN o kısmı görmezden gel ve sadece katılım/teyit ile ilgili kısmı kullan.
+Şu ÜSLUP KURALINI izle: Resmi, üçüncü şahıs anlatımıyla, "[isim ve isim]'in toplantı oturumunda oldukları görüldü ve müzakere süreci başladı" kalıbını kullanarak TEK bir paragraf yaz. Birden fazla karşı taraf varsa HER BİRİNİN toplantıda hazır bulunduğunu belirt.
+ÇOK ÖNEMLİ — paragrafın SINIRI: Paragraf SADECE toplantıya kimlerin hazır bulunduğunu/katıldığını belirtip "... müzakere süreci başladı." cümlesiyle BİTMELİDİR, tam orada dur. Görüşmede NELERİN konuşulduğu, hangi tekliflerin verildiği, toplantının UZAYIP UZAMADIĞI, toplantının ne zaman/nasıl SONLANDIĞI veya bir SONRAKİ TOPLANTI ile ilgili HİÇBİR bilgiyi EKLEME — bunların hepsi ayrı, sana daha sonra sorulacak bir kapanış paragrafına ait, burada bunlardan hiç bahsetme. Kullanıcının notunda bu tür kapanış bilgileri geçiyor olsa bile, SEN o kısmı görmezden gel ve sadece katılım ile ilgili kısmı kullan. Görüşmelerin hangi GSM hattından/telefonla teyit edildiğinden ya da telekonferans talebinden HİÇ BAHSETME — bu bilgi ayrı, sabit bir paragrafta zaten var, sen sadece toplantı oturumunun kimlerle başladığını anlat.
 ${NARRATIVE_RULES}
 
 GERÇEK BİLGİLER:
@@ -193,11 +205,12 @@ Başvurucu tarafı: ${basvurucuTemsilci(mediationCase)}
 Karşı taraf(lar): ${karsiTemsilciListesi(mediationCase)}
 Toplantı Tarihi: ${toplantiTarihiTr || "(belirtilmedi)"}
 Toplantı Saati: ${toplantiSaati || "(belirtilmedi)"}
-Kullanıcının notu (görüşmelerin nasıl geçtiği, teyit süreci, toplantı yöntemi vb.): ${notlar}
+Kullanıcının notu (görüşmelerin nasıl geçtiği, oturumda neler konuşuldu vb.): ${notlar}
 
-Şimdi bu bilgilerle 2 paragraf yaz.`;
+Şimdi bu bilgilerle TEK paragraf yaz.`;
 
-      const narrative = indentParagraphs(await generateNarrative(openingPrompt));
+      const oturumParagrafi = indentParagraphs(await generateNarrative(openingPrompt));
+      const narrative = `${teyitParagrafi}\n\n${oturumParagrafi}`;
 
       // Kapanış: normal akışta AI'ye yazdırılır. Ama "ikinci toplantı
       // istenmiyor" işaretliyse süreç burada anlaşmasız bittiği için,
@@ -232,9 +245,9 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         // başlık sade "ANLAŞAMAMA" gösterir — "hiçbir konuda" ibaresi
         // SADECE narrative metninin son cümlesinde geçer (bkz.
         // buildAnlasamamaNarrative).
-        const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: ANLAŞAMAMA**`;
+        const extraLine = `[[D]]**__Arabuluculuk Sonucu:__**** ANLAŞAMAMA**`;
         const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", extraLine, toplantiTarihiTr || undefined);
-        const title = `[[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**"ANLAŞAMAMA" SON TUTANAĞI**\n\n\n`;
+        const title = `[[SZ14]][[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[SZ14]][[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[SZ14]][[C]]**"ANLAŞAMAMA" SON TUTANAĞI**\n\n\n`;
         finalText =
           title +
           header +
@@ -250,7 +263,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         fileName = `${safeFilePart(mediationCase.basvurucuAd || "")} - Bilgilendirme ve Anlaşamama Son Tutanağı.udf`;
       } else {
         const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", undefined, toplantiTarihiTr || undefined);
-        const title = `[[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
+        const title = `[[SZ14]][[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[SZ14]][[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[SZ14]][[C]]**İLK OTURUM TUTANAĞI**\n\n\n`;
         finalText =
           title +
           header +
@@ -365,13 +378,12 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         closingLine = `\tİşbu arabuluculuk bilgilendirme ve anlaşamama son tutanağı iki sayfa ve dört nüsha olarak 6325 sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu m. 11, m. 15 uyarınca hep birlikte imza altına alındı. ${belgeTarihi}`;
       }
 
-      // NOT: [[D]] işareti ve tek "\t", buildHeaderBlock'taki tarih
-      // satırlarıyla (Başvuru/Görevlendirme/Düzenlenme Tarihi) AYNI geniş
-      // sekme durağını kullanır — bu satır onların hemen altına geldiği
-      // için ":" işaretleri aynı dikey hizada durur.
-      const extraLine = `[[D]]**__Arabuluculuk Sonucu__**\t**: ${sonucLabel}**`;
+      // NOT: [[D]] işareti, buildHeaderBlock'taki tarih satırlarıyla
+      // (Başvuru/Görevlendirme/Düzenlenme Tarihi) AYNI biçimi kullanır —
+      // etiket VE ":" birlikte kalın+altı çizili, değer sadece kalın.
+      const extraLine = `[[D]]**__Arabuluculuk Sonucu:__**** ${sonucLabel}**`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine, tutanakTarihiTr || undefined);
-      const title = `[[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[C]]**DAVA ŞARTI ARABULUCULUK** \n[[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
+      const title = `[[SZ14]][[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[SZ14]][[C]]**DAVA ŞARTI ARABULUCULUK** \n[[SZ14]][[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
 
       finalText =
         title +

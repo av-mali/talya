@@ -165,7 +165,7 @@ function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): 
   }
   lines.push(`\tTelefon\t: ${v(p.telefon)}`);
 
-  return `**__${label}__**\t\t\t
+  return `**__${label}\t__**\t\t
 
 ${lines.join("\n")}
 `;
@@ -212,12 +212,12 @@ export function buildHeaderBlock(
   }
   basvurucuLines.push(`\tTelefon\t: ${v(c.basvurucuTelefon)}`);
 
-  return `**__ARABULUCULUK BÜROSU__**\t\t\t\t  
+  return `**__ARABULUCULUK BÜROSU\t__**\t\t\t
  
 \tArabuluculuk Bürosu\t: ${v(a.arabuluculukBurosu)}
  \tDosya Numarası\t: ${dosyaNoGosterim}
 
-**__${arabulucuLabel}__**\t\t\t\t\t
+**__${arabulucuLabel}\t__**\t\t\t\t
 \t
 \tAdı ve Soyadı\t: ${v(a.name)}
 \tSicil Numarası\t: ${v(a.arabulucuSicilNo)}
@@ -225,7 +225,7 @@ export function buildHeaderBlock(
 \tUETS\t: ${v(a.arabulucuUets)}
 \tE-Posta\t: ${v(a.email)}
 
-**__BAŞVURUCU__**\t\t\t
+**__BAŞVURUCU\t__**\t\t
 \t
 ${basvurucuLines.join("\n")}
 
@@ -234,9 +234,9 @@ ${karsiTarafBlocks}
 
 \t${buildUyusmazlikKonusuCumlesi(c)}
 
-[[D]]**__Arabuluculuk Bürosuna Başvuru Tarihi__**\t**: ${v(c.basvuruTarihi)}**
-[[D]]**__Arabulucunun Görevlendirildiği Tarih__**\t**: ${v(c.gorevlendirmeTarihi)}**
-[[D]]**__Tutanağının Düzenlendiği Tarih__**\t**: ${v(duzenlemeTarihi || c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
+[[D]]**__Arabuluculuk Bürosuna Başvuru Tarihi:__**** ${v(c.basvuruTarihi)}**
+[[D]]**__Arabulucunun Görevlendirildiği Tarih:__**** ${v(c.gorevlendirmeTarihi)}**
+[[D]]**__Tutanağının Düzenlendiği Tarih:__**** ${v(duzenlemeTarihi || c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
 `;
 }
 
@@ -357,6 +357,64 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile, a
 
 [[F]]Bu evrak 5070 sayılı Elektronik İmza Kanunu hükümlerine uygun olarak elektronik imza ile imzalanmıştır.
 `;
+}
+
+// Bilgilendirme ve İlk Oturum Tutanağı'nın AÇILIŞ ("katılım teyidi")
+// paragrafı — kullanıcının verdiği GERÇEK ÖRNEK cümle kalıpları BİREBİR
+// kullanılır (AI'a hiç yazdırılmaz, GSM numarası/isim hatası riski
+// olmasın). Her taraf (başvurucu + her karşı taraf) için ayrı bir cümle
+// üretilir. SADECE telekonferans talep eden taraf "...ile yapılan
+// görüşmede ... katılabileceğini ANCAK telekonferans şeklinde katılma
+// isteğinin olduğunu beyan etti" kalıbını alır, diğer taraflar sade
+// "...ile yapılan görüşmede ... teyit edildi." kalıbını kullanır.
+// Paragrafın son (karar) cümlesi toplantının telekonferans mı yüz yüze
+// mi yapılacağını belirtir — kullanıcının belirttiği gerçek uygulamaya
+// göre, taraflardan BİRİ bile telekonferans talep ettiyse toplantının
+// TAMAMI telekonferansa döner.
+export function buildKatilimTeyidiParagraph(
+  c: MediationCaseData,
+  telekonferansTalepEden: string | null | undefined, // "basvurucu" | "karsi-{i}" | "" | null/undefined
+  toplantiTarihiTr: string,
+  toplantiSaati: string
+): string {
+  const basvurucuTemsilciEk = c.basvurucuVekilAd
+    ? `vekili ${avLabel(c.basvurucuVekilAd)}`
+    : c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()
+    ? `Yetkilisi ${v(c.basvurucuYetkiliAd)}`
+    : "";
+  const basvurucuEtiket = `Başvurucu ${v(c.basvurucuAd)}${basvurucuTemsilciEk ? " " + basvurucuTemsilciEk : ""}`;
+
+  const cumleler: string[] = [
+    buildKatilimCumlesi(basvurucuEtiket, c.basvurucuTelefon, telekonferansTalepEden === "basvurucu"),
+  ];
+
+  const parties = partiesList(c);
+  parties.forEach((p, i) => {
+    const rolEtiketi = parties.length > 1 ? `Karşı taraf ${i + 1} olan` : "Karşı taraf olan";
+    const temsilciEk = p.vekilAd
+      ? `vekili ${avLabel(p.vekilAd)}`
+      : p.yetkiliAd && p.yetkiliAd.trim()
+      ? `Yetkilisi ${v(p.yetkiliAd)}`
+      : "";
+    const etiket = `${rolEtiketi} ${v(p.ad)}${temsilciEk ? " " + temsilciEk : ""}`;
+    cumleler.push(buildKatilimCumlesi(etiket, p.telefon, telekonferansTalepEden === `karsi-${i}`));
+  });
+
+  const telekonferansMi = !!telekonferansTalepEden;
+  // HTML <input type="time"> "16:00" (iki nokta üst üste) verir — resmi
+  // belgelerde saat "16.00" (nokta) biçiminde yazılır.
+  const saatMetni = (toplantiSaati || "").replace(":", ".");
+  const kararCumlesi = `Taraflarla yapılan karşılıklı görüşme sonunda bilgilendirme ve ilk oturum toplantısının ${toplantiTarihiTr || "……………"} günü saat ${saatMetni || "……"}'da ${telekonferansMi ? "telekonferans" : "yüz yüze"} şeklinde yapılmasına karar verildi ve taraflar bu konuda bilgilendirildi.`;
+
+  return `${cumleler.join(" ")} ${kararCumlesi}`;
+}
+
+function buildKatilimCumlesi(etiket: string, telefon: string | null | undefined, telekonferansTalebiVar: boolean): string {
+  const tel = v(telefon);
+  if (telekonferansTalebiVar) {
+    return `${etiket} ile ${tel} numaralı GSM hattından yapılan görüşmede toplantıya belirlenen gün ve saat de katılabileceğini ancak telekonferans şeklinde katılma isteğinin olduğunu beyan etti.`;
+  }
+  return `${etiket} ile yapılan görüşmede toplantıya belirlenen gün ve saat de katılacağı ${tel} numaralı GSM hattından yapılan görüşme ile teyit edildi.`;
 }
 
 // İlk Oturum Tutanağı'nda değişmeyen, uzun yasal bilgilendirme metni —

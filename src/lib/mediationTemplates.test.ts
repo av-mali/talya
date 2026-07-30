@@ -11,6 +11,7 @@ import {
   buildUcretCumlesi,
   sonucKisaLabel,
   buildUyusmazlikBasligi,
+  buildKatilimTeyidiParagraph,
 } from "./mediationTemplates";
 
 describe("avLabel", () => {
@@ -139,6 +140,51 @@ describe("buildHeaderBlock — 'Tutanağının Düzenlendiği Tarih'", () => {
     const header = buildHeaderBlock(c, a, "ARABULUCU");
     const line = header.split("\n").find((l) => l.includes("Tutanağının Düzenlendiği Tarih"));
     expect(line).toContain("01.01.2026");
+  });
+});
+
+describe("buildHeaderBlock — tarih satırlarında etiket VE ':' birlikte altı çizili, aralarında TAB yok (v293, kullanıcının UYAP'ta elle düzenlediği örnek belgeyle karşılaştırılarak doğrulandı)", () => {
+  const c: any = { basvuruTarihi: "16.06.2026", gorevlendirmeTarihi: "16.06.2026" };
+  const a: any = {};
+
+  it("üç tarih satırı da (Başvuru/Görevlendirme/Düzenlenme) yeni 'Etiket:__****  değer' kalıbını kullanır", () => {
+    const header = buildHeaderBlock(c, a, "ARABULUCU");
+    for (const etiket of [
+      "Arabuluculuk Bürosuna Başvuru Tarihi",
+      "Arabulucunun Görevlendirildiği Tarih",
+      "Tutanağının Düzenlendiği Tarih",
+    ]) {
+      const line = header.split("\n").find((l) => l.includes(etiket));
+      expect(line).toBeTruthy();
+      expect(line).toContain(`${etiket}:__****`);
+      // Eski kalıp: etiket ile ':' arasında bir TAB vardı — artık YOK.
+      expect(line).not.toContain(`${etiket}__**\t`);
+    }
+  });
+});
+
+describe("buildHeaderBlock / buildKarsiTarafBlock — alt başlıklardan sonraki İLK tab artık altı çizili run'ın içinde (v293)", () => {
+  it("ARABULUCULUK BÜROSU, arabulucuLabel ve BAŞVURUCU başlıkları '\\t__**' ile biter", () => {
+    const c: any = {};
+    const a: any = {};
+    const header = buildHeaderBlock(c, a, "ARABULUCU");
+    expect(header).toContain("**__ARABULUCULUK BÜROSU\t__**");
+    expect(header).toContain("**__ARABULUCU\t__**");
+    expect(header).toContain("**__BAŞVURUCU\t__**");
+  });
+
+  it("KARŞI TARAF etiketi de aynı kalıbı kullanır", () => {
+    const c: any = { karsiTaraflar: [{ ad: "Test Kişi" }] };
+    const a: any = {};
+    const header = buildHeaderBlock(c, a, "ARABULUCU");
+    expect(header).toContain("**__KARŞI TARAF\t__**");
+  });
+
+  it("ARABULUCULUK KONUSU UYUŞMAZLIK başlığına DOKUNULMADI — tab eklenmedi (kullanıcının kendi örneğinde de değişmemişti)", () => {
+    const c: any = {};
+    const a: any = {};
+    const header = buildHeaderBlock(c, a, "ARABULUCU");
+    expect(header).toContain("**__ARABULUCULUK KONUSU UYUŞMAZLIK__**\n");
   });
 });
 
@@ -302,6 +348,71 @@ describe("sonucKisaLabel", () => {
   it("bilinmeyen/boş değerde eski davranışla uyumlu olarak 'Anlaşamama' döner", () => {
     expect(sonucKisaLabel(null)).toBe("Anlaşamama");
     expect(sonucKisaLabel(undefined)).toBe("Anlaşamama");
+  });
+});
+
+describe("buildKatilimTeyidiParagraph (v293) — kullanıcının UYAP'ta elle düzenlediği GERÇEK örnek belgeyle birebir doğrulandı", () => {
+  const c: any = {
+    basvurucuAd: "Samed Can MÜJDE",
+    basvurucuVekilAd: "Arif USTA",
+    basvurucuTelefon: "0533 425 88 60",
+    karsiTaraflar: [
+      {
+        tip: "tuzel",
+        ad: "Urfa Sofrası Özcemre İnş. Gıda Tur. San. Tic. Ltd. Şti.",
+        yetkiliAd: "Özcan KUŞ",
+        telefon: "0532 457 8505",
+      },
+    ],
+  };
+
+  it("telekonferansı karşı taraf talep ettiğinde, gerçek örnekteki cümle birebir üretilir", () => {
+    const text = buildKatilimTeyidiParagraph(c, "karsi-0", "28.03.2025", "16:00");
+    expect(text).toBe(
+      "Başvurucu Samed Can MÜJDE vekili Av. Arif USTA ile yapılan görüşmede toplantıya belirlenen gün ve saat de katılacağı 0533 425 88 60 numaralı GSM hattından yapılan görüşme ile teyit edildi. " +
+      "Karşı taraf olan Urfa Sofrası Özcemre İnş. Gıda Tur. San. Tic. Ltd. Şti. Yetkilisi Özcan KUŞ ile 0532 457 8505 numaralı GSM hattından yapılan görüşmede toplantıya belirlenen gün ve saat de katılabileceğini ancak telekonferans şeklinde katılma isteğinin olduğunu beyan etti. " +
+      "Taraflarla yapılan karşılıklı görüşme sonunda bilgilendirme ve ilk oturum toplantısının 28.03.2025 günü saat 16.00'da telekonferans şeklinde yapılmasına karar verildi ve taraflar bu konuda bilgilendirildi."
+    );
+  });
+
+  it("kimse telekonferans talep etmediyse (yüz yüze) HER İKİ taraf da sade 'teyit edildi' kalıbını alır, kapanış 'yüz yüze' der", () => {
+    const text = buildKatilimTeyidiParagraph(c, "", "28.03.2025", "16:00");
+    expect(text).toContain("Başvurucu Samed Can MÜJDE vekili Av. Arif USTA ile yapılan görüşmede toplantıya belirlenen gün ve saat de katılacağı 0533 425 88 60 numaralı GSM hattından yapılan görüşme ile teyit edildi.");
+    expect(text).toContain("Karşı taraf olan Urfa Sofrası Özcemre İnş. Gıda Tur. San. Tic. Ltd. Şti. Yetkilisi Özcan KUŞ ile yapılan görüşmede toplantıya belirlenen gün ve saat de katılacağı 0532 457 8505 numaralı GSM hattından yapılan görüşme ile teyit edildi.");
+    expect(text).not.toContain("ancak telekonferans");
+    expect(text).toContain("yüz yüze şeklinde yapılmasına karar verildi");
+    expect(text).not.toContain("telekonferans şeklinde yapılmasına karar verildi");
+  });
+
+  it("telekonferansı BAŞVURUCU talep ederse, 'ancak telekonferans...' kalıbı başvurucuya, sade kalıp karşı tarafa uygulanır", () => {
+    const text = buildKatilimTeyidiParagraph(c, "basvurucu", "28.03.2025", "16:00");
+    expect(text).toContain("Başvurucu Samed Can MÜJDE vekili Av. Arif USTA ile 0533 425 88 60 numaralı GSM hattından yapılan görüşmede toplantıya belirlenen gün ve saat de katılabileceğini ancak telekonferans şeklinde katılma isteğinin olduğunu beyan etti.");
+    expect(text).toContain("Karşı taraf olan Urfa Sofrası Özcemre İnş. Gıda Tur. San. Tic. Ltd. Şti. Yetkilisi Özcan KUŞ ile yapılan görüşmede toplantıya belirlenen gün ve saat de katılacağı 0532 457 8505 numaralı GSM hattından yapılan görüşme ile teyit edildi.");
+    expect(text).toContain("telekonferans şeklinde yapılmasına karar verildi");
+  });
+
+  it("birden fazla karşı taraf varsa 'Karşı taraf 1 olan' / 'Karşı taraf 2 olan' şeklinde numaralanır", () => {
+    const cokluC: any = {
+      basvurucuAd: "Ali Veli",
+      karsiTaraflar: [{ ad: "Ayşe Yılmaz" }, { ad: "Mehmet Can" }],
+    };
+    const text = buildKatilimTeyidiParagraph(cokluC, "", "01.01.2026", "10:00");
+    expect(text).toContain("Karşı taraf 1 olan Ayşe Yılmaz ile");
+    expect(text).toContain("Karşı taraf 2 olan Mehmet Can ile");
+    expect(text).not.toContain("Karşı taraf olan");
+  });
+
+  it("vekilsiz/yetkilisiz (kendisi katılan) taraf için ek ünvan eklenmez", () => {
+    const cSade: any = { basvurucuAd: "Ali Veli", karsiTaraflar: [{ ad: "Ayşe Yılmaz" }] };
+    const text = buildKatilimTeyidiParagraph(cSade, "", "01.01.2026", "10:00");
+    expect(text).toContain("Başvurucu Ali Veli ile yapılan görüşmede");
+    expect(text).toContain("Karşı taraf olan Ayşe Yılmaz ile yapılan görüşmede");
+  });
+
+  it("saat alanı ':' yerine '.' ile yazılır (HTML time input 'HH:MM' -> resmi belge 'HH.MM')", () => {
+    const text = buildKatilimTeyidiParagraph(c, "", "01.01.2026", "09:30");
+    expect(text).toContain("saat 09.30'da");
+    expect(text).not.toContain("09:30");
   });
 });
 

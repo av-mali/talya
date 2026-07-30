@@ -123,13 +123,16 @@ export async function generateDocx(text: string): Promise<Buffer> {
   const footerParagraphs: Paragraph[] = [];
 
   for (const rawLine of lines) {
-    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow, sigImage, dateRow, footer } = parseLineMarkup(rawLine);
+    const { text: lineText, runs, centered, right, bulleted, numbered, sigRow, sigImage, dateRow, footer, fontSize } = parseLineMarkup(rawLine);
 
     const paragraph = new Paragraph({
       children: sigImage
         ? buildSigImageChildren(lineText)
         : footer
         ? buildRuns(lineText, runs, { italics: true, bold: true, size: 20, color: "0080FF" })
+        // docx "size" birimi YARIM punto (half-point) — 14 punto için 28.
+        : fontSize
+        ? buildRuns(lineText, runs, { size: fontSize * 2 })
         : buildRuns(lineText, runs),
       alignment: footer ? AlignmentType.CENTER : centered ? AlignmentType.CENTER : right ? AlignmentType.RIGHT : AlignmentType.JUSTIFIED,
       spacing: { after: 0, before: 0 },

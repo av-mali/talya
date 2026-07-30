@@ -430,13 +430,21 @@ function arShowGenForm(docType) {
       <button class="pop-cta-btn g" style="width:100%;margin-top:6px;" onclick="arGenerate('davet')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
     `;
   } else if (docType === 'ilkoturum') {
+    const telekonferansOptions = [`<option value="basvurucu">Başvurucu — ${(c?.basvurucuAd)||''}</option>`]
+      .concat((c?.karsiTaraflar || []).map((p, i) => `<option value="karsi-${i}">${(c.karsiTaraflar.length > 1 ? 'Karşı Taraf ' + (i+1) + ' — ' : 'Karşı Taraf — ')}${p.ad||''}</option>`));
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">İlk Oturum Tutanağı</div></div>
       <div style="display:flex;gap:6px;">
         <div class="fg" style="flex:1;"><div class="fl">Toplantı Tarihi</div><input type="date" id="ar-ilk-tarih" value="${c?.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toISOString().slice(0,10) : ''}"></div>
         <div class="fg" style="flex:1;"><div class="fl">Toplantı Saati</div><input type="time" id="ar-ilk-saat" value="${c?.ilkOturumTarihi ? new Date(c.ilkOturumTarihi).toTimeString().slice(0,5) : '09:00'}"></div>
       </div>
-      <div class="fg"><div class="fl">Kısa Notlar</div><textarea id="ar-ilk-notlar" rows="4" placeholder="Kiminle ne zaman görüşüldü, toplantı nasıl (yüz yüze/telekonferans) kararlaştırıldı, oturumda neler konuşuldu…"></textarea></div>
+      <div class="fg"><div class="fl">Telekonferans Talep Eden Taraf <span class="opt">(varsa — toplantı bu durumda TAMAMEN telekonferans sayılır)</span></div>
+        <div class="sw"><select id="ar-ilk-telekonferans">
+          <option value="">Yok — Toplantı yüz yüze yapıldı</option>
+          ${telekonferansOptions.join('')}
+        </select></div>
+      </div>
+      <div class="fg"><div class="fl">Kısa Notlar</div><textarea id="ar-ilk-notlar" rows="4" placeholder="Oturumda neler konuşuldu, süreç nasıl ilerledi…"></textarea></div>
       <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
         <input type="checkbox" id="ar-ilk-karsiteklif">
         <span style="font-size:12.5px;">Karşı tarafın bir karşı teklifi vardı</span>
@@ -548,6 +556,7 @@ async function arGenerate(docType) {
   } else if (docType === 'ilkoturum') {
     body.toplantiTarihi = document.getElementById('ar-ilk-tarih').value;
     body.toplantiSaati = document.getElementById('ar-ilk-saat').value;
+    body.telekonferansTalepEden = document.getElementById('ar-ilk-telekonferans').value;
     body.notlar = document.getElementById('ar-ilk-notlar').value;
     body.karsiTeklifVar = document.getElementById('ar-ilk-karsiteklif').checked;
     body.ikinciToplantiIstenmiyor = document.getElementById('ar-ilk-ikincitoplanti-istenmiyor').checked;

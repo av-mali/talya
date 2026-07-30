@@ -111,3 +111,25 @@ describe("generateUdf — [[F]] footer", () => {
     expect(xml).not.toContain("<footer>");
   });
 });
+
+describe("generateUdf — [[SZ14]] satır boyu punto (v293, sadece ana başlıklar için)", () => {
+  it("[[SZ14]] işaretli satırın <content> run'larına size=\"14\" eklenir, diğer satırlara EKLENMEZ", async () => {
+    const xml = await contentXml("[[SZ14]][[C]]**KAT MÜLKİYETİ KANUNUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA** \nNormal gövde satırı.");
+    const elemStart = xml.indexOf("<elements");
+    const paragraphs = xml.slice(elemStart).match(/<paragraph[^]*?<\/paragraph>/g) || [];
+    expect(paragraphs).toHaveLength(2);
+    expect(paragraphs[0]).toContain('size="14"');
+    expect(paragraphs[1]).not.toContain("size=");
+  });
+
+  it("size, biçimsiz (bold/underline olmayan) kısımlara da uygulanır — satırın TAMAMI aynı puntoda kalır", async () => {
+    // "__X__" öncesi/sonrası düz metin de aynı size'ı almalı, yoksa satır
+    // içinde tutarsız punto görünür.
+    const xml = await contentXml("[[SZ14]]düz __altı çizili__ düz");
+    const elemStart = xml.indexOf("<elements");
+    const paragraph = (xml.slice(elemStart).match(/<paragraph[^]*?<\/paragraph>/g) || [])[0];
+    const sizeCount = (paragraph.match(/size="14"/g) || []).length;
+    // 3 run: düz / altı çizili / düz — üçü de size="14" taşımalı
+    expect(sizeCount).toBe(3);
+  });
+});

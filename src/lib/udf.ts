@@ -133,7 +133,8 @@ export async function generateUdf(text: string): Promise<Buffer> {
 
   for (let i = 0; i < rawLines.length; i++) {
     const isLast = i === rawLines.length - 1;
-    const { text: lineText, runs, centered, bulleted, sigRow, sigImage, dateRow, footer } = parseLineMarkup(rawLines[i]);
+    const { text: lineText, runs, centered, bulleted, sigRow, sigImage, dateRow, footer, fontSize } = parseLineMarkup(rawLines[i]);
+    const sizeAttr = fontSize ? ` size="${fontSize}"` : "";
     const lengthWithBreak = lineText.length + (isLast ? 0 : 1);
 
     plainCdata += lineText + (isLast ? "" : "\n");
@@ -195,23 +196,27 @@ export async function generateUdf(text: string): Promise<Buffer> {
         }
         elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}>${inner}</paragraph>`;
       } else if (!runs.length) {
-        elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}><content startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
+        elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}><content${sizeAttr} startOffset="${offset}" length="${lengthWithBreak}" /></paragraph>`;
       } else {
         // Biçimli kısımlar ile düz kısımları, orijinal sırayla ayrı
         // <content> "run"ları olarak yaz — gerçek UDF yapısı böyle çalışıyor.
+        // "[[SZ14]]" gibi bir satır boyu punto isteği varsa (fontSize),
+        // hem biçimli hem düz parçalara AYNI size özniteliği eklenir —
+        // aksi halde satırın biçimsiz kısımları (ör. aradaki boşluklar)
+        // varsayılan puntoda kalır ve satır tutarsız görünür.
         let cursor = 0;
         let inner = "";
         const sorted = [...runs].sort((a, b) => a.start - b.start);
         for (const r of sorted) {
           if (r.start > cursor) {
-            inner += `<content startOffset="${offset + cursor}" length="${r.start - cursor}" />`;
+            inner += `<content${sizeAttr} startOffset="${offset + cursor}" length="${r.start - cursor}" />`;
           }
-          const fmtAttrs = `${r.bold ? ' bold="true"' : ""}${r.underline ? ' underline="true"' : ""}`;
+          const fmtAttrs = `${r.bold ? ' bold="true"' : ""}${r.underline ? ' underline="true"' : ""}${sizeAttr}`;
           inner += `<content${fmtAttrs} startOffset="${offset + r.start}" length="${r.length}" />`;
           cursor = r.start + r.length;
         }
         if (cursor < lineText.length + (isLast ? 0 : 1)) {
-          inner += `<content startOffset="${offset + cursor}" length="${lineText.length + (isLast ? 0 : 1) - cursor}" />`;
+          inner += `<content${sizeAttr} startOffset="${offset + cursor}" length="${lineText.length + (isLast ? 0 : 1) - cursor}" />`;
         }
         elementsXml += `<paragraph${alignAttr}${bulletAttr}${tabSetAttr}>${inner}</paragraph>`;
       }
