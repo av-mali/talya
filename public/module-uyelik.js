@@ -129,19 +129,19 @@ async function profilOnOpen() {
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">Görünüm — Renk Paleti</div>
       <div id="pf-palette-picker" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;"></div>
 
-      <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="pf-name" value="${(u.name||'').replace(/"/g,'&quot;')}"></div>
-      <div class="fg"><div class="fl">E-posta</div><input type="text" value="${u.email}" disabled style="opacity:.6;"></div>
-      <div class="fg"><div class="fl">Telefon</div><input type="text" id="pf-phone" value="${(u.phone||'').replace(/"/g,'&quot;')}"></div>
-      <div class="fg"><div class="fl">Baro</div><input type="text" id="pf-baro" value="${(u.baro||'').replace(/"/g,'&quot;')}"></div>
-      <div class="fg"><div class="fl">Sicil Numarası</div><input type="text" id="pf-sicil" value="${(u.sicilNo||'').replace(/"/g,'&quot;')}"></div>
-      <div class="fg"><div class="fl">Büro Adresi <span class="opt">(Avukatlık Ücret Sözleşmesi gibi belgelerde otomatik kullanılır)</span></div><input type="text" id="pf-office-address" value="${(u.officeAddress||'').replace(/"/g,'&quot;')}" placeholder="ör. Kızılsaray M. Şarampol Cd. ... No.107 K.4 D.19 ANTALYA"></div>
+      <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="pf-name" value="${escHtml(u.name||'')}"></div>
+      <div class="fg"><div class="fl">E-posta</div><input type="text" value="${escHtml(u.email)}" disabled style="opacity:.6;"></div>
+      <div class="fg"><div class="fl">Telefon</div><input type="text" id="pf-phone" value="${escHtml(u.phone||'')}"></div>
+      <div class="fg"><div class="fl">Baro</div><input type="text" id="pf-baro" value="${escHtml(u.baro||'')}"></div>
+      <div class="fg"><div class="fl">Sicil Numarası</div><input type="text" id="pf-sicil" value="${escHtml(u.sicilNo||'')}"></div>
+      <div class="fg"><div class="fl">Büro Adresi <span class="opt">(Avukatlık Ücret Sözleşmesi gibi belgelerde otomatik kullanılır)</span></div><input type="text" id="pf-office-address" value="${escHtml(u.officeAddress||'')}" placeholder="ör. Kızılsaray M. Şarampol Cd. ... No.107 K.4 D.19 ANTALYA"></div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-handshake"></i> Arabuluculuk Profili (opsiyonel)</div>
-      <div class="fg"><div class="fl">Arabuluculuk Bürosu <span class="opt">(bağlı olduğunuz resmi büro adı, ör. "Antalya Arabuluculuk Bürosu")</span></div><input type="text" id="pf-arab-buro" value="${(u.arabuluculukBurosu||'').replace(/"/g,'&quot;')}" placeholder="ör. Antalya Arabuluculuk Bürosu"></div>
-      <div class="fg"><div class="fl">Kendi Büro Adresiniz <span class="opt">(davet mektubunda görünür)</span></div><input type="text" id="pf-arab-adres" value="${(u.arabulucuAdres||'').replace(/"/g,'&quot;')}" placeholder="ör. Kızılsaray Mah. ... No.107 K.4 D.19 Muratpaşa/Antalya"></div>
-      <div class="fg"><div class="fl">Arabulucu Sicil No</div><input type="text" id="pf-arab-sicil" value="${(u.arabulucuSicilNo||'').replace(/"/g,'&quot;')}"></div>
-      <div class="fg"><div class="fl">UETS No</div><input type="text" id="pf-arab-uets" value="${(u.arabulucuUets||'').replace(/"/g,'&quot;')}"></div>
-      <div class="fg"><div class="fl">IBAN <span class="opt">(anlaşma/kısmi anlaşma son tutanaklarında ücret cümlesinde otomatik kullanılır)</span></div><input type="text" id="pf-arab-iban" value="${(u.arabulucuIban||'').replace(/"/g,'&quot;')}" placeholder="TR__ ____ ____ ____ ____ ____ __"></div>
+      <div class="fg"><div class="fl">Arabuluculuk Bürosu <span class="opt">(bağlı olduğunuz resmi büro adı, ör. "Antalya Arabuluculuk Bürosu")</span></div><input type="text" id="pf-arab-buro" value="${escHtml(u.arabuluculukBurosu||'')}" placeholder="ör. Antalya Arabuluculuk Bürosu"></div>
+      <div class="fg"><div class="fl">Kendi Büro Adresiniz <span class="opt">(davet mektubunda görünür)</span></div><input type="text" id="pf-arab-adres" value="${escHtml(u.arabulucuAdres||'')}" placeholder="ör. Kızılsaray Mah. ... No.107 K.4 D.19 Muratpaşa/Antalya"></div>
+      <div class="fg"><div class="fl">Arabulucu Sicil No</div><input type="text" id="pf-arab-sicil" value="${escHtml(u.arabulucuSicilNo||'')}"></div>
+      <div class="fg"><div class="fl">UETS No</div><input type="text" id="pf-arab-uets" value="${escHtml(u.arabulucuUets||'')}"></div>
+      <div class="fg"><div class="fl">IBAN <span class="opt">(anlaşma/kısmi anlaşma son tutanaklarında ücret cümlesinde otomatik kullanılır)</span></div><input type="text" id="pf-arab-iban" value="${escHtml(u.arabulucuIban||'')}" placeholder="TR__ ____ ____ ____ ____ ____ __"></div>
 
       <button class="pop-cta-btn g" style="width:100%;" onclick="profilSave()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
       <div id="profil-msg" style="font-size:12px;margin-top:10px;"></div>
@@ -525,7 +525,7 @@ function destekRenderList() {
     ${destekTicketsCache.length ? destekTicketsCache.map((t, i) => `
       <div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick="destekShowTicket(${i})">
         <span class="ico"><i class="fa-solid fa-comment-dots"></i></span>
-        <span style="flex:1;">${t.subject}<span style="display:block;font-size:10px;color:${DESTEK_STATUS_COLOR[t.status]};">${DESTEK_STATUS_LABEL[t.status]} — ${t.messages.length} mesaj</span></span>
+        <span style="flex:1;">${escHtml(t.subject)}<span style="display:block;font-size:10px;color:${DESTEK_STATUS_COLOR[t.status]};">${DESTEK_STATUS_LABEL[t.status]} — ${t.messages.length} mesaj</span></span>
       </div>
     `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz bir talebiniz yok.</div>'}
   `;
@@ -564,14 +564,14 @@ function destekShowTicket(index) {
   box.innerHTML = `
     <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="destekRenderList()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-      <div style="font-family:'Instrument Serif',serif;font-size:16px;">${t.subject}</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:16px;">${escHtml(t.subject)}</div>
       <span style="font-size:11px;color:${DESTEK_STATUS_COLOR[t.status]};font-weight:600;">${DESTEK_STATUS_LABEL[t.status]}</span>
     </div>
     <div style="max-height:320px;overflow-y:auto;margin-bottom:12px;">
       ${t.messages.map(m => `
         <div style="margin-bottom:10px;padding:10px 12px;border-radius:var(--r);background:${m.isAdmin ? 'var(--gold-lo)' : 'var(--bg2)'};">
           <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">${m.isAdmin ? 'Talya Ekibi' : 'Siz'} — ${new Date(m.createdAt).toLocaleString('tr-TR')}</div>
-          <div style="font-size:13px;white-space:pre-wrap;">${m.content.replace(/</g,'&lt;')}</div>
+          <div style="font-size:13px;white-space:pre-wrap;">${escHtml(m.content)}</div>
         </div>
       `).join('')}
     </div>

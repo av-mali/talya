@@ -174,6 +174,18 @@ export default function DashboardShellClient({ children }: { children: React.Rea
 
         const res = await fetch(cfg.contentUrl, { cache: "no-store" });
         const html = await res.text();
+
+        // YARIŞ DURUMU KORUMASI: bu async fonksiyon await'lerde beklerken
+        // kullanıcı HIZLICA başka bir sayfaya geçmiş olabilir — bu durumda
+        // bir SONRAKİ effect çalışması loadingPath.current'ı KENDİ yoluna
+        // ayarlamış olur. Böyle bir durumda burada devam edip ESKİ
+        // içeriği/scripti YENİ sayfanın üzerine yazmamak için, her ağır
+        // adımdan sonra "hâlâ bu pathname için mi çalışıyoruz?" diye
+        // kontrol ediyoruz — değilse sessizce vazgeçiyoruz (loadedPath.current
+        // GÜNCELLENMEZ, bu yüzden asıl geçerli navigasyon kendi effect'inde
+        // normal şekilde yüklemeye devam eder/edecektir).
+        if (loadingPath.current !== pathname) return;
+
         slot.innerHTML = html;
 
         if (pathname === "/dashboard") {
@@ -210,6 +222,9 @@ export default function DashboardShellClient({ children }: { children: React.Rea
           await loadScriptOnce(src);
         }
 
+        // Script yükleme de asenkron — yine aynı yarış durumu kontrolü.
+        if (loadingPath.current !== pathname) return;
+
         // Bu modüle DAHA ÖNCE girilmişse, script'i tekrar çalışmadığı için
         // CURRENT_MODULE'ü önbellekten geri yüklüyoruz.
         if (pathname !== "/dashboard" && !(window as any).CURRENT_MODULE && moduleConfigCache.current[pathname]) {
@@ -223,6 +238,9 @@ export default function DashboardShellClient({ children }: { children: React.Rea
             console.error("talyaInitPage sırasında hata (SPA içerik yükleme):", e);
           }
         }
+
+        // talyaInitPage de asenkron olabiliyor — son bir kez daha kontrol.
+        if (loadingPath.current !== pathname) return;
 
         loadedPath.current = pathname;
       } catch (e) {

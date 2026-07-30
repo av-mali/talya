@@ -26,19 +26,24 @@ export default function DavetPage({ params }: { params: { token: string } }) {
   async function handleJoin() {
     setJoining(true);
     setError("");
-    const res = await fetch("/api/workspace/join", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: params.token }),
-    });
-    const data = await res.json();
-    setJoining(false);
-    if (!res.ok) {
-      setError(data.error || "Katılırken bir hata oluştu.");
-      return;
+    try {
+      const res = await fetch("/api/workspace/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: params.token }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Katılırken bir hata oluştu.");
+        return;
+      }
+      setJoined(true);
+      setTimeout(() => router.push("/dashboard"), 1800);
+    } catch (e) {
+      setError("Bağlantı hatası, tekrar deneyin.");
+    } finally {
+      setJoining(false);
     }
-    setJoined(true);
-    setTimeout(() => router.push("/dashboard"), 1800);
   }
 
   return (

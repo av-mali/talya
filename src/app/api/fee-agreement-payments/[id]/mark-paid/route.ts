@@ -27,20 +27,28 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const now = new Date();
   const desc = `Avukatlık ücreti — ${payment.agreement.client.name}${payment.agreement.konu ? " (" + payment.agreement.konu.slice(0, 40) + ")" : ""}`;
 
-  const ops: any[] = [
-    prisma.feeAgreementPayment.update({
+  // ÖNEMLİ: fatura oluşturma (varsa) ve gelir kaydı, ödemenin "ödendi"
+  // işaretlenmesiyle AYNI atomik işlemde olmalı — aksi halde (eskiden
+  // olduğu gibi) fatura önce, transaction dizisinin GERÇEK yürütülmesinden
+  // ÖNCE ayrı bir çağrıyla oluşturulup, sonra $transaction(ops) başarısız
+  // olursa "yetim" (hiçbir ödemeye/gelir kaydına bağlı olmayan) bir fatura
+  // ortada kalabiliyordu. Fatura oluşturma ADIMI önceki adımın sonucuna
+  // (invoice.id) ihtiyaç duyduğu için dizi (array) formundaki $transaction
+  // YETERSİZ — interaktif (callback) formu kullanılıyor, böylece tüm
+  // adımlar TEK bir veritabanı işleminde ya hep birlikte uygulanır ya da
+  // hep birlikte geri alınır.
+  const updatedPayment = await prisma.$transaction(async (tx) => {
+    const updated = await tx.feeAgreementPayment.update({
       where: { id: params.id },
       data: { odendiMi: true, odemeTarihi: now },
-    }),
-  ];
-
-  if (payment.agreement.caseId) {
-    // Dosyaya bağlı — Fatura & Tahsilat'a gerçek bir fatura düşülür.
-    const invoice = await prisma.invoice.create({
-      data: { amount: payment.tutar, note: desc, caseId: payment.agreement.caseId, feeAgreementPaymentId: payment.id },
     });
-    ops.push(
-      prisma.transaction.create({
+
+    if (payment.agreement.caseId) {
+      // Dosyaya bağlı — Fatura & Tahsilat'a gerçek bir fatura düşülür.
+      const invoice = await tx.invoice.create({
+        data: { amount: payment.tutar, note: desc, caseId: payment.agreement.caseId, feeAgreementPaymentId: payment.id },
+      });
+      await tx.transaction.create({
         data: {
           type: "gelir",
           amount: payment.tutar,
@@ -50,12 +58,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           workspaceId: ok.workspaceId,
           sourceInvoiceId: invoice.id,
         },
-      })
-    );
-  } else {
-    // Dosyaya bağlı değil — doğrudan Gelir-Gider'e gelir kaydı.
-    ops.push(
-      prisma.transaction.create({
+      });
+    } else {
+      // Dosyaya bağlı değil — doğrudan Gelir-Gider'e gelir kaydı.
+      await tx.transaction.create({
         data: {
           type: "gelir",
           amount: payment.tutar,
@@ -64,11 +70,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           userId: ok.userId,
           workspaceId: ok.workspaceId,
         },
-      })
-    );
-  }
+      });
+    }
 
-  const [updatedPayment] = await prisma.$transaction(ops);
+    return updated;
+  });
 
   return NextResponse.json({ payment: updatedPayment });
 }

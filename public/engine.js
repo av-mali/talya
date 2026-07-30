@@ -510,7 +510,7 @@ async function talyaAskSubmit() {
 
   openTalyaModal(`
     <div class="ic" style="margin-bottom:14px;"><div class="ic-t"><i class="fa-solid fa-scale-balanced"></i> Talya'ya Sordunuz</div>
-      <p style="font-style:italic;">"${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}"</p>
+      <p style="font-style:italic;">"${escHtml(text)}"</p>
     </div>
     <div id="talya-ask-answer" style="font-size:13px;color:var(--t2);line-height:1.7;">
       <i class="fa-solid fa-spinner fa-spin"></i> Talya düşünüyor…
@@ -751,7 +751,7 @@ async function sendChat() {
   const text = inp.value.trim();
   if (!text) return;
   inp.value = ''; inp.style.height = 'auto';
-  appendMsg('user', text.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+  appendMsg('user', escHtml(text));
   chatHistory.push({ role: 'user', content: text });
   const btn = document.getElementById('sendBtn');
   if (btn) btn.disabled = true;
@@ -785,7 +785,7 @@ function toast(text, ico, gold) {
   if (!stack) return;
   const el = document.createElement('div');
   el.className = 'toast' + (gold ? ' gold' : '');
-  el.innerHTML = `<div class="tico"><i class="${ico || 'fa-solid fa-check'}"></i></div><span>${text}</span>`;
+  el.innerHTML = `<div class="tico"><i class="${ico || 'fa-solid fa-check'}"></i></div><span>${escHtml(text)}</span>`;
   stack.appendChild(el);
   setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 200); }, 3200);
 }
@@ -840,7 +840,7 @@ async function openDeadlinesModal() {
       const tag = days === 0 ? 'BUGÜN' : days + ' GÜN';
       return `<div class="dl-row">
         <span class="dl-tag ${level}">${tag}</span>
-        <span class="dl-text">${e.clientName} — ${e.title}</span>
+        <span class="dl-text">${escHtml(e.clientName)} — ${escHtml(e.title)}</span>
         <span class="dl-days">${fmtDueDate(e.dueDate)}</span>
       </div>`;
     }).join('');
@@ -995,6 +995,25 @@ async function renderGelirGiderOzet() {
   }
 }
 
+// ── HTML KAÇIŞ (XSS koruması) ──
+// Modüllerin çoğu, kullanıcı/müvekkil verisini (ad, not, açıklama vb.)
+// doğrudan `innerHTML = \`...${veri}...\`` şablonlarına gömüyor — bu veri
+// kaçışsız gömülürse, bir müvekkil adına veya nota "<script>" ya da
+// "<img onerror=...>" gibi bir HTML parçası yazması saklanan XSS'e yol
+// açabilir. Metin olarak gösterilecek her kullanıcı verisi bu fonksiyondan
+// geçirilmelidir. (onclick="..." gibi ÖZNİTELİK içine gömülen, kod
+// olması gereken değerler için KULLANILMAMALIDIR — o durumda zaten ayrı
+// bir tırnak kaçışı gerekir, ör. .replace(/"/g,'&quot;').)
+function escHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function fmtTL(n) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(n); }
 function fmtTLShort(n) {
   if (typeof fmtTL === 'function') return fmtTL(n);
@@ -1010,9 +1029,9 @@ async function renderDashOzet() {
     const data = await res.json();
     const items = [
       { renk: 'var(--success)', metin: `Bugün <strong>${data.bugunDurusma}</strong> duruşmanız/etkinliğiniz var.`, gizle: data.bugunDurusma === 0 },
-      { renk: 'var(--warn)', metin: data.yaklasanOdeme === 1 && data.enYakinOdemeIsim ? `<strong>${data.enYakinOdemeIsim}</strong>'in ödemesi yaklaşıyor.` : `<strong>${data.yaklasanOdeme}</strong> ödeme yaklaşıyor.`, gizle: data.yaklasanOdeme === 0 },
+      { renk: 'var(--warn)', metin: data.yaklasanOdeme === 1 && data.enYakinOdemeIsim ? `<strong>${escHtml(data.enYakinOdemeIsim)}</strong>'in ödemesi yaklaşıyor.` : `<strong>${data.yaklasanOdeme}</strong> ödeme yaklaşıyor.`, gizle: data.yaklasanOdeme === 0 },
       { renk: 'var(--blue)', metin: `<strong>${data.uyapHareket}</strong> dosyada yeni UYAP hareketi var.`, gizle: data.uyapHareket === 0 },
-      { renk: 'var(--danger)', metin: data.gecikenGorev === 1 && data.enGecikenGorevBaslik ? `"<strong>${data.enGecikenGorevBaslik}</strong>" görevi gecikti.` : `<strong>${data.gecikenGorev}</strong> görev gecikti.`, gizle: data.gecikenGorev === 0 },
+      { renk: 'var(--danger)', metin: data.gecikenGorev === 1 && data.enGecikenGorevBaslik ? `"<strong>${escHtml(data.enGecikenGorevBaslik)}</strong>" görevi gecikti.` : `<strong>${data.gecikenGorev}</strong> görev gecikti.`, gizle: data.gecikenGorev === 0 },
     ].filter(i => !i.gizle);
 
     box.innerHTML = (items.length ? items.map(i => `
@@ -1024,7 +1043,7 @@ async function renderDashOzet() {
     + (data.oneri ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
         <div style="font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:4px;"><i class="fa-solid fa-lightbulb"></i> Talya'nın Önerisi</div>
-        <div style="font-size:12px;color:var(--t2);">${data.oneri}</div>
+        <div style="font-size:12px;color:var(--t2);">${escHtml(data.oneri)}</div>
       </div>
     ` : '');
   } catch (e) {
@@ -1058,7 +1077,7 @@ async function renderDashDeadlines() {
       const tag = days === 0 ? 'BUGÜN' : days + ' GÜN';
       return `<div class="dl-row">
         <span class="dl-tag ${level}">${tag}</span>
-        <span class="dl-text">${e.clientName} — ${e.title}</span>
+        <span class="dl-text">${escHtml(e.clientName)} — ${escHtml(e.title)}</span>
         <span class="dl-days">${fmtDueDate(e.dueDate)}</span>
       </div>`;
     }).join('');
@@ -1190,8 +1209,8 @@ function renderNotifs() {
         <div class="nd-dot ${n.read ? 'read' : n.level}"></div>
         <div class="nd-ico ${n.level}"><i class="fa-solid ${n.ico}"></i></div>
         <div class="nd-content">
-          <div class="nd-label">${n.label}</div>
-          <div class="nd-text">${n.text}</div>
+          <div class="nd-label">${escHtml(n.label)}</div>
+          <div class="nd-text">${escHtml(n.text)}</div>
           <div class="nd-time">${n.time}</div>
         </div>
       </div>`).join('');

@@ -101,9 +101,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!(await hasToolAccess(userId, "arabuluculuk"))) {
     return NextResponse.json({ error: "Bu araca erişim yetkiniz yok." }, { status: 403 });
   }
-  if (!(await hasAiAccess(userId))) {
-    return NextResponse.json({ error: "AI kullanım yetkiniz yok." }, { status: 403 });
-  }
 
   const mediationCase = await prisma.mediationCase.findFirst({
     where: { id: params.id, userId },
@@ -119,6 +116,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const body = await req.json();
   const { docType } = body;
+
+  // AI erişimi sadece GERÇEKTEN AI kullanan belge türü ("ilkoturum" — açılış/
+  // kapanış paragrafları Gemini'den geliyor) için gerekli. "davet" ve
+  // "sontutanak" tamamen sabit şablonlardan üretiliyor; AI erişimi olmayan
+  // bir kullanıcıyı bu iki türde de gereksiz yere engellememek gerekiyordu.
+  if (docType === "ilkoturum" && !(await hasAiAccess(userId))) {
+    return NextResponse.json({ error: "AI kullanım yetkiniz yok." }, { status: 403 });
+  }
 
   try {
     let finalText = "";
@@ -141,6 +146,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         if (!p) return NextResponse.json({ error: "Davet edilecek taraf bulunamadı." }, { status: 400 });
         ad = p.ad || "";
         vekil = p.vekilAd || "";
+        baroSicil = p.vekilBaroSicil || "";
         telefon = p.telefon || "";
         digerTarafAd = mediationCase.basvurucuAd || "";
         digerTarafVekil = mediationCase.basvurucuVekilAd || "";

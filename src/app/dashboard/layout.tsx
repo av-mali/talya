@@ -5,10 +5,11 @@ import { Suspense } from "react";
 import DashboardShellClient from "@/components/DashboardShellClient";
 
 // Bu layout, /dashboard altındaki TÜM sayfalara uygulanır — ama sadece
-// "taşınmış" (migrated) sayfalarda kalıcı menü moduna geçer. Diğer
-// modüller (Belge & Analiz, Arabuluculuk, Tevkil, UYAP, Hesap, Üyelik)
-// bu listeye HENÜZ eklenmedi — onlar bu layout'tan hiç etkilenmez,
-// kendi TalyaShell'leriyle eskisi gibi çalışmaya devam eder.
+// "taşınmış" (migrated) sayfalarda kalıcı menü moduna geçer. GÜNCEL DURUM:
+// tüm /dashboard/* modülleri (Ana Sayfa, Büro Yönetimi, Belge & Analiz,
+// Arabuluculuk, Tevkil, UYAP, Hesap, Üyelik) artık bu listede ve
+// DashboardShellClient'ın kalıcı kabuğunu kullanıyor — eski, her sayfada
+// ayrı ayrı kendi çerçevesini kuran TalyaShell bileşeni kaldırıldı.
 const MIGRATED_PATHS = [
   "/dashboard",
   "/dashboard/buro",

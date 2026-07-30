@@ -60,21 +60,25 @@ export default function MuvekkilPage() {
     if (!newMessage.trim()) return;
     const content = newMessage.trim();
     setSendError("");
-    const res = await fetch("/api/portal/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    if (res.ok) {
-      // Ekranı bir sonraki isteği beklemeden ANINDA güncelle — arka planda
-      // gerçek veriyle senkronize etmeye de devam ediyoruz.
-      setMessages((prev) => [...prev, { id: "temp-" + Date.now(), content, isFromClient: true, createdAt: new Date().toISOString() }]);
-      setNewMessage("");
-      loadPortalData();
-    } else {
-      const data = await res.json();
-      setSendError(data.error || "Mesaj gönderilemedi.");
-      loadPortalData(); // gerçek durumu (belki zaten cevap bekleniyordu) yansıt
+    try {
+      const res = await fetch("/api/portal/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (res.ok) {
+        // Ekranı bir sonraki isteği beklemeden ANINDA güncelle — arka planda
+        // gerçek veriyle senkronize etmeye de devam ediyoruz.
+        setMessages((prev) => [...prev, { id: "temp-" + Date.now(), content, isFromClient: true, createdAt: new Date().toISOString() }]);
+        setNewMessage("");
+        loadPortalData();
+      } else {
+        const data = await res.json();
+        setSendError(data.error || "Mesaj gönderilemedi.");
+        loadPortalData(); // gerçek durumu (belki zaten cevap bekleniyordu) yansıt
+      }
+    } catch (e) {
+      setSendError("Bağlantı hatası, tekrar deneyin.");
     }
   }
 
@@ -218,18 +222,23 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     }
     setLoading(true);
     setError("");
-    const res = await fetch("/api/portal/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tcMersis: tcMersis.trim(), password: password.trim() }),
-    });
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "Giriş yapılamadı.");
-      return;
+    try {
+      const res = await fetch("/api/portal/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tcMersis: tcMersis.trim(), password: password.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Giriş yapılamadı.");
+        return;
+      }
+      onSuccess();
+    } catch (e) {
+      setError("Bağlantı hatası, tekrar deneyin.");
+    } finally {
+      setLoading(false);
     }
-    onSuccess();
   }
 
   return (

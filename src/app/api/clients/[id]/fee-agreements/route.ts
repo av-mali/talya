@@ -47,6 +47,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const konu = body.konu || null;
   let caseId = body.caseId || null;
 
+  // caseId istemciden geliyor — bu müvekkile (params.id) gerçekten ait
+  // olduğunu doğrulamadan kullanmak, başka bir müvekkilin/büronun dosyasını
+  // bu sözleşmeye bağlama riski taşır (IDOR). Ait değilse yok say.
+  if (caseId) {
+    const ownedCase = await prisma.case.findFirst({ where: { id: caseId, clientId: params.id } });
+    if (!ownedCase) caseId = null;
+  }
+
   // Kullanıcı bu sözleşmeyi mevcut bir dosyaya bağlamadıysa (ör. bu
   // müvekkilin hiç dosyası yoksa), sözleşme konusuyla otomatik YENİ bir
   // dosya oluşturup sözleşmeyi ona bağlıyoruz — böylece her sözleşme

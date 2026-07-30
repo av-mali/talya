@@ -158,7 +158,7 @@ model Client {
   // adımda) userId tamamen kaldırılacak.
   workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId String?
-  user        User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId      String?
   logs        ClientLog[]
   cases       Case[]

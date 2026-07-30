@@ -25,7 +25,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const body = await req.json();
   const data: any = {};
   if (body.konu !== undefined) data.konu = body.konu || null;
-  if (body.caseId !== undefined) data.caseId = body.caseId || null;
+  if (body.caseId !== undefined) {
+    // caseId istemciden geliyor — bu sözleşmenin müvekkiline gerçekten ait
+    // olduğunu doğrulamadan kullanmak IDOR riski taşır (başka bir dosyayı
+    // bu sözleşmeye bağlayıp senkronize edebilir).
+    if (body.caseId) {
+      const currentAgreement = await prisma.feeAgreement.findUnique({ where: { id: params.id }, select: { clientId: true } });
+      const ownedCase = currentAgreement
+        ? await prisma.case.findFirst({ where: { id: body.caseId, clientId: currentAgreement.clientId } })
+        : null;
+      data.caseId = ownedCase ? body.caseId : null;
+    } else {
+      data.caseId = null;
+    }
+  }
   if (body.sabitUcret !== undefined) data.sabitUcret = body.sabitUcret != null ? parseFloat(body.sabitUcret) : null;
   if (body.yuzdeVarMi !== undefined) data.yuzdeVarMi = !!body.yuzdeVarMi;
   if (body.yuzdeOrani !== undefined) data.yuzdeOrani = body.yuzdeOrani != null && body.yuzdeOrani !== "" ? parseFloat(body.yuzdeOrani) : null;

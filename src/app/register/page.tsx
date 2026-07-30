@@ -34,18 +34,23 @@ function RegisterForm() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, phone, baro, sicilNo }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Bir hata oluştu.");
-      return;
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, phone, baro, sicilNo }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Bir hata oluştu.");
+        return;
+      }
+      setSubmitted(true);
+    } catch (e) {
+      setError("Bağlantı hatası, tekrar deneyin.");
+    } finally {
+      setLoading(false);
     }
-    setSubmitted(true);
   }
 
   if (submitted) {

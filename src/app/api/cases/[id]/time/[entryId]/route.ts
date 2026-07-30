@@ -12,6 +12,7 @@ export async function DELETE(
   const found = await prisma.case.findFirst({ where: { id: params.id, client: { workspaceId: ws.workspaceId } } });
   if (!found) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });
 
-  await prisma.timeEntry.delete({ where: { id: params.entryId } });
+  const result = await prisma.timeEntry.deleteMany({ where: { id: params.entryId, caseId: params.id } });
+  if (result.count === 0) return NextResponse.json({ error: "Kayıt bulunamadı." }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

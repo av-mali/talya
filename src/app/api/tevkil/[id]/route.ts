@@ -13,6 +13,18 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     return NextResponse.json({ error: "Yetkisiz veya talep bulunamadı." }, { status: 401 });
   }
 
+  // Talep zaten bir meslektaş tarafından ONAYLANMIŞSA silmeye izin verme —
+  // aksi halde onaylayan kişi tarafında hâlâ görünen (acceptedById dolu)
+  // bir kabul kaydı, karşılığındaki talep kaydı silinince "yetim" kalır ve
+  // onaylayan taraf için tutarsız/karışık bir görünüme yol açar. Önce
+  // onayın geri alınması (durum tekrar "acik" olması) gerekiyor.
+  if (talep.durum === "onaylandi") {
+    return NextResponse.json(
+      { error: "Bu talep bir meslektaş tarafından onaylanmış — silmeden önce onayın geri alınması gerekiyor." },
+      { status: 409 }
+    );
+  }
+
   await prisma.tevkilTalebi.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }

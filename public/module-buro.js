@@ -210,7 +210,7 @@ async function loadClientList(containerId, q, selectFnName, selectedId) {
     }
     el.innerHTML = clients.map(c => `
       <div class="s-item ${selectedId===c.id?'active-b':''}" style="margin:0 0 2px;" onclick="${selectFnName}('${c.id}')">
-        <span class="ico"><i class="fa-solid fa-user"></i></span>${c.name}
+        <span class="ico"><i class="fa-solid fa-user"></i></span>${escHtml(c.name)}
       </div>`).join('');
   } catch (e) {
     el.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--danger);">Yüklenemedi.</div>`;
@@ -246,7 +246,7 @@ async function getWorkspaceMembers() {
 }
 function assigneeOptionsHtml(members, selectedId) {
   return `<option value="">— Atanmamış —</option>` + members.map(m =>
-    `<option value="${m.id}" ${m.id === selectedId ? 'selected' : ''}>${m.name || m.email}</option>`
+    `<option value="${m.id}" ${m.id === selectedId ? 'selected' : ''}>${escHtml(m.name || m.email)}</option>`
   ).join('');
 }
 let mvCaseCache = null;
@@ -333,21 +333,26 @@ async function mvSaveNew() {
     }
   } catch (e) { /* kontrol başarısız olursa kaydetmeye devam et */ }
 
-  const res = await fetch('/api/clients', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, phone, email, notes, tcMersis, address, isAday })
-  });
-  const data = await res.json();
-  if (data.client) {
-    toast(isAday ? 'Müvekkil adayı eklendi' : 'Müvekkil eklendi', 'fa-solid fa-check', true);
-    document.getElementById('mv-n-name').value = '';
-    document.getElementById('mv-n-tc').value = '';
-    document.getElementById('mv-n-address').value = '';
-    document.getElementById('mv-n-phone').value = '';
-    document.getElementById('mv-n-email').value = '';
-    document.getElementById('mv-n-note').value = '';
-    document.getElementById('mv-n-isaday').checked = false;
-    mvSelect(data.client.id);
+  try {
+    const res = await fetch('/api/clients', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, email, notes, tcMersis, address, isAday })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Müvekkil kaydedilemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    if (data.client) {
+      toast(isAday ? 'Müvekkil adayı eklendi' : 'Müvekkil eklendi', 'fa-solid fa-check', true);
+      document.getElementById('mv-n-name').value = '';
+      document.getElementById('mv-n-tc').value = '';
+      document.getElementById('mv-n-address').value = '';
+      document.getElementById('mv-n-phone').value = '';
+      document.getElementById('mv-n-email').value = '';
+      document.getElementById('mv-n-note').value = '';
+      document.getElementById('mv-n-isaday').checked = false;
+      mvSelect(data.client.id);
+    }
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
   }
 }
 
@@ -380,9 +385,9 @@ function mvRenderClientView() {
       </div>
       <div style="display:flex;align-items:flex-start;justify-content:space-between;">
         <div>
-          <div style="font-family:'Instrument Serif',serif;font-size:20px;">${c.name}</div>
-          <div style="font-size:12px;color:var(--t2);">${c.phone||'—'} ${c.email?(' · '+c.email):''}</div>
-          ${c.notes ? `<div style="font-size:12px;color:var(--t2);margin-top:4px;">${c.notes}</div>` : ''}
+          <div style="font-family:'Instrument Serif',serif;font-size:20px;">${escHtml(c.name)}</div>
+          <div style="font-size:12px;color:var(--t2);">${escHtml(c.phone)||'—'} ${c.email?(' · '+escHtml(c.email)):''}</div>
+          ${c.notes ? `<div style="font-size:12px;color:var(--t2);margin-top:4px;">${escHtml(c.notes)}</div>` : ''}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
           <button class="pop-cta-btn b" style="width:auto;padding:5px 10px;" onclick="mvEditToggle()" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
@@ -392,12 +397,12 @@ function mvRenderClientView() {
         </div>
       </div>
       <div id="mv-edit-form" style="display:none;margin-top:10px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);">
-        <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-e-name" value="${c.name.replace(/"/g,'&quot;')}"></div>
-        <div class="fg"><div class="fl">TC Kimlik / Mersis No</div><input type="text" id="mv-e-tc" value="${(c.tcMersis||'').replace(/"/g,'&quot;')}"></div>
-        <div class="fg"><div class="fl">Adres <span class="opt">(sözleşmede tebligat adresi olarak kullanılır)</span></div><input type="text" id="mv-e-address" value="${(c.address||'').replace(/"/g,'&quot;')}"></div>
-        <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-e-phone" value="${(c.phone||'').replace(/"/g,'&quot;')}"></div>
-        <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-e-email" value="${(c.email||'').replace(/"/g,'&quot;')}"></div>
-        <div class="fg"><div class="fl">Not</div><textarea id="mv-e-note" rows="2">${(c.notes||'')}</textarea></div>
+        <div class="fg"><div class="fl">Ad Soyad</div><input type="text" id="mv-e-name" value="${escHtml(c.name)}"></div>
+        <div class="fg"><div class="fl">TC Kimlik / Mersis No</div><input type="text" id="mv-e-tc" value="${escHtml(c.tcMersis||'')}"></div>
+        <div class="fg"><div class="fl">Adres <span class="opt">(sözleşmede tebligat adresi olarak kullanılır)</span></div><input type="text" id="mv-e-address" value="${escHtml(c.address||'')}"></div>
+        <div class="fg"><div class="fl">Telefon</div><input type="text" id="mv-e-phone" value="${escHtml(c.phone||'')}"></div>
+        <div class="fg"><div class="fl">E-posta</div><input type="text" id="mv-e-email" value="${escHtml(c.email||'')}"></div>
+        <div class="fg"><div class="fl">Not</div><textarea id="mv-e-note" rows="2">${escHtml(c.notes||'')}</textarea></div>
         <div style="display:flex;gap:6px;">
           <button class="pop-cta-btn b" style="flex:1;" onclick="mvSaveEdit()"><span>Kaydet</span></button>
           <button class="pop-cta-btn" style="flex:1;" onclick="mvEditToggle()"><span>Vazgeç</span></button>
@@ -408,7 +413,7 @@ function mvRenderClientView() {
       <div id="mv-cases">${c.cases.length ? c.cases.map(cs => {
         const nextEv = cs.events.filter(e => new Date(e.dueDate) >= new Date()).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate))[0];
         return `<div class="s-item" style="margin:0 0 4px;" onclick="mvOpenCase('${cs.id}')">
-          <span class="ico"><i class="fa-solid fa-folder"></i></span>${cs.title}
+          <span class="ico"><i class="fa-solid fa-folder"></i></span>${escHtml(cs.title)}
           ${cs.status==='kapali' ? '<span style="margin-left:6px;font-size:9px;color:var(--t3);">(kapalı)</span>' : ''}
           ${nextEv ? `<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg2);color:var(--t3);">${new Date(nextEv.dueDate).toLocaleDateString('tr-TR')}</span>` : ''}
         </div>`;
@@ -436,7 +441,7 @@ function mvRenderClientView() {
       <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvSendPortalMessage('${c.id}')"><span>Gönder</span></button>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 6px;"><i class="fa-solid fa-comments"></i> Genel Görüşme Geçmişi</div>
-      <div id="mv-logs">${c.logs.length ? c.logs.map(l => `<div style="padding:6px 0;border-bottom:1px solid var(--border);"><div style="font-size:10px;color:var(--t3);">${new Date(l.createdAt).toLocaleString('tr-TR')}</div><div style="font-size:12.5px;">${l.content}</div></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz görüşme kaydı yok.</div>'}</div>
+      <div id="mv-logs">${c.logs.length ? c.logs.map(l => `<div style="padding:6px 0;border-bottom:1px solid var(--border);"><div style="font-size:10px;color:var(--t3);">${new Date(l.createdAt).toLocaleString('tr-TR')}</div><div style="font-size:12.5px;">${escHtml(l.content)}</div></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz görüşme kaydı yok.</div>'}</div>
       <textarea id="mv-log-text" rows="2" placeholder="Ne konuşuldu, ne karar verildi…" style="margin-top:8px;"></textarea>
       <button class="pop-cta-btn b" style="width:100%;margin-top:6px;" onclick="mvAddLog()"><span>Notu Kaydet</span></button>
     </div>
@@ -450,21 +455,33 @@ async function mvAddCase() {
   const title = document.getElementById('mv-case-title').value.trim();
   const caseNumber = document.getElementById('mv-case-number').value.trim();
   if (!title) { toast('Dosya adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/clients/' + mvSelectedId + '/cases', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, caseNumber })
-  });
-  toast('Dosya eklendi', 'fa-solid fa-check', true);
-  mvSelect(mvSelectedId);
+  try {
+    const res = await fetch('/api/clients/' + mvSelectedId + '/cases', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, caseNumber })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Dosya eklenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Dosya eklendi', 'fa-solid fa-check', true);
+    mvSelect(mvSelectedId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvSaveCaseNumber(caseId) {
   const caseNumber = document.getElementById('mv-case-number-edit').value.trim();
-  await fetch('/api/cases/' + caseId, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ caseNumber })
-  });
-  toast('Dosya numarası kaydedildi', 'fa-solid fa-check', true);
+  try {
+    const res = await fetch('/api/cases/' + caseId, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caseNumber })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Dosya numarası kaydedilemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Dosya numarası kaydedildi', 'fa-solid fa-check', true);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 function mvShowMergeForm(caseId) {
@@ -479,7 +496,7 @@ function mvShowMergeForm(caseId) {
     </div>
     <div class="fg"><div class="fl">Hangi dosyayla birleştirilsin?</div>
       <select id="mv-merge-target">
-        ${digerDosyalar.map(cs => `<option value="${cs.id}">${cs.title}${cs.caseNumber ? ' — ' + cs.caseNumber : ''}</option>`).join('')}
+        ${digerDosyalar.map(cs => `<option value="${cs.id}">${escHtml(cs.title)}${cs.caseNumber ? ' — ' + escHtml(cs.caseNumber) : ''}</option>`).join('')}
       </select>
     </div>
     <button class="pop-cta-btn g" style="width:100%;" onclick="mvMergeCase('${caseId}')"><i class="fa-solid fa-code-merge"></i><span>Birleştir</span></button>
@@ -523,10 +540,10 @@ async function mvOpenCase(caseId) {
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="mvRenderClientView()">
-        <i class="fa-solid fa-arrow-left"></i> ${cs.client.name} — Müvekkile Dön
+        <i class="fa-solid fa-arrow-left"></i> ${escHtml(cs.client.name)} — Müvekkile Dön
       </div>
       <div style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div style="font-family:'Instrument Serif',serif;font-size:19px;">${cs.title}</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:19px;">${escHtml(cs.title)}</div>
         <div style="display:flex;gap:6px;">
           <button class="pop-cta-btn b" style="width:auto;padding:5px 10px;font-size:11px;" onclick="mvShowTimeline()"><i class="fa-solid fa-timeline"></i> Zaman Çizelgesi</button>
           <select onchange="mvSetCaseStatus('${cs.id}', this.value)" style="width:110px;font-size:11px;">
@@ -539,7 +556,7 @@ async function mvOpenCase(caseId) {
       </div>
 
       <div style="display:flex;gap:6px;align-items:center;margin-top:8px;">
-        <input type="text" id="mv-case-number-edit" value="${cs.caseNumber || ''}" placeholder="Dosya No (ör. 2026/1329) — sonradan girilebilir" style="flex:1;font-size:12px;">
+        <input type="text" id="mv-case-number-edit" value="${escHtml(cs.caseNumber || '')}" placeholder="Dosya No (ör. 2026/1329) — sonradan girilebilir" style="flex:1;font-size:12px;">
         <button class="pop-cta-btn b" style="width:auto;padding:6px 10px;" onclick="mvSaveCaseNumber('${cs.id}')"><i class="fa-solid fa-check"></i></button>
       </div>
 
@@ -555,7 +572,7 @@ async function mvOpenCase(caseId) {
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Tarihler</div>
       <div id="mv-events">${cs.events.length ? cs.events.map(ev => {
         const dl = mvDaysLeft(ev.dueDate);
-        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(ev.type).toUpperCase()}</span><span class="dl-text">${ev.title} — ${new Date(ev.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span><span style="cursor:pointer;color:var(--t3);margin-left:8px;" onclick="mvDeleteEvent('${ev.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></div>`;
+        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(ev.type).toUpperCase()}</span><span class="dl-text">${escHtml(ev.title)} — ${new Date(ev.dueDate).toLocaleDateString('tr-TR')}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span><span style="cursor:pointer;color:var(--t3);margin-left:8px;" onclick="mvDeleteEvent('${ev.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz tarih eklenmedi.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <select id="mv-ev-type" style="width:130px;" onchange="mvToggleCustomType()">
@@ -609,7 +626,7 @@ async function mvOpenCase(caseId) {
       `}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-file-invoice-dollar"></i> Faturalar</div>
-      <div id="mv-invoices">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span>${inv.feeAgreementPaymentId ? '' : `<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>`}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
+      <div id="mv-invoices">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+escHtml(inv.note)):''}</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span>${inv.feeAgreementPaymentId ? '' : `<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteInvoice('${inv.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>`}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
       ${!(cs.feeAgreements && cs.feeAgreements.length) ? `
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <input type="text" id="mv-inv-amount" class="tl-amount" placeholder="Tutar (TL)" style="width:120px;">
@@ -629,7 +646,7 @@ async function mvOpenCase(caseId) {
           <button class="pop-cta-btn g" style="width:auto;padding:6px 12px;" onclick="mvConvertTimeToInvoice('${cs.id}')"><i class="fa-solid fa-file-invoice-dollar"></i><span>Faturaya Dönüştür</span></button>
         </div>
       ` : ''}
-      <div id="mv-time">${cs.timeEntries.length ? cs.timeEntries.map(t => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(t.date).toLocaleDateString('tr-TR')} — ${t.hours} saat${t.description?(' — '+t.description):''}${t.invoiced ? ' <span style="color:var(--success);font-size:10px;">(faturalandı)</span>' : ''}</span><span style="display:flex;align-items:center;gap:8px;">${t.hourlyRate?`<span style="font-family:'JetBrains Mono',monospace;color:var(--t3);">${fmtTL(t.hours*t.hourlyRate)}</span>`:''}<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteTime('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz zaman kaydı yok.</div>'}</div>
+      <div id="mv-time">${cs.timeEntries.length ? cs.timeEntries.map(t => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(t.date).toLocaleDateString('tr-TR')} — ${t.hours} saat${t.description?(' — '+escHtml(t.description)):''}${t.invoiced ? ' <span style="color:var(--success);font-size:10px;">(faturalandı)</span>' : ''}</span><span style="display:flex;align-items:center;gap:8px;">${t.hourlyRate?`<span style="font-family:'JetBrains Mono',monospace;color:var(--t3);">${fmtTL(t.hours*t.hourlyRate)}</span>`:''}<span style="cursor:pointer;color:var(--t3);" onclick="mvDeleteTime('${t.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span></span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz zaman kaydı yok.</div>'}</div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <input type="text" id="mv-time-hours" placeholder="Saat (ör. 1.5)" style="width:110px;">
         <input type="text" id="mv-time-rate" class="tl-amount" placeholder="Saatlik ücret (ops.)" style="width:150px;">
@@ -643,35 +660,59 @@ async function mvOpenCase(caseId) {
 async function mvSaveAgreedFee(caseId) {
   const val = tlParseValue(document.getElementById('mv-agreed-fee').value);
   const paymentDueDate = document.getElementById('mv-payment-due').value;
-  await fetch('/api/cases/' + caseId, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agreedFee: val, paymentDueDate: paymentDueDate || null })
-  });
-  toast('Anlaşılan ücret kaydedildi', 'fa-solid fa-check', true);
-  mvOpenCase(caseId);
+  try {
+    const res = await fetch('/api/cases/' + caseId, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agreedFee: val, paymentDueDate: paymentDueDate || null })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Anlaşılan ücret kaydedilemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Anlaşılan ücret kaydedildi', 'fa-solid fa-check', true);
+    mvOpenCase(caseId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvSetCaseStatus(caseId, status) {
-  await fetch('/api/cases/' + caseId, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status })
-  });
-  toast('Dosya durumu güncellendi', 'fa-solid fa-check', true);
+  try {
+    const res = await fetch('/api/cases/' + caseId, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Dosya durumu güncellenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Dosya durumu güncellendi', 'fa-solid fa-check', true);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvSetCaseAssignee(caseId, assignedToId) {
-  await fetch('/api/cases/' + caseId, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ assignedToId: assignedToId || null })
-  });
-  toast('Sorumlu avukat güncellendi', 'fa-solid fa-check', true);
+  try {
+    const res = await fetch('/api/cases/' + caseId, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assignedToId: assignedToId || null })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Sorumlu avukat güncellenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Sorumlu avukat güncellendi', 'fa-solid fa-check', true);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvDeleteCase(caseId) {
   if (!confirm('Bu dosyayı ve içindeki tüm tarih/fatura/zaman kayıtlarını silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/cases/' + caseId, { method: 'DELETE' });
-  toast('Dosya silindi', 'fa-solid fa-trash');
-  mvSelect(mvSelectedId);
+  try {
+    const res = await fetch('/api/cases/' + caseId, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Dosya silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Dosya silindi', 'fa-solid fa-trash');
+    mvSelect(mvSelectedId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 function mvToggleCustomType() {
@@ -695,22 +736,34 @@ async function mvSaveEdit() {
   const email = document.getElementById('mv-e-email').value;
   const notes = document.getElementById('mv-e-note').value;
   if (!name) { toast('Müvekkil adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/clients/' + mvSelectedId, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, tcMersis, address, phone, email, notes })
-  });
-  toast('Bilgiler güncellendi', 'fa-solid fa-check', true);
-  mvSelect(mvSelectedId);
+  try {
+    const res = await fetch('/api/clients/' + mvSelectedId, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, tcMersis, address, phone, email, notes })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Bilgiler güncellenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Bilgiler güncellendi', 'fa-solid fa-check', true);
+    mvSelect(mvSelectedId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvDeleteClient() {
   if (!mvSelectedId) return;
   const ok = await talyaConfirm('Bu müvekkili ve <strong>tüm dosyalarını</strong> silmek istediğinize emin misiniz?<br><span style="font-size:12px;color:var(--t3);">Bu işlem geri alınamaz.</span>', 'Evet, Sil', 'danger');
   if (!ok) return;
-  await fetch('/api/clients/' + mvSelectedId, { method: 'DELETE' });
-  toast('Müvekkil silindi', 'fa-solid fa-trash');
-  mvSelectedId = null;
-  openPopup('muvekkilyonetimi');
+  try {
+    const res = await fetch('/api/clients/' + mvSelectedId, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Müvekkil silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Müvekkil silindi', 'fa-solid fa-trash');
+    mvSelectedId = null;
+    openPopup('muvekkilyonetimi');
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvAddEvent() {
@@ -720,20 +773,32 @@ async function mvAddEvent() {
   const title = document.getElementById('mv-ev-title').value.trim();
   const dueDate = document.getElementById('mv-ev-date').value;
   if (!title || !dueDate) { toast('Başlık ve tarih girin', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/cases/' + mvOpenCaseId + '/events', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, title, dueDate })
-  });
-  toast('Tarih eklendi — takvime düştü', 'fa-solid fa-calendar-check', true);
-  mvOpenCase(mvOpenCaseId);
+  try {
+    const res = await fetch('/api/cases/' + mvOpenCaseId + '/events', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, title, dueDate })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Tarih eklenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Tarih eklendi — takvime düştü', 'fa-solid fa-calendar-check', true);
+    mvOpenCase(mvOpenCaseId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvDeleteEvent(eventId) {
   if (!mvOpenCaseId) return;
   if (!confirm('Bu tarihi silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/cases/' + mvOpenCaseId + '/events/' + eventId, { method: 'DELETE' });
-  toast('Tarih silindi', 'fa-solid fa-trash');
-  mvOpenCase(mvOpenCaseId);
+  try {
+    const res = await fetch('/api/cases/' + mvOpenCaseId + '/events/' + eventId, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Tarih silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Tarih silindi', 'fa-solid fa-trash');
+    mvOpenCase(mvOpenCaseId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvAddInvoice() {
@@ -741,20 +806,32 @@ async function mvAddInvoice() {
   const amount = tlParseValue(document.getElementById('mv-inv-amount').value);
   const note = document.getElementById('mv-inv-note').value;
   if (!amount) { toast('Tutar girin', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/cases/' + mvOpenCaseId + '/invoices', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ amount, note })
-  });
-  toast('Fatura oluşturuldu', 'fa-solid fa-check', true);
-  mvOpenCase(mvOpenCaseId);
+  try {
+    const res = await fetch('/api/cases/' + mvOpenCaseId + '/invoices', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, note })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Fatura oluşturulamadı', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Fatura oluşturuldu', 'fa-solid fa-check', true);
+    mvOpenCase(mvOpenCaseId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvDeleteInvoice(invoiceId) {
   if (!mvOpenCaseId) return;
   if (!confirm('Bu faturayı silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/cases/' + mvOpenCaseId + '/invoices/' + invoiceId, { method: 'DELETE' });
-  toast('Fatura silindi', 'fa-solid fa-trash');
-  mvOpenCase(mvOpenCaseId);
+  try {
+    const res = await fetch('/api/cases/' + mvOpenCaseId + '/invoices/' + invoiceId, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Fatura silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Fatura silindi', 'fa-solid fa-trash');
+    mvOpenCase(mvOpenCaseId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvAddTime() {
@@ -763,12 +840,18 @@ async function mvAddTime() {
   const hourlyRate = tlParseValue(document.getElementById('mv-time-rate').value);
   const description = document.getElementById('mv-time-desc').value;
   if (!hours) { toast('Süre girin', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/cases/' + mvOpenCaseId + '/time', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ hours, hourlyRate: hourlyRate || null, description })
-  });
-  toast('Zaman kaydı eklendi', 'fa-solid fa-check', true);
-  mvOpenCase(mvOpenCaseId);
+  try {
+    const res = await fetch('/api/cases/' + mvOpenCaseId + '/time', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hours, hourlyRate: hourlyRate || null, description })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Zaman kaydı eklenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Zaman kaydı eklendi', 'fa-solid fa-check', true);
+    mvOpenCase(mvOpenCaseId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvConvertTimeToInvoice(caseId) {
@@ -786,20 +869,32 @@ async function mvConvertTimeToInvoice(caseId) {
 async function mvDeleteTime(entryId) {
   if (!mvOpenCaseId) return;
   if (!confirm('Bu zaman kaydını silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/cases/' + mvOpenCaseId + '/time/' + entryId, { method: 'DELETE' });
-  toast('Zaman kaydı silindi', 'fa-solid fa-trash');
-  mvOpenCase(mvOpenCaseId);
+  try {
+    const res = await fetch('/api/cases/' + mvOpenCaseId + '/time/' + entryId, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Zaman kaydı silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Zaman kaydı silindi', 'fa-solid fa-trash');
+    mvOpenCase(mvOpenCaseId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvAddLog() {
   if (!mvSelectedId) return;
   const content = document.getElementById('mv-log-text').value.trim();
   if (!content) return;
-  await fetch('/api/clients/' + mvSelectedId + '/logs', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content })
-  });
-  mvSelect(mvSelectedId);
+  try {
+    const res = await fetch('/api/clients/' + mvSelectedId + '/logs', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Not kaydedilemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    mvSelect(mvSelectedId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -886,7 +981,7 @@ function calRender() {
   agenda.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">${title}</div>` +
     (list.length ? list.map(ev => {
       const dl = mvDaysLeft(ev.dueDate);
-      return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(ev.type).toUpperCase()}</span><span class="dl-text">${ev.clientName} — ${ev.title}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
+      return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(ev.type).toUpperCase()}</span><span class="dl-text">${escHtml(ev.clientName)} — ${escHtml(ev.title)}</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
     }).join('') : `<div style="font-size:12px;color:var(--t3);">Kayıt yok.</div>`);
 }
 
@@ -919,8 +1014,8 @@ async function rpSelect(id) {
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="tblLoad()">
         <i class="fa-solid fa-arrow-left"></i> Tabloya Dön
       </div>
-      <div style="font-family:'Instrument Serif',serif;font-size:20px;">${c.name}</div>
-      <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">${c.phone||'—'}${c.email?(' · '+c.email):''}</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:20px;">${escHtml(c.name)}</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">${escHtml(c.phone)||'—'}${c.email?(' · '+escHtml(c.email)):''}</div>
 
       <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);">
         <span><i class="fa-solid fa-handshake" style="color:var(--gold);margin-right:6px;"></i>Anlaşılan Ücret</span>
@@ -936,19 +1031,19 @@ async function rpSelect(id) {
       </div>
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-folder-open"></i> Dosyalar (${c.cases.length})</div>
-      ${c.cases.length ? c.cases.map(cs => `<div style="font-size:12.5px;padding:4px 0;">${cs.title} ${cs.status==='kapali'?'<span style="color:var(--t3);font-size:10px;">(kapalı)</span>':''}</div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz dosya yok.</div>'}
+      ${c.cases.length ? c.cases.map(cs => `<div style="font-size:12.5px;padding:4px 0;">${escHtml(cs.title)} ${cs.status==='kapali'?'<span style="color:var(--t3);font-size:10px;">(kapalı)</span>':''}</div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz dosya yok.</div>'}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-calendar-days"></i> Yaklaşan Tarihler</div>
       ${gelecekEv.length ? gelecekEv.map(e => {
         const dl = mvDaysLeft(e.dueDate);
-        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${e.caseTitle} — ${e.title} (${new Date(e.dueDate).toLocaleDateString('tr-TR')})</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
+        return `<div class="dl-row"><span class="dl-tag ${dl.color==='var(--danger)'?'crit':dl.color==='var(--warn)'?'warn':''}">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${escHtml(e.caseTitle)} — ${escHtml(e.title)} (${new Date(e.dueDate).toLocaleDateString('tr-TR')})</span><span class="dl-days" style="color:${dl.color}">${dl.text}</span></div>`;
       }).join('') : '<div style="font-size:12px;color:var(--t3);">Yaklaşan tarih yok.</div>'}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Tarihler</div>
-      ${gecmisEv.length ? gecmisEv.map(e => `<div class="dl-row"><span class="dl-tag" style="background:var(--bg2);color:var(--t3);">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${e.caseTitle} — ${e.title} (${new Date(e.dueDate).toLocaleDateString('tr-TR')})</span><span class="dl-days" style="color:var(--t3);">Tamamlandı</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Geçmiş kayıt yok.</div>'}
+      ${gecmisEv.length ? gecmisEv.map(e => `<div class="dl-row"><span class="dl-tag" style="background:var(--bg2);color:var(--t3);">${eventTypeLabel(e.type).toUpperCase()}</span><span class="dl-text">${escHtml(e.caseTitle)} — ${escHtml(e.title)} (${new Date(e.dueDate).toLocaleDateString('tr-TR')})</span><span class="dl-days" style="color:var(--t3);">Tamamlandı</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Geçmiş kayıt yok.</div>'}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:16px 0 6px;"><i class="fa-solid fa-comments"></i> Son Görüşme</div>
-      ${c.logs.length ? `<div style="font-size:12.5px;">${c.logs[0].content}</div><div style="font-size:10px;color:var(--t3);margin-top:2px;">${new Date(c.logs[0].createdAt).toLocaleString('tr-TR')}</div>` : '<div style="font-size:12px;color:var(--t3);">Görüşme kaydı yok.</div>'}
+      ${c.logs.length ? `<div style="font-size:12.5px;">${escHtml(c.logs[0].content)}</div><div style="font-size:10px;color:var(--t3);margin-top:2px;">${new Date(c.logs[0].createdAt).toLocaleString('tr-TR')}</div>` : '<div style="font-size:12px;color:var(--t3);">Görüşme kaydı yok.</div>'}
     </div>
   `;
 }
@@ -986,12 +1081,12 @@ function fatRenderCaseList(c) {
   const dp = document.getElementById('detailPane');
   dp.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;">
-      <div style="font-family:'Instrument Serif',serif;font-size:20px;">${c.name}</div>
-      <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">${c.phone||''}${c.email?(' · '+c.email):''}</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:20px;">${escHtml(c.name)}</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">${escHtml(c.phone)||''}${c.email?(' · '+escHtml(c.email)):''}</div>
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Fatura oluşturmak için bir dosya seçin</div>
       ${c.cases.length ? c.cases.map(cs => `
         <div class="s-item" style="margin:0 0 4px;" onclick="fatSelectCase('${c.id}','${cs.id}')">
-          <span class="ico"><i class="fa-solid fa-folder"></i></span>${cs.title}
+          <span class="ico"><i class="fa-solid fa-folder"></i></span>${escHtml(cs.title)}
         </div>
       `).join('') : `<div style="font-size:12px;color:var(--t3);">Bu müvekkilin henüz dosyası yok. Önce Müvekkil Yönetimi'nden bir dosya ekleyin.</div>`}
     </div>
@@ -1016,8 +1111,8 @@ function fatRenderPane(cs) {
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="fatSelect('${cs.client.id}')">
         <i class="fa-solid fa-arrow-left"></i> Dosyalara Dön
       </div>
-      <div style="font-family:'Instrument Serif',serif;font-size:19px;">${cs.client.name}</div>
-      <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">Dosya: ${cs.title}</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:19px;">${escHtml(cs.client.name)}</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">Dosya: ${escHtml(cs.title)}</div>
       ${linked ? `
         <div style="background:var(--gold-lo);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:var(--gold-hi);">
           <i class="fa-solid fa-file-signature"></i> Bu dosya bir <strong>Avukatlık Ücret Sözleşmesi</strong>'ne bağlı — fatura elle oluşturulmuyor, aşağıdaki ödeme takvimi sözleşmeden otomatik geliyor. Ödeme almanı işaretlemek için müvekkilin sayfasındaki sözleşme bölümünü kullan.
@@ -1028,7 +1123,7 @@ function fatRenderPane(cs) {
           </div>
         `).join('')).join('')}
       ` : `
-      <div class="fg"><div class="fl">Tutar (TL)</div><input type="text" id="fat-amount" placeholder="15000"></div>
+      <div class="fg"><div class="fl">Tutar (TL)</div><input type="text" id="fat-amount" class="tl-amount" placeholder="15.000"></div>
       <div class="fg"><div class="fl">Açıklama (opsiyonel)</div><input type="text" id="fat-note" placeholder="Vekâlet ücreti…"></div>
       <button class="pop-cta-btn g" style="width:100%;" onclick="fatCreate('${cs.id}')">
         <i class="fa-solid fa-file-invoice-dollar"></i><span>Fatura Oluştur</span>
@@ -1037,13 +1132,13 @@ function fatRenderPane(cs) {
       `}
 
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:20px 0 6px;"><i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Faturalar</div>
-      <div id="fat-history">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+inv.note):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
+      <div id="fat-history">${cs.invoices.length ? cs.invoices.map(inv => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}${inv.note?(' — '+escHtml(inv.note)):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv.amount)}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>'}</div>
     </div>
   `;
 }
 
 async function fatCreate(caseId) {
-  const amount = document.getElementById('fat-amount').value;
+  const amount = tlParseValue(document.getElementById('fat-amount').value);
   const note = document.getElementById('fat-note').value;
   if (!amount) { toast('Tutar girin', 'fa-solid fa-triangle-exclamation'); return; }
 
@@ -1064,10 +1159,10 @@ async function fatCreate(caseId) {
     <div id="fat-doc" style="border:1px solid var(--border);border-radius:var(--r);padding:22px;background:#fff;color:#1a1714;">
       <div style="font-family:'Instrument Serif',serif;font-size:20px;color:var(--gold);margin-bottom:2px;">Talya Hukuk Bürosu</div>
       <div style="font-size:11px;color:var(--t3);margin-bottom:16px;">Vekâlet Ücreti Fatura Belgesi</div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Müvekkil</span><strong>${clientName}</strong></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Dosya</span><strong>${caseTitle}</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Müvekkil</span><strong>${escHtml(clientName)}</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Dosya</span><strong>${escHtml(caseTitle)}</strong></div>
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Tarih</span><strong>${new Date(inv.createdAt).toLocaleDateString('tr-TR')}</strong></div>
-      ${note ? `<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Açıklama</span><strong>${note}</strong></div>` : ''}
+      ${note ? `<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Açıklama</span><strong>${escHtml(note)}</strong></div>` : ''}
       <div style="display:flex;justify-content:space-between;font-size:16px;margin-top:12px;padding-top:12px;border-top:1px solid #ddd;"><span>Toplam Tutar</span><strong style="color:var(--gold);">${fmtTL(inv.amount)}</strong></div>
     </div>
     <button class="pop-cta-btn b" style="width:100%;margin-top:12px;" onclick="fatPrint()">
@@ -1082,7 +1177,7 @@ async function fatCreate(caseId) {
   const freshData = await fresh.json();
   if (freshData.case) {
     document.getElementById('fat-history').innerHTML = freshData.case.invoices.length
-      ? freshData.case.invoices.map(inv2 => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv2.createdAt).toLocaleDateString('tr-TR')}${inv2.note?(' — '+inv2.note):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv2.amount)}</span></div>`).join('')
+      ? freshData.case.invoices.map(inv2 => `<div class="cr-row" style="padding:5px 0;border-bottom:1px solid var(--border);"><span>${new Date(inv2.createdAt).toLocaleDateString('tr-TR')}${inv2.note?(' — '+escHtml(inv2.note)):''}</span><span style="font-family:'JetBrains Mono',monospace;">${fmtTL(inv2.amount)}</span></div>`).join('')
       : '<div style="font-size:12px;color:var(--t3);">Henüz fatura yok.</div>';
   }
 }
@@ -1170,7 +1265,7 @@ function taskCard(t, colKey) {
     const dueTimeVal = t.dueDate ? new Date(t.dueDate).toTimeString().slice(0, 5) : '';
     return `
       <div class="kanban-card" style="background:var(--card);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-        <input type="text" id="task-edit-title-${t.id}" value="${(t.title||'').replace(/"/g,'&quot;')}" style="width:100%;margin-bottom:6px;font-size:12.5px;">
+        <input type="text" id="task-edit-title-${t.id}" value="${escHtml(t.title||'')}" style="width:100%;margin-bottom:6px;font-size:12.5px;">
         <div style="display:flex;gap:4px;margin-bottom:6px;">
           <input type="date" id="task-edit-date-${t.id}" value="${dueDateVal}" style="flex:1;font-size:11px;">
           <input type="time" id="task-edit-time-${t.id}" value="${dueTimeVal}" style="width:100px;font-size:11px;">
@@ -1187,8 +1282,8 @@ function taskCard(t, colKey) {
     <div class="kanban-card" draggable="true"
          ondragstart="event.dataTransfer.setData('text/plain','${t.id}')"
          style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
-      <div style="font-size:12.5px;margin-bottom:4px;">${t.title}</div>
-      ${t.assignedTo ? `<div style="font-size:10px;color:var(--t3);margin-bottom:4px;"><i class="fa-solid fa-user"></i> ${t.assignedTo.name || t.assignedTo.email}</div>` : ''}
+      <div style="font-size:12.5px;margin-bottom:4px;">${escHtml(t.title)}</div>
+      ${t.assignedTo ? `<div style="font-size:10px;color:var(--t3);margin-bottom:4px;"><i class="fa-solid fa-user"></i> ${escHtml(t.assignedTo.name || t.assignedTo.email)}</div>` : ''}
       ${t.dueDate ? `<div style="font-size:10px;color:${overdue ? 'var(--danger)' : 'var(--t3)'};margin-bottom:6px;"><i class="fa-solid fa-calendar"></i> ${new Date(t.dueDate).toLocaleDateString('tr-TR')} ${new Date(t.dueDate).toTimeString().slice(0,5)}${overdue ? ' — süresi geçti' : ''}</div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
         <span style="display:flex;gap:6px;">
@@ -1220,13 +1315,19 @@ async function taskSaveEdit(id) {
   const timeVal = document.getElementById('task-edit-time-' + id).value;
   if (!title) { toast('Görev başlığı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
   const dueDate = dateVal ? localDateTimeToISO(dateVal, timeVal) : null;
-  await fetch('/api/tasks/' + id, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, dueDate })
-  });
-  taskEditingId = null;
-  toast('Görev güncellendi', 'fa-solid fa-check', true);
-  taskRenderList();
+  try {
+    const res = await fetch('/api/tasks/' + id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, dueDate })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Görev güncellenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    taskEditingId = null;
+    toast('Görev güncellendi', 'fa-solid fa-check', true);
+    taskRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 function taskDropOnColumn(event, colKey) {
@@ -1236,11 +1337,17 @@ function taskDropOnColumn(event, colKey) {
 }
 
 async function taskMoveStatus(id, status) {
-  await fetch('/api/tasks/' + id, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status })
-  });
-  taskRenderList();
+  try {
+    const res = await fetch('/api/tasks/' + id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Görev durumu güncellenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    taskRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function taskAdd() {
@@ -1251,21 +1358,33 @@ async function taskAdd() {
   const assigneeEl = document.getElementById('task-assignee');
   const assignedToId = assigneeEl && assigneeEl.closest('#task-assignee-wrap').style.display !== 'none' ? assigneeEl.value : null;
   if (!title) { toast('Görev başlığı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/tasks', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, dueDate, assignedToId })
-  });
-  document.getElementById('task-title').value = '';
-  document.getElementById('task-date').value = '';
-  document.getElementById('task-time').value = '';
-  toast('Görev eklendi', 'fa-solid fa-check', true);
-  taskRenderList();
+  try {
+    const res = await fetch('/api/tasks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, dueDate, assignedToId })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Görev eklenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-date').value = '';
+    document.getElementById('task-time').value = '';
+    toast('Görev eklendi', 'fa-solid fa-check', true);
+    taskRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function taskDelete(id) {
-  await fetch('/api/tasks/' + id, { method: 'DELETE' });
-  toast('Görev silindi', 'fa-solid fa-trash');
-  taskRenderList();
+  try {
+    const res = await fetch('/api/tasks/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Görev silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Görev silindi', 'fa-solid fa-trash');
+    taskRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1293,7 +1412,7 @@ async function noteRenderList() {
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
               <div style="flex:1;">
                 <div style="font-size:10px;color:var(--t3);margin-bottom:3px;">${new Date(n.createdAt).toLocaleString('tr-TR')}</div>
-                <div style="font-size:13px;white-space:pre-wrap;">${n.content}</div>
+                <div style="font-size:13px;white-space:pre-wrap;">${escHtml(n.content)}</div>
               </div>
               <span style="cursor:pointer;color:var(--t3);flex-shrink:0;" onclick="noteDelete('${n.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
             </div>
@@ -1311,18 +1430,30 @@ async function noteRenderList() {
 async function noteAdd() {
   const content = document.getElementById('note-text').value.trim();
   if (!content) return;
-  await fetch('/api/notes', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content })
-  });
-  document.getElementById('note-text').value = '';
-  toast('Not kaydedildi', 'fa-solid fa-check', true);
-  noteRenderList();
+  try {
+    const res = await fetch('/api/notes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Not kaydedilemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    document.getElementById('note-text').value = '';
+    toast('Not kaydedildi', 'fa-solid fa-check', true);
+    noteRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function noteDelete(id) {
-  await fetch('/api/notes/' + id, { method: 'DELETE' });
-  noteRenderList();
+  try {
+    const res = await fetch('/api/notes/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Not silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    noteRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1418,7 +1549,7 @@ function txGroupsHtml(txs) {
                 <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">
                   <span>
                     <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${t.type==='gelir'?'var(--success)':'var(--danger)'};margin-right:6px;"></span>
-                    ${t.description} <span style="color:var(--t3);font-size:11px;">— ${new Date(t.date).toLocaleDateString('tr-TR')}</span>
+                    ${escHtml(t.description)} <span style="color:var(--t3);font-size:11px;">— ${new Date(t.date).toLocaleDateString('tr-TR')}</span>
                   </span>
                   <span style="display:flex;align-items:center;gap:8px;">
                     <span style="font-family:'JetBrains Mono',monospace;color:${t.type==='gelir'?'var(--success)':'var(--danger)'};">${t.type==='gelir'?'+':'-'}${fmtTL(t.amount)}</span>
@@ -1487,7 +1618,7 @@ async function txRenderList() {
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;"><i class="fa-solid fa-hourglass-half"></i> Bekleyen Alacaklar (${receivables.length})</div>
           ${receivables.map(r => `
             <div class="cr-row" style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;">
-              <span style="cursor:pointer;flex:1;min-width:0;" onclick="mvSelect('${r.clientId}')">${r.overdue ? '<span style="color:var(--danger);font-size:10px;font-weight:600;margin-right:6px;">VADESİ GEÇTİ</span>' : ''}${r.clientName} — ${r.caseTitle}</span>
+              <span style="cursor:pointer;flex:1;min-width:0;" onclick="mvSelect('${r.clientId}')">${r.overdue ? '<span style="color:var(--danger);font-size:10px;font-weight:600;margin-right:6px;">VADESİ GEÇTİ</span>' : ''}${escHtml(r.clientName)} — ${escHtml(r.caseTitle)}</span>
               <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <span style="font-family:'JetBrains Mono',monospace;color:${r.overdue ? 'var(--danger)' : 'var(--warn)'};">${fmtTL(r.remaining)}</span>
                 ${r.feeAgreementPaymentId ? `<button class="pop-cta-btn" style="width:auto;padding:6px 12px;font-size:11px;background:var(--danger);color:#fff;" onclick="event.stopPropagation();mvMarkFeePaymentPaid('${r.feeAgreementPaymentId}')"><i class="fa-solid fa-xmark"></i> Ödenmedi</button>` : ''}
@@ -1513,20 +1644,32 @@ async function txAdd() {
   const description = document.getElementById('tx-desc').value.trim();
   const date = document.getElementById('tx-date').value;
   if (!amount || !description) { toast('Tutar ve açıklama girin', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/transactions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, amount, description, date: date || null })
-  });
-  document.getElementById('tx-amount').value = '';
-  document.getElementById('tx-desc').value = '';
-  document.getElementById('tx-date').value = '';
-  toast('Kayıt eklendi', 'fa-solid fa-check', true);
-  txRenderList();
+  try {
+    const res = await fetch('/api/transactions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, amount, description, date: date || null })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Kayıt eklenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    document.getElementById('tx-amount').value = '';
+    document.getElementById('tx-desc').value = '';
+    document.getElementById('tx-date').value = '';
+    toast('Kayıt eklendi', 'fa-solid fa-check', true);
+    txRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function txDelete(id) {
-  await fetch('/api/transactions/' + id, { method: 'DELETE' });
-  txRenderList();
+  try {
+    const res = await fetch('/api/transactions/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Kayıt silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    txRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1568,31 +1711,49 @@ function tblFilter() {
 }
 
 async function tblToggleArchive(id, archive) {
-  await fetch('/api/clients/' + id, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ archived: archive })
-  });
-  toast(archive ? 'Müvekkil arşivlendi' : 'Müvekkil aktife alındı', 'fa-solid fa-check', true);
-  tblLoad();
+  try {
+    const res = await fetch('/api/clients/' + id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archived: archive })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'İşlem başarısız oldu', 'fa-solid fa-triangle-exclamation'); return; }
+    toast(archive ? 'Müvekkil arşivlendi' : 'Müvekkil aktife alındı', 'fa-solid fa-check', true);
+    tblLoad();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function tblConvertToClient(id) {
   const ok = await talyaConfirm('Bu adayı gerçek bir müvekkile dönüştürmek istediğinize emin misiniz?', 'Evet, Dönüştür');
   if (!ok) return;
-  await fetch('/api/clients/' + id, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ isAday: false })
-  });
-  toast('Müvekkile dönüştürüldü', 'fa-solid fa-check', true);
-  tblLoad();
+  try {
+    const res = await fetch('/api/clients/' + id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isAday: false })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Dönüştürülemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Müvekkile dönüştürüldü', 'fa-solid fa-check', true);
+    tblLoad();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function tblDeleteClient(id) {
   const ok = await talyaConfirm('Bu müvekkili ve <strong>tüm dosyalarını</strong> silmek istediğinize emin misiniz?<br><span style="font-size:12px;color:var(--t3);">Bu işlem geri alınamaz.</span>', 'Evet, Sil', 'danger');
   if (!ok) return;
-  await fetch('/api/clients/' + id, { method: 'DELETE' });
-  toast('Müvekkil silindi', 'fa-solid fa-trash');
-  tblLoad();
+  try {
+    const res = await fetch('/api/clients/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Müvekkil silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Müvekkil silindi', 'fa-solid fa-trash');
+    tblLoad();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 function tblRender(rows) {
@@ -1638,9 +1799,9 @@ function tblRenderRowsOnly(rows) {
         <tbody>
           ${rows.map(r => `
             <tr style="border-bottom:1px solid var(--border);">
-              <td style="padding:8px 10px;cursor:pointer;" onclick="mvSelect('${r.id}')">${r.name}</td>
-              <td style="padding:8px 10px;color:var(--t2);font-family:'JetBrains Mono',monospace;font-size:11px;">${r.tcMersis || '—'}</td>
-              <td style="padding:8px 10px;color:var(--t2);">${r.phone || '—'}</td>
+              <td style="padding:8px 10px;cursor:pointer;" onclick="mvSelect('${r.id}')">${escHtml(r.name)}</td>
+              <td style="padding:8px 10px;color:var(--t2);font-family:'JetBrains Mono',monospace;font-size:11px;">${escHtml(r.tcMersis) || '—'}</td>
+              <td style="padding:8px 10px;color:var(--t2);">${escHtml(r.phone) || '—'}</td>
               <td style="padding:8px 10px;text-align:center;">${r.caseCount}</td>
               <td style="padding:8px 10px;font-family:'JetBrains Mono',monospace;">${r.totalInvoiced ? fmtTL(r.totalInvoiced) : '—'}</td>
               <td style="padding:8px 10px;">
@@ -1734,7 +1895,7 @@ function gaRender(results) {
       const meta = GA_TYPE_META[r.type] || { icon: 'fa-circle', label: r.type };
       return `<div class="s-item" style="margin:0 0 4px;" onclick="gaOpen('${r.type}','${r.id}')">
         <span class="ico"><i class="fa-solid ${meta.icon}"></i></span>
-        <span>${r.title}<span style="display:block;font-size:10px;color:var(--t3);">${meta.label}${r.subtitle ? ' — ' + r.subtitle : ''}</span></span>
+        <span>${escHtml(r.title)}<span style="display:block;font-size:10px;color:var(--t3);">${meta.label}${r.subtitle ? ' — ' + escHtml(r.subtitle) : ''}</span></span>
       </div>`;
     }).join('');
 }
@@ -1817,8 +1978,8 @@ async function szRenderList() {
           return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
               <div>
-                <div style="font-size:13.5px;font-weight:500;">${c.title}</div>
-                <div style="font-size:11px;color:var(--t3);">${c.counterparty || ''}${c.notes ? ' — ' + c.notes : ''}</div>
+                <div style="font-size:13.5px;font-weight:500;">${escHtml(c.title)}</div>
+                <div style="font-size:11px;color:var(--t3);">${escHtml(c.counterparty || '')}${c.notes ? ' — ' + escHtml(c.notes) : ''}</div>
               </div>
               <span style="cursor:pointer;color:var(--t3);flex-shrink:0;" onclick="szDelete('${c.id}')"><i class="fa-solid fa-xmark"></i></span>
             </div>
@@ -1843,24 +2004,36 @@ async function szAdd() {
   const notes = document.getElementById('sz-notes').value;
   if (!title || !endDate) { toast('Sözleşme adı ve bitiş tarihi gerekli', 'fa-solid fa-triangle-exclamation'); return; }
 
-  await fetch('/api/contracts', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, counterparty, startDate: startDate || null, endDate, notes })
-  });
-  document.getElementById('sz-title').value = '';
-  document.getElementById('sz-counterparty').value = '';
-  document.getElementById('sz-start').value = '';
-  document.getElementById('sz-end').value = '';
-  document.getElementById('sz-notes').value = '';
-  toast('Sözleşme eklendi', 'fa-solid fa-check', true);
-  szRenderList();
+  try {
+    const res = await fetch('/api/contracts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, counterparty, startDate: startDate || null, endDate, notes })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Sözleşme eklenemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    document.getElementById('sz-title').value = '';
+    document.getElementById('sz-counterparty').value = '';
+    document.getElementById('sz-start').value = '';
+    document.getElementById('sz-end').value = '';
+    document.getElementById('sz-notes').value = '';
+    toast('Sözleşme eklendi', 'fa-solid fa-check', true);
+    szRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function szDelete(id) {
   if (!confirm('Bu sözleşmeyi silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/contracts/' + id, { method: 'DELETE' });
-  toast('Sözleşme silindi', 'fa-solid fa-trash');
-  szRenderList();
+  try {
+    const res = await fetch('/api/contracts/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Sözleşme silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Sözleşme silindi', 'fa-solid fa-trash');
+    szRenderList();
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1875,15 +2048,15 @@ function mvShowTimeline() {
   const items = [];
   (cs.events || []).forEach(e => items.push({
     date: new Date(e.dueDate), icon: 'fa-gavel', color: 'var(--danger)',
-    label: eventTypeLabel(e.type), text: e.title,
+    label: eventTypeLabel(e.type), text: escHtml(e.title),
   }));
   (cs.invoices || []).forEach(i => items.push({
     date: new Date(i.createdAt), icon: 'fa-file-invoice-dollar', color: 'var(--success)',
-    label: 'Fatura', text: `${fmtTL(i.amount)}${i.note ? ' — ' + i.note : ''}`,
+    label: 'Fatura', text: `${fmtTL(i.amount)}${i.note ? ' — ' + escHtml(i.note) : ''}`,
   }));
   (cs.timeEntries || []).forEach(t => items.push({
     date: new Date(t.date), icon: 'fa-stopwatch', color: 'var(--gold)',
-    label: 'Zaman Kaydı', text: `${t.hours} saat${t.description ? ' — ' + t.description : ''}`,
+    label: 'Zaman Kaydı', text: `${t.hours} saat${t.description ? ' — ' + escHtml(t.description) : ''}`,
   }));
   items.sort((a, b) => b.date - a.date);
 
@@ -1892,7 +2065,7 @@ function mvShowTimeline() {
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="mvOpenCase('${cs.id}')">
         <i class="fa-solid fa-arrow-left"></i> Dosya Detayına Dön
       </div>
-      <div style="font-family:'Instrument Serif',serif;font-size:19px;margin-bottom:16px;">${cs.title} — Zaman Çizelgesi</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:19px;margin-bottom:16px;">${escHtml(cs.title)} — Zaman Çizelgesi</div>
       ${items.length ? `
         <div style="position:relative;padding-left:28px;">
           <div style="position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--border);"></div>
@@ -1936,7 +2109,7 @@ function ekipRender(ws, myRole) {
     <div class="fg">
       <div class="fl">Büro Adı</div>
       <div style="display:flex;gap:6px;">
-        <input type="text" id="ekip-name" value="${ws.name.replace(/"/g,'&quot;')}" ${isAdmin ? '' : 'disabled'} style="flex:1;min-width:0;">
+        <input type="text" id="ekip-name" value="${escHtml(ws.name)}" ${isAdmin ? '' : 'disabled'} style="flex:1;min-width:0;">
         ${isAdmin ? `<button class="pop-cta-btn b" style="width:auto;padding:6px 12px;flex-shrink:0;" onclick="ekipSaveName()">Kaydet</button>` : ''}
       </div>
     </div>
@@ -1946,7 +2119,7 @@ function ekipRender(ws, myRole) {
     </div>
     ${ws.members.map(m => `
       <div class="cr-row" style="padding:7px 0;border-bottom:1px solid var(--border);">
-        <span style="cursor:pointer;" onclick='ekipShowMemberCases(${JSON.stringify(m.id)}, ${JSON.stringify(m.name || m.email)})'>${m.name || m.email} <span style="font-size:10px;color:var(--t3);">${m.workspaceRole === 'admin' ? '(Yönetici)' : '(Üye)'}</span></span>
+        <span style="cursor:pointer;" onclick="ekipShowMemberCases('${m.id}')">${escHtml(m.name || m.email)} <span style="font-size:10px;color:var(--t3);">${m.workspaceRole === 'admin' ? '(Yönetici)' : '(Üye)'}</span></span>
         <span style="display:flex;gap:10px;align-items:center;">
           ${isAdmin && m.workspaceRole !== 'admin' ? `<span style="cursor:pointer;color:var(--gold);font-size:11px;" onclick='ekipShowPermissions(${JSON.stringify(m.id)})'>Yetkiler</span>` : ''}
           ${isAdmin && m.workspaceRole !== 'admin' ? `<span style="cursor:pointer;color:var(--danger);font-size:11px;" onclick="ekipRemoveMember('${m.id}')">Çıkar</span>` : ''}
@@ -2007,22 +2180,27 @@ function ekipGetPane() {
   return document.getElementById('detailPane');
 }
 
-async function ekipShowMemberCases(memberId, memberName) {
+async function ekipShowMemberCases(memberId) {
   const panel = ekipGetPane();
   panel.innerHTML = `<div style="padding:22px 24px;">${skeletonRows(3)}</div>`;
+  // Adı doğrudan onclick içine gömmek yerine (kullanıcı serbest metnini
+  // JS string olarak güvenli biçimde kaçırmak zor olduğu için) üye
+  // önbelleğinden id ile buluyoruz — ekrana basarken escHtml ile kaçırılır.
+  const member = ekipMembersCache.find(m => m.id === memberId);
+  const memberName = member ? (member.name || member.email) : '';
   try {
     const res = await fetch('/api/cases?assignedToId=' + memberId);
     const data = await res.json();
     const cases = data.cases || [];
     panel.innerHTML = `
       <div style="padding:22px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
-        <div style="font-size:14px;font-family:'Instrument Serif',serif;margin-bottom:14px;">${memberName} — Atanan Dosyalar (${cases.length})</div>
+        <div style="font-size:14px;font-family:'Instrument Serif',serif;margin-bottom:14px;">${escHtml(memberName)} — Atanan Dosyalar (${cases.length})</div>
         ${cases.length ? cases.map(c => `
           <div class="cr-row" style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${c.clientId}')">
-            <span>${c.client.name} — ${c.title}</span>
+            <span>${escHtml(c.client.name)} — ${escHtml(c.title)}</span>
             <span style="font-size:11px;color:${c.status==='acik'?'var(--success)':'var(--t3)'};">${c.status==='acik'?'Açık':'Kapalı'}</span>
           </div>
-        `).join('') : emptyState('fa-folder-open', 'Atanmış dosya yok', memberName + ' adına henüz bir dosya atanmamış.')}
+        `).join('') : emptyState('fa-folder-open', 'Atanmış dosya yok', escHtml(memberName) + ' adına henüz bir dosya atanmamış.')}
       </div>
     `;
   } catch (e) {
@@ -2047,7 +2225,7 @@ function ekipShowPermissions(memberId) {
   const panel = ekipGetPane();
   panel.innerHTML = `
     <div style="padding:22px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
-    <div style="font-size:14px;font-family:'Instrument Serif',serif;margin-bottom:12px;">${member.name || member.email} — Erişim Yetkileri</div>
+    <div style="font-size:14px;font-family:'Instrument Serif',serif;margin-bottom:12px;">${escHtml(member.name || member.email)} — Erişim Yetkileri</div>
 
     <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px;cursor:pointer;">
       <input type="checkbox" id="ekip-perm-ai" ${member.aiEnabled === false ? '' : 'checked'}>
@@ -2112,7 +2290,7 @@ async function mvOpenPortalAccess(clientId) {
     <div style="background:var(--gold-lo);border:1px solid var(--gold-rule);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:8px;">
       <div style="font-size:10px;color:var(--t3);margin-bottom:4px;">Müvekkile iletin — bir daha gösterilmeyecek</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:.08em;color:var(--gold);font-weight:600;">${data.password}</div>
-      <div style="font-size:10.5px;color:var(--t3);margin-top:6px;">TC No: ${data.tcMersis} · talyahukuk.com/muvekkil</div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:6px;">TC No: ${escHtml(data.tcMersis)} · talyahukuk.com/muvekkil</div>
     </div>
     <button class="pop-cta-btn" style="width:100%;background:var(--danger);" onclick="mvClosePortalAccess('${clientId}')"><span>Erişimi Kapat</span></button>
   `;
@@ -2121,9 +2299,15 @@ async function mvOpenPortalAccess(clientId) {
 
 async function mvClosePortalAccess(clientId) {
   if (!confirm('Müvekkilin panel erişimini kapatmak istediğinize emin misiniz?')) return;
-  await fetch('/api/clients/' + clientId + '/portal-access', { method: 'DELETE' });
-  toast('Erişim kapatıldı', 'fa-solid fa-check', true);
-  mvSelect(clientId);
+  try {
+    const res = await fetch('/api/clients/' + clientId + '/portal-access', { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Erişim kapatılamadı', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Erişim kapatıldı', 'fa-solid fa-check', true);
+    mvSelect(clientId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvLoadPortalMessages(clientId) {
@@ -2139,7 +2323,7 @@ async function mvLoadPortalMessages(clientId) {
           <div style="font-size:10px;color:var(--t3);margin-bottom:2px;">${m.isFromClient ? 'Müvekkil' : 'Siz'} — ${new Date(m.createdAt).toLocaleString('tr-TR')}</div>
           <span style="cursor:pointer;color:var(--t3);font-size:11px;" onclick="mvDeletePortalMessage('${clientId}','${m.id}')" title="Sil"><i class="fa-solid fa-xmark"></i></span>
         </div>
-        <div style="font-size:12.5px;white-space:pre-wrap;">${m.content.replace(/</g,'&lt;')}</div>
+        <div style="font-size:12.5px;white-space:pre-wrap;">${escHtml(m.content)}</div>
       </div>
     `).join('') : '<div style="font-size:12px;color:var(--t3);">Henüz mesaj yok.</div>';
   } catch (e) {
@@ -2149,22 +2333,34 @@ async function mvLoadPortalMessages(clientId) {
 
 async function mvDeletePortalMessage(clientId, messageId) {
   if (!confirm('Bu mesajı silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/clients/' + clientId + '/portal-messages?messageId=' + messageId, { method: 'DELETE' });
-  toast('Mesaj silindi', 'fa-solid fa-trash');
-  mvLoadPortalMessages(clientId);
+  try {
+    const res = await fetch('/api/clients/' + clientId + '/portal-messages?messageId=' + messageId, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Mesaj silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Mesaj silindi', 'fa-solid fa-trash');
+    mvLoadPortalMessages(clientId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 async function mvSendPortalMessage(clientId) {
   const el = document.getElementById('mv-portal-reply');
   const content = el.value.trim();
   if (!content) { toast('Mesaj boş olamaz', 'fa-solid fa-triangle-exclamation'); return; }
-  await fetch('/api/clients/' + clientId + '/portal-messages', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content })
-  });
-  el.value = '';
-  toast('Mesaj gönderildi', 'fa-solid fa-check', true);
-  mvLoadPortalMessages(clientId);
+  try {
+    const res = await fetch('/api/clients/' + clientId + '/portal-messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Mesaj gönderilemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    el.value = '';
+    toast('Mesaj gönderildi', 'fa-solid fa-check', true);
+    mvLoadPortalMessages(clientId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 // Bildirim zilinden "müvekkil mesajı" bildirimine tıklanınca buraya
@@ -2205,7 +2401,7 @@ function mvRenderFeeAgreements(clientId) {
       <div style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div style="flex:1;overflow:hidden;">
-            <div style="font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">${(a.konu || 'Konu belirtilmemiş').slice(0,40)}</div>
+            <div style="font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">${escHtml((a.konu || 'Konu belirtilmemiş').slice(0,40))}</div>
             <div style="font-size:10px;color:var(--t3);">${new Date(a.sozlesmeTarihi).toLocaleDateString('tr-TR')} — ${a.sabitUcret ? new Intl.NumberFormat('tr-TR').format(a.sabitUcret) + ' TL' : ''}</div>
           </div>
           <div style="display:flex;gap:10px;">
@@ -2250,10 +2446,10 @@ function mvShowFeeForm(clientId, existing) {
     <div class="fg"><div class="fl">Hangi Dosyaya Bağlı? <span class="opt">(seçmezsen, "Sözleşme Konusu İş" ile otomatik yeni bir dosya oluşturulur)</span></div>
       <select id="fee-case">
         <option value="">Yeni dosya oluştur (Sözleşme Konusu İş ile)</option>
-        ${(mvClientCache.cases || []).map(cs => `<option value="${cs.id}" ${existing && existing.caseId === cs.id ? 'selected' : ''}>${cs.title}</option>`).join('')}
+        ${(mvClientCache.cases || []).map(cs => `<option value="${cs.id}" ${existing && existing.caseId === cs.id ? 'selected' : ''}>${escHtml(cs.title)}</option>`).join('')}
       </select>
     </div>
-    <div class="fg"><div class="fl">Sözleşme Konusu İş</div><textarea id="fee-konu" rows="3" placeholder="ör. Antalya 3. Aile Mahkemesi 2025/222 Esas numaralı dosya kapsamındaki işler.">${existing ? (existing.konu||'') : ''}</textarea></div>
+    <div class="fg"><div class="fl">Sözleşme Konusu İş</div><textarea id="fee-konu" rows="3" placeholder="ör. Antalya 3. Aile Mahkemesi 2025/222 Esas numaralı dosya kapsamındaki işler.">${existing ? escHtml(existing.konu||'') : ''}</textarea></div>
 
     <div class="fg"><div class="fl">Sabit Ücret (TL)</div><input type="text" class="tl-amount" id="fee-sabit" value="${existing && existing.sabitUcret != null ? new Intl.NumberFormat('tr-TR').format(existing.sabitUcret) : ''}" placeholder="200.000"></div>
 
@@ -2298,7 +2494,7 @@ function mvShowFeeForm(clientId, existing) {
       <div id="fee-taksit-rows"></div>
     </div>
 
-    <div class="fg"><div class="fl">Yetkili Yer <span class="opt">(uyuşmazlık çözüm yeri, ör. Antalya)</span></div><input type="text" id="fee-yetki-yeri" value="${existing ? (existing.yetkiYeri||'') : ''}" placeholder="Antalya"></div>
+    <div class="fg"><div class="fl">Yetkili Yer <span class="opt">(uyuşmazlık çözüm yeri, ör. Antalya)</span></div><input type="text" id="fee-yetki-yeri" value="${existing ? escHtml(existing.yetkiYeri||'') : ''}" placeholder="Antalya"></div>
     <div class="fg"><div class="fl">Sözleşme Tarihi</div><input type="date" id="fee-sozlesme-tarih" value="${existing && existing.sozlesmeTarihi ? new Date(existing.sozlesmeTarihi).toISOString().slice(0,10) : todayISO}"></div>
 
     <div style="display:flex;gap:8px;margin-top:6px;">
@@ -2548,9 +2744,15 @@ async function mvMarkFeePaymentPaid(paymentId) {
 
 async function mvDeleteFeeAgreement(clientId, id) {
   if (!confirm('Bu sözleşmeyi silmek istediğinize emin misiniz?')) return;
-  await fetch('/api/fee-agreements/' + id, { method: 'DELETE' });
-  toast('Sözleşme silindi', 'fa-solid fa-trash');
-  mvLoadFeeAgreements(clientId);
+  try {
+    const res = await fetch('/api/fee-agreements/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Sözleşme silinemedi', 'fa-solid fa-triangle-exclamation'); return; }
+    toast('Sözleşme silindi', 'fa-solid fa-trash');
+    mvLoadFeeAgreements(clientId);
+  } catch (e) {
+    toast('Bağlantı hatası, tekrar deneyin', 'fa-solid fa-triangle-exclamation');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -2584,7 +2786,7 @@ async function bakiyeOnOpen() {
           <tbody>
             ${rows.map(r => `
               <tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="mvSelect('${r.clientId}')">
-                <td style="padding:8px 10px;">${r.clientName}</td>
+                <td style="padding:8px 10px;">${escHtml(r.clientName)}</td>
                 <td style="padding:8px 10px;text-align:right;font-family:'JetBrains Mono',monospace;color:var(--t2);">${fmtTL(r.anlasilan)}</td>
                 <td style="padding:8px 10px;text-align:right;font-family:'JetBrains Mono',monospace;color:var(--success);">${fmtTL(r.tahsil)}</td>
                 <td style="padding:8px 10px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;color:${r.bakiye > 0 ? 'var(--warn)' : 'var(--success)'};">${fmtTL(r.bakiye)}</td>

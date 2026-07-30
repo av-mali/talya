@@ -17,18 +17,23 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
     }
     setLoading(true);
     setError("");
-    const res = await fetch("/api/workspace/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      setError(data.error || "Büro oluşturulamadı.");
-      return;
+    try {
+      const res = await fetch("/api/workspace/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Büro oluşturulamadı.");
+        return;
+      }
+      onDone();
+    } catch (e) {
+      setError("Bağlantı hatası, tekrar deneyin.");
+    } finally {
+      setLoading(false);
     }
-    onDone();
   }
 
   return (

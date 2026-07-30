@@ -167,7 +167,7 @@ async function durusmaAnalyzeSubmit() {
   if (!files.length) { toast('En az bir belge yükleyin', 'fa-solid fa-triangle-exclamation'); return; }
 
   const fileNames = files.map(f => f.name).join(', ');
-  appendMsg('user', `<strong>Duruşma Hazırlık</strong> — ${files.length} belge: ${fileNames.replace(/</g, '&lt;')}${question ? '<br><span style="opacity:.85;">' + question.replace(/</g, '&lt;') + '</span>' : ''}`);
+  appendMsg('user', `<strong>Duruşma Hazırlık</strong> — ${files.length} belge: ${escHtml(fileNames)}${question ? '<br><span style="opacity:.85;">' + escHtml(question) + '</span>' : ''}`);
   showTyping();
 
   const form = new FormData();
@@ -206,7 +206,7 @@ async function araclAnalyzeSubmit(prefix) {
 
   const fileLabel = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : 'Yapıştırılan metin';
   const baslik = mode === 'sozlesme' ? 'Sözleşme İnceleme' : 'Dosya Analizi';
-  appendMsg('user', `<strong>${baslik}</strong> — ${fileLabel.replace(/</g, '&lt;')}<br><span style="opacity:.85;">${question.replace(/</g, '&lt;')}</span>`);
+  appendMsg('user', `<strong>${baslik}</strong> — ${escHtml(fileLabel)}<br><span style="opacity:.85;">${escHtml(question)}</span>`);
   showTyping();
 
   const form = new FormData();
@@ -245,7 +245,7 @@ async function dilekceSihirbaziSubmit() {
     return;
   }
 
-  appendMsg('user', `<strong>Dilekçe Sihirbazı</strong> — ${davaTuru.replace(/</g, '&lt;')}<br><span style="opacity:.85;white-space:pre-wrap;">${olay.replace(/</g, '&lt;')}${talep ? '<br><em>Özel talep: ' + talep.replace(/</g, '&lt;') + '</em>' : ''}</span>`);
+  appendMsg('user', `<strong>Dilekçe Sihirbazı</strong> — ${escHtml(davaTuru)}<br><span style="opacity:.85;white-space:pre-wrap;">${escHtml(olay)}${talep ? '<br><em>Özel talep: ' + escHtml(talep) + '</em>' : ''}</span>`);
   showTyping();
 
   const instruction = `Dava Türü: ${davaTuru}\n\nOlay Örgüsü:\n${olay}\n\nÖzel Talepler: ${talep || 'Belirtilmemiş'}`;
@@ -298,7 +298,7 @@ async function tplRenderList() {
       box.innerHTML = `
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">Şablonlarınız (${templates.length})</div>
         ${templates.length ? templates.map(t => `<div class="s-item" style="margin:0 0 4px;" onclick="tplView('${t.id}')">
-          <span class="ico"><i class="fa-solid fa-file-lines"></i></span>${t.title}
+          <span class="ico"><i class="fa-solid fa-file-lines"></i></span>${escHtml(t.title)}
         </div>`).join('') : emptyState('fa-layer-group', 'Henüz şablon eklenmedi', 'Soldaki formdan ilk şablonunuzu ekleyin.')}
       `;
     } else {
@@ -307,13 +307,13 @@ async function tplRenderList() {
       box.innerHTML = `
         <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="tplBack()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div style="font-family:'Instrument Serif',serif;font-size:18px;margin-bottom:12px;">${tpl.title}</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:18px;margin-bottom:12px;">${escHtml(tpl.title)}</div>
           <div style="display:flex;gap:6px;">
             <button class="pop-cta-btn g" style="width:auto;padding:5px 10px;" onclick="tplCopy('${tpl.id}')"><i class="fa-solid fa-copy"></i></button>
             <button class="pop-cta-btn" style="width:auto;padding:5px 10px;background:var(--danger);" onclick="tplDelete('${tpl.id}')"><i class="fa-solid fa-trash"></i></button>
           </div>
         </div>
-        <div id="tpl-content-${tpl.id}" style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:16px;line-height:1.6;">${tpl.content}</div>
+        <div id="tpl-content-${tpl.id}" style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:16px;line-height:1.6;">${escHtml(tpl.content)}</div>
       `;
     }
   } catch (e) {
@@ -390,14 +390,12 @@ async function mevzuatSearch() {
       body: JSON.stringify({ action: 'search', query })
     });
     const data = await res.json();
-    console.log('[Mevzuat] Ham API cevabı:', data);
     if (!res.ok) {
       box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'Arama başarısız.'}</div>`;
       return;
     }
     const list = Array.isArray(data.result) ? data.result : (data.result?.results || data.result?.items || data.result?.mevzuatlar || []);
     if (!list.length) {
-      console.log('[Mevzuat] Sonuç bulunamadı, ham cevap:', data._debug);
       box.innerHTML = `<div style="font-size:12px;color:var(--t3);padding:10px 0;">Sonuç bulunamadı. Farklı bir terimle tekrar deneyin.</div>`;
       return;
     }
@@ -415,7 +413,7 @@ async function mevzuatSearch() {
         const rgTarih = mvzField(item, 'resmiGazeteTarihi', 'resmi_gazete_tarihi', 'rgTarihi') || '';
         return `<div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick="mevzuatShowTree(${i})">
           <span class="ico"><i class="fa-solid fa-scale-balanced"></i></span>
-          <span>${title}<span style="display:block;font-size:10px;color:var(--t3);">${tur}${rgTarih ? ' — RG: ' + rgTarih : ''}</span></span>
+          <span>${escHtml(title)}<span style="display:block;font-size:10px;color:var(--t3);">${escHtml(tur)}${rgTarih ? ' — RG: ' + escHtml(rgTarih) : ''}</span></span>
         </div>`;
       }).join('');
   } catch (e) {
@@ -447,7 +445,6 @@ async function mevzuatShowTree(index) {
       body: JSON.stringify({ action: 'content', mevzuatId, mevzuatTur, mevzuatNo })
     });
     const data = await res.json();
-    console.log('[Mevzuat] İçerik ham cevap:', data);
     if (!res.ok) {
       box.innerHTML = `<div style="font-size:12px;color:var(--danger);padding:10px 0;">${data.error || 'İçerik alınamadı.'}</div>`;
       return;
@@ -463,8 +460,8 @@ async function mevzuatShowTree(index) {
     if (text && text.slice(0, 8).includes('%PDF')) {
       box.innerHTML = `
         <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
-        <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
-        <div style="font-size:12px;color:var(--t3);padding:10px 0;">Bu belge için metin çıkarma şu an başarısız oluyor (servis ham PDF verisi döndürdü). Bu, "${mevzuatTur}" türü için bilinen bir sınır.</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${escHtml(title)}</div>
+        <div style="font-size:12px;color:var(--t3);padding:10px 0;">Bu belge için metin çıkarma şu an başarısız oluyor (servis ham PDF verisi döndürdü). Bu, "${escHtml(mevzuatTur)}" türü için bilinen bir sınır.</div>
         <a href="https://www.google.com/search?q=site:mevzuat.gov.tr+${encodeURIComponent(title)}" target="_blank" rel="noopener" style="color:var(--gold);font-size:12px;">mevzuat.gov.tr'de orijinalini ara ↗</a>
       `;
       return;
@@ -472,8 +469,8 @@ async function mevzuatShowTree(index) {
 
     box.innerHTML = `
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:10px;" onclick="mevzuatSearch()"><i class="fa-solid fa-arrow-left"></i> Arama Sonuçlarına Dön</div>
-      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${title}</div>
-      <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;max-height:500px;overflow-y:auto;">${(text || '').replace(/</g, '&lt;')}</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${escHtml(title)}</div>
+      <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;max-height:500px;overflow-y:auto;">${escHtml(text || '')}</div>
       <div style="display:flex;gap:6px;margin-top:10px;">
         <button class="pop-cta-btn b" style="flex:1;" onclick="mevzuatCopyContent()"><i class="fa-solid fa-copy"></i><span>Kopyala</span></button>
         <button class="pop-cta-btn g" style="flex:1;" onclick="mevzuatSaveToLibrary()"><i class="fa-solid fa-bookmark"></i><span>Kütüphaneme Kaydet</span></button>
@@ -584,7 +581,7 @@ function libraryRenderList() {
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:10px;">Kayıtlarınız (${libraryItemsCache.length})</div>
       ${libraryItemsCache.map((it, i) => `
         <div class="s-item" style="margin:0 0 4px;white-space:normal;height:auto;padding:10px 12px;" onclick="libraryShowItem(${i})">
-          <span class="ico"><i class="fa-solid fa-scale-balanced"></i></span>${it.title}
+          <span class="ico"><i class="fa-solid fa-scale-balanced"></i></span>${escHtml(it.title)}
         </div>
       `).join('')}
     </div>
@@ -599,10 +596,10 @@ function libraryShowItem(index) {
     <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="libraryRenderList()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${item.title}</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:10px;">${escHtml(item.title)}</div>
         <span style="cursor:pointer;color:var(--danger);font-size:11px;flex-shrink:0;" onclick="libraryDeleteItem('${item.id}')"><i class="fa-solid fa-trash"></i> Sil</span>
       </div>
-      <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;">${item.content.replace(/</g, '&lt;')}</div>
+      <div style="white-space:pre-wrap;font-size:13px;background:var(--bg2);border-radius:var(--r);padding:14px;line-height:1.6;">${escHtml(item.content)}</div>
     </div>
   `;
 }

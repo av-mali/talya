@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -20,7 +21,20 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   const target = await prisma.user.findUnique({ where: { id: params.id }, select: { workspaceId: true } });
 
-  await prisma.user.delete({ where: { id: params.id } });
+  try {
+    await prisma.user.delete({ where: { id: params.id } });
+  } catch (err) {
+    // P2003: yabancı anahtar kısıtlaması — bu kullanıcı tevkil talebi/başvurusu
+    // gibi başka kayıtlarda (Restrict ilişkili) referans alınıyorsa silme
+    // ham bir 500 yerine anlaşılır bir hata mesajıyla reddedilir.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
+      return NextResponse.json(
+        { error: "Bu kullanıcı başka kayıtlarda (ör. tevkil geçmişi) referans alındığı için silinemiyor." },
+        { status: 409 }
+      );
+    }
+    throw err;
+  }
 
   // Silinen kullanıcı bir büronun SON üyesiyse, artık kimsesiz kalan o
   // büro da otomatik silinir — Admin panelinde "hayalet büro" birikmesin.
