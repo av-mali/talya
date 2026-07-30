@@ -98,14 +98,23 @@ describe("[[SZ14]] — satır boyu punto işareti", () => {
   });
 });
 
-describe("tarih satırı — etiket VE ':' birlikte altı çizili, tab yok (v293)", () => {
-  it("'Etiket:__****  değer**' kalıbı, etiket+':' tek altı çizili+kalın run, değer (baştaki boşluk dahil) ayrı kalın-sadece run üretir", () => {
-    const r = parseLineMarkup("[[D]]**__Tutanağının Düzenlendiği Tarih:__**** 28.06.2026**");
+describe("tarih satırı — etiket + TAB birlikte altı çizili, ':' değer tarafında (v294 düzeltmesi — kullanıcının İKİNCİ gerçek örneği; v293'teki 'tab yok, ':' etikete dahil' varsayımı YANLIŞ çıktı, bkz. altındaki not)", () => {
+  // v293'te (bu oturumun önceki adımı) kullanıcının BAŞKA bir gerçek UDF
+  // örneğinden ":" karakterinin de altı çizili run'a dahil olduğu, TAB'ın
+  // ise hiç kullanılmadığı sonucuna varılmıştı. Kullanıcı bu kez AÇIKÇA
+  // "önce" (v293 çıktısı) ve "sonra" (istediği hâl) diye iki ekran
+  // görüntüsü karşılaştırdı: istediği hâlde TAB var (üç satırdaki ':'
+  // karakterleri dikey olarak HİZALI) ve altı çizgi TAB'ın üzerinden de
+  // (etiketten hemen sonra, ':' karakterine kadar) geçiyor — ':' ise altı
+  // ÇİZİLİ DEĞİL. Yani doğrusu: TAB altı çizili run'ın İÇİNDE, ':' değer
+  // tarafında (kalın ama altı çizili değil).
+  it("'Etiket\\t__****: değer**' kalıbı, etiket+TAB tek altı çizili+kalın run, ': değer' ayrı kalın-sadece run üretir", () => {
+    const r = parseLineMarkup("[[D]]**__Tutanağının Düzenlendiği Tarih\t__****: 28.06.2026**");
     expect(r.dateRow).toBe(true);
-    expect(r.text).toBe("Tutanağının Düzenlendiği Tarih: 28.06.2026");
+    expect(r.text).toBe("Tutanağının Düzenlendiği Tarih\t: 28.06.2026");
     expect(r.runs).toEqual([
       { start: 0, length: 31, bold: true, underline: true },
-      { start: 31, length: 11, bold: true, underline: false },
+      { start: 31, length: 12, bold: true, underline: false },
     ]);
   });
 });

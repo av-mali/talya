@@ -245,7 +245,7 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
         // başlık sade "ANLAŞAMAMA" gösterir — "hiçbir konuda" ibaresi
         // SADECE narrative metninin son cümlesinde geçer (bkz.
         // buildAnlasamamaNarrative).
-        const extraLine = `[[D]]**__Arabuluculuk Sonucu:__**** ANLAŞAMAMA**`;
+        const extraLine = `[[D]]**__Arabuluculuk Sonucu\t__****: ANLAŞAMAMA**`;
         const header = buildHeaderBlock(mediationCase, profile, "ARABULUCU", extraLine, toplantiTarihiTr || undefined);
         const title = `[[SZ14]][[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[SZ14]][[C]]**DAVA ŞARTI ARABULUCULUK BİLGİLENDİRME VE** \n[[SZ14]][[C]]**"ANLAŞAMAMA" SON TUTANAĞI**\n\n\n`;
         finalText =
@@ -380,8 +380,8 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
 
       // NOT: [[D]] işareti, buildHeaderBlock'taki tarih satırlarıyla
       // (Başvuru/Görevlendirme/Düzenlenme Tarihi) AYNI biçimi kullanır —
-      // etiket VE ":" birlikte kalın+altı çizili, değer sadece kalın.
-      const extraLine = `[[D]]**__Arabuluculuk Sonucu:__**** ${sonucLabel}**`;
+      // etiket + TAB birlikte kalın+altı çizili, ':' değer tarafında.
+      const extraLine = `[[D]]**__Arabuluculuk Sonucu\t__****: ${sonucLabel}**`;
       const header = buildHeaderBlock(mediationCase, profile, "ARABULUCUNUN", extraLine, tutanakTarihiTr || undefined);
       const title = `[[SZ14]][[C]]**${buildUyusmazlikBasligi(mediationCase.uyusmazlikTuru)}** \n[[SZ14]][[C]]**DAVA ŞARTI ARABULUCULUK** \n[[SZ14]][[C]]**"${sonucLabel}" SON TUTANAĞI**\n\n`;
 

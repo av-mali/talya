@@ -143,11 +143,11 @@ describe("buildHeaderBlock — 'Tutanağının Düzenlendiği Tarih'", () => {
   });
 });
 
-describe("buildHeaderBlock — tarih satırlarında etiket VE ':' birlikte altı çizili, aralarında TAB yok (v293, kullanıcının UYAP'ta elle düzenlediği örnek belgeyle karşılaştırılarak doğrulandı)", () => {
+describe("buildHeaderBlock — tarih satırlarında etiket + TAB birlikte altı çizili, ':' değer tarafında (v294 düzeltmesi — kullanıcının 'önce/sonra' ekran görüntüleriyle doğrulandı; v293'teki 'tab yok' varsayımı YANLIŞTI)", () => {
   const c: any = { basvuruTarihi: "16.06.2026", gorevlendirmeTarihi: "16.06.2026" };
   const a: any = {};
 
-  it("üç tarih satırı da (Başvuru/Görevlendirme/Düzenlenme) yeni 'Etiket:__****  değer' kalıbını kullanır", () => {
+  it("üç tarih satırı da 'Etiket\\t__****: değer' kalıbını kullanır — TAB altı çizili run'ın İÇİNDE (üç satırdaki ':' dikey hizalı olsun diye geniş tek sekme durağı kullanılıyor), ':' DIŞINDA", () => {
     const header = buildHeaderBlock(c, a, "ARABULUCU");
     for (const etiket of [
       "Arabuluculuk Bürosuna Başvuru Tarihi",
@@ -156,9 +156,10 @@ describe("buildHeaderBlock — tarih satırlarında etiket VE ':' birlikte altı
     ]) {
       const line = header.split("\n").find((l) => l.includes(etiket));
       expect(line).toBeTruthy();
-      expect(line).toContain(`${etiket}:__****`);
-      // Eski kalıp: etiket ile ':' arasında bir TAB vardı — artık YOK.
-      expect(line).not.toContain(`${etiket}__**\t`);
+      expect(line).toContain(`${etiket}\t__****: `);
+      // v293'teki (YANLIŞ çıkan) kalıp: ':' etikete bitişik altı çizili
+      // run'ın içindeydi, TAB hiç yoktu — artık geri gelmemeli.
+      expect(line).not.toContain(`${etiket}:__****`);
     }
   });
 });

@@ -234,9 +234,9 @@ ${karsiTarafBlocks}
 
 \t${buildUyusmazlikKonusuCumlesi(c)}
 
-[[D]]**__Arabuluculuk Bürosuna Başvuru Tarihi:__**** ${v(c.basvuruTarihi)}**
-[[D]]**__Arabulucunun Görevlendirildiği Tarih:__**** ${v(c.gorevlendirmeTarihi)}**
-[[D]]**__Tutanağının Düzenlendiği Tarih:__**** ${v(duzenlemeTarihi || c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
+[[D]]**__Arabuluculuk Bürosuna Başvuru Tarihi\t__****: ${v(c.basvuruTarihi)}**
+[[D]]**__Arabulucunun Görevlendirildiği Tarih\t__****: ${v(c.gorevlendirmeTarihi)}**
+[[D]]**__Tutanağının Düzenlendiği Tarih\t__****: ${v(duzenlemeTarihi || c.gorevlendirmeTarihi)}**${extraLine ? "\n" + extraLine : ""}
 `;
 }
 
