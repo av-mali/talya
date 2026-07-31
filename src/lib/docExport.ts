@@ -176,7 +176,13 @@ export async function generateDocx(text: string): Promise<Buffer> {
           reference: "n1-list",
           levels: [{
             level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.START,
-            style: { paragraph: { indent: { left: 500, hanging: 300 } }, run: { bold: true } },
+            // size: 24 -> 12 punto (yarım-punto birimi) — SADECE davet
+            // mektubunda kullanıldığından (n1-list başka hiçbir belgede
+            // yok), maddelerin metniyle ([[SZ12]]) aynı punto boyutunda
+            // görünmesi için buraya da açıkça 12 punto veriyoruz —
+            // yoksa numara/rakam kütüphanenin varsayılan boyutunda kalıp
+            // metinden küçük görünüyordu.
+            style: { paragraph: { indent: { left: 500, hanging: 300 } }, run: { bold: true, size: 24 } },
           }],
         },
         {
@@ -194,7 +200,8 @@ export async function generateDocx(text: string): Promise<Buffer> {
           reference: "n3-list",
           levels: [{
             level: 0, format: LevelFormat.LOWER_LETTER, text: "%1)", alignment: AlignmentType.START,
-            style: { paragraph: { indent: { left: 900, hanging: 300 } }, run: { bold: true } },
+            // aynı sebeple (bkz. n1-list) buraya da 12 punto açıkça verildi.
+            style: { paragraph: { indent: { left: 900, hanging: 300 } }, run: { bold: true, size: 24 } },
           }],
         },
       ],

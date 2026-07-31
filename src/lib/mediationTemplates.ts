@@ -607,41 +607,41 @@ export function buildUcretCumlesi(
 
 // Davet Mektubu'nda hiç değişmeyen, uzun HUAK bilgilendirme metni —
 // örnek belgeden birebir alınmıştır.
-export const DAVET_MEKTUBU_BILGILENDIRME = `[[N1]]Başvuruya konu hukuki uyuşmazlığınızın 6325 Sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu kapsamında, tarafların üzerinde serbestçe tasarruf edebileceği iş ve işlemlerden doğan özel hukuk uyuşmazlığı olduğu anlaşılmaktadır.
+export const DAVET_MEKTUBU_BILGILENDIRME = `[[SZ12]][[N1]]Başvuruya konu hukuki uyuşmazlığınızın 6325 Sayılı Hukuk Uyuşmazlıklarında Arabuluculuk Kanunu kapsamında, tarafların üzerinde serbestçe tasarruf edebileceği iş ve işlemlerden doğan özel hukuk uyuşmazlığı olduğu anlaşılmaktadır.
 
-[[N1]]Bu bağlamda, gerçekleştirilecek arabuluculuk sürecinin daha verimli geçmesi için, arabuluculukla ilgili şu hususları bilgilerinize sunmak isterim
+[[SZ12]][[N1]]Bu bağlamda, gerçekleştirilecek arabuluculuk sürecinin daha verimli geçmesi için, arabuluculukla ilgili şu hususları bilgilerinize sunmak isterim
 
-[[N3]]Arabulucu taraflar arasındaki hukuki uyuşmazlığın çözümünde tarafsız ve bağımsız bir üçüncü kişi olarak yer alır ve taraflar arasındaki iletişim ortamını kolaylaştırarak kendi çözümlerini kendilerinin üretmeleri konusunda onlara yardımcı olur. Tarafların çözüm üretemediklerinin ortaya çıkması halinde arabulucu bir çözüm önerisinde de bulunabilir.
+[[SZ12]][[N3]]Arabulucu taraflar arasındaki hukuki uyuşmazlığın çözümünde tarafsız ve bağımsız bir üçüncü kişi olarak yer alır ve taraflar arasındaki iletişim ortamını kolaylaştırarak kendi çözümlerini kendilerinin üretmeleri konusunda onlara yardımcı olur. Tarafların çözüm üretemediklerinin ortaya çıkması halinde arabulucu bir çözüm önerisinde de bulunabilir.
 
-[[N3]]Arabuluculuk yoluyla uyuşmazlığın çözümü gönüllülük esasına dayalıdır. Taraflar, süreci devam ettirmek, sonuçlandırmak veya bu süreçten vazgeçmek konusunda serbesttirler.
+[[SZ12]][[N3]]Arabuluculuk yoluyla uyuşmazlığın çözümü gönüllülük esasına dayalıdır. Taraflar, süreci devam ettirmek, sonuçlandırmak veya bu süreçten vazgeçmek konusunda serbesttirler.
 
-[[N3]]Arabuluculuk yoluyla uyuşmazlığın çözümü ekonomik, sosyal ve psikolojik bakımdan faydalıdır. Arabuluculuk süreci taraflar arasındaki ilişkilerin korunmasına yardımcı olur ve toplumsal barışa hizmet eder.
+[[SZ12]][[N3]]Arabuluculuk yoluyla uyuşmazlığın çözümü ekonomik, sosyal ve psikolojik bakımdan faydalıdır. Arabuluculuk süreci taraflar arasındaki ilişkilerin korunmasına yardımcı olur ve toplumsal barışa hizmet eder.
 
-[[N3]]Taraflarca aksi kararlaştırılmadıkça arabuluculuk görüşmelerinde gizlilik ilkesine uyulması esastır. Bu durum, ticari, mesleki ve kişisel sırlarınızın korunmasını sağlayacağı gibi ticari, mesleki ve kişisel itibarınızın zarar görmesini de engelleyecektir.
+[[SZ12]][[N3]]Taraflarca aksi kararlaştırılmadıkça arabuluculuk görüşmelerinde gizlilik ilkesine uyulması esastır. Bu durum, ticari, mesleki ve kişisel sırlarınızın korunmasını sağlayacağı gibi ticari, mesleki ve kişisel itibarınızın zarar görmesini de engelleyecektir.
 
-[[N1]]Arabuluculuk bürosuna başvurulmasından son tutanağın düzenlendiği tarihe kadar geçen sürede zamanaşımı durur ve hak düşürücü süre işlemez (HUAK m. 18A/15).
+[[SZ12]][[N1]]Arabuluculuk bürosuna başvurulmasından son tutanağın düzenlendiği tarihe kadar geçen sürede zamanaşımı durur ve hak düşürücü süre işlemez (HUAK m. 18A/15).
 
-[[N1]]Dava açılmadan önce ihtiyati tedbir kararı verilmesi hâlinde 6100 sayılı Kanunun 397.maddesinin birinci fıkrasında, ihtiyati haciz kararı verilmesi hâlinde ise 9/6/1932 tarihli ve 2004 sayılı İcra ve İflas Kanununun 264'üncü maddesinin birinci fıkrasında düzenlenen dava açma süresi, arabuluculuk bürosuna başvurulmasından son tutanağın düzenlendiği tarihe kadar işlemez (HUAK m. 18A/16).
+[[SZ12]][[N1]]Dava açılmadan önce ihtiyati tedbir kararı verilmesi hâlinde 6100 sayılı Kanunun 397.maddesinin birinci fıkrasında, ihtiyati haciz kararı verilmesi hâlinde ise 9/6/1932 tarihli ve 2004 sayılı İcra ve İflas Kanununun 264'üncü maddesinin birinci fıkrasında düzenlenen dava açma süresi, arabuluculuk bürosuna başvurulmasından son tutanağın düzenlendiği tarihe kadar işlemez (HUAK m. 18A/16).
 
-[[N1]]Davacı, arabuluculuk faaliyeti sonunda anlaşmaya varılamadığına ilişkin son tutanağın aslını veya arabulucu tarafından onaylanmış bir örneğini dava dilekçesine eklemek zorundadır. Bu zorunluluğa uyulmaması hâlinde mahkemece davacıya, son tutanağın bir haftalık kesin süre içinde mahkemeye sunulması gerektiği, aksi takdirde davanın usulden reddedileceği ihtarını içeren davetiye gönderilir. İhtarın gereği yerine getirilmez ise dava dilekçesi karşı tarafa tebliğe çıkarılmaksızın davanın usulden reddine karar verilir. Arabulucuya başvurulmadan dava açıldığının anlaşılması hâlinde herhangi bir işlem yapılmaksızın davanın, dava şartı yokluğu sebebiyle usulden reddine karar verilir. (HUAK m. 3/2).
+[[SZ12]][[N1]]Davacı, arabuluculuk faaliyeti sonunda anlaşmaya varılamadığına ilişkin son tutanağın aslını veya arabulucu tarafından onaylanmış bir örneğini dava dilekçesine eklemek zorundadır. Bu zorunluluğa uyulmaması hâlinde mahkemece davacıya, son tutanağın bir haftalık kesin süre içinde mahkemeye sunulması gerektiği, aksi takdirde davanın usulden reddedileceği ihtarını içeren davetiye gönderilir. İhtarın gereği yerine getirilmez ise dava dilekçesi karşı tarafa tebliğe çıkarılmaksızın davanın usulden reddine karar verilir. Arabulucuya başvurulmadan dava açıldığının anlaşılması hâlinde herhangi bir işlem yapılmaksızın davanın, dava şartı yokluğu sebebiyle usulden reddine karar verilir. (HUAK m. 3/2).
 
-[[N1]]Arabulucu, yapılan başvuruyu görevlendirildiği tarihten itibaren üç hafta içinde sonuçlandırır. Bu süre zorunlu hâllerde arabulucu tarafından en fazla bir hafta uzatılabilir (HUAK m. 18A/9).
+[[SZ12]][[N1]]Arabulucu, yapılan başvuruyu görevlendirildiği tarihten itibaren üç hafta içinde sonuçlandırır. Bu süre zorunlu hâllerde arabulucu tarafından en fazla bir hafta uzatılabilir (HUAK m. 18A/9).
 
-[[N1]]Arabulucu, taraflara ulaşılamaması, taraflar katılmadığı için görüşme yapılamaması yahut yapılan görüşmeler sonucunda anlaşmaya varılması veya varılamaması hâllerinde arabuluculuk faaliyetini sona erdirir ve son tutanağı düzenleyerek durumu derhâl arabuluculuk bürosuna bildirir (HUAK m.18A/10).
+[[SZ12]][[N1]]Arabulucu, taraflara ulaşılamaması, taraflar katılmadığı için görüşme yapılamaması yahut yapılan görüşmeler sonucunda anlaşmaya varılması veya varılamaması hâllerinde arabuluculuk faaliyetini sona erdirir ve son tutanağı düzenleyerek durumu derhâl arabuluculuk bürosuna bildirir (HUAK m.18A/10).
 
-[[N1]]Tarafların arabuluculuk faaliyeti sonunda anlaşmaları hâlinde, arabuluculuk ücret, Arabuluculuk Asgari Ücret Tarifesinin eki Arabuluculuk Ücret Tarifesinin İkinci Kısmına göre karşılanır. Bu durumda ücret, Tarifenin Birinci Kısmında belirlenen iki saatlik ücret tutarından az olamaz. (HUAK m. 18A/12)
+[[SZ12]][[N1]]Tarafların arabuluculuk faaliyeti sonunda anlaşmaları hâlinde, arabuluculuk ücret, Arabuluculuk Asgari Ücret Tarifesinin eki Arabuluculuk Ücret Tarifesinin İkinci Kısmına göre karşılanır. Bu durumda ücret, Tarifenin Birinci Kısmında belirlenen iki saatlik ücret tutarından az olamaz. (HUAK m. 18A/12)
 
-[[N1]]Arabuluculuk faaliyeti sonunda taraflara ulaşılamaması, taraflar katılmadığı için görüşme yapılamaması veya iki saatten az süren görüşmeler sonunda tarafların anlaşamamaları hâllerinde, iki saatlik ücret tutarı Tarifenin Birinci Kısmına göre Adalet Bakanlığı bütçesinden ödenir. İki saatten fazla süren görüşmeler sonunda tarafların anlaşamamaları hâlinde ise iki saati aşan kısma ilişkin ücret aksi kararlaştırılmadıkça taraflarca eşit şekilde uyuşmazlığın konusu dikkate alınarak Tarifenin Birinci Kısmına göre karşılanır. Adalet Bakanlığı bütçesinden ödenen ve taraflarca karşılanan arabuluculuk ücret, yargılama giderlerinden sayılır. (HUAK m. 18A/13)
+[[SZ12]][[N1]]Arabuluculuk faaliyeti sonunda taraflara ulaşılamaması, taraflar katılmadığı için görüşme yapılamaması veya iki saatten az süren görüşmeler sonunda tarafların anlaşamamaları hâllerinde, iki saatlik ücret tutarı Tarifenin Birinci Kısmına göre Adalet Bakanlığı bütçesinden ödenir. İki saatten fazla süren görüşmeler sonunda tarafların anlaşamamaları hâlinde ise iki saati aşan kısma ilişkin ücret aksi kararlaştırılmadıkça taraflarca eşit şekilde uyuşmazlığın konusu dikkate alınarak Tarifenin Birinci Kısmına göre karşılanır. Adalet Bakanlığı bütçesinden ödenen ve taraflarca karşılanan arabuluculuk ücret, yargılama giderlerinden sayılır. (HUAK m. 18A/13)
 
-[[N1]]Arabuluculuk müzakerelerine taraflar bizzat, kanuni temsilcileri veya avukatları aracılığıyla katılabilirler. Uyuşmazlığın çözümüne katkı sağlayabilecek uzman kişiler de müzakerelerde hazır bulundurulabilir (HUAK m. 15/6).
+[[SZ12]][[N1]]Arabuluculuk müzakerelerine taraflar bizzat, kanuni temsilcileri veya avukatları aracılığıyla katılabilirler. Uyuşmazlığın çözümüne katkı sağlayabilecek uzman kişiler de müzakerelerde hazır bulundurulabilir (HUAK m. 15/6).
 
-[[N1]]Arabuluculuk görüşmeleri, taraflarca aksi kararlaştırılmadıkça, arabulucuyu görevlendiren büronun bağlı bulunduğu adli yargı ilk derece mahkemesi adalet komisyonunun yetki alanı içinde yürütülür (HUAK m. 18A/17).
+[[SZ12]][[N1]]Arabuluculuk görüşmeleri, taraflarca aksi kararlaştırılmadıkça, arabulucuyu görevlendiren büronun bağlı bulunduğu adli yargı ilk derece mahkemesi adalet komisyonunun yetki alanı içinde yürütülür (HUAK m. 18A/17).
 
-[[N1]]Yukarıda belirtilen tarihte yapılacak ilk toplantıya taraflardan birinin geçerli bir mazeret göstermeksizin katılmaması sebebiyle arabuluculuk faaliyetinin sona ermesi durumunda toplantıya katılmayan taraf, son tutanakta belirtilir ve bu taraf davada kısmen veya tamamen haklı çıksa bile yargılama giderinin tamamından sorumlu tutulur. Ayrıca bu taraf lehine vekâlet ücretine hükmedilmez. Her iki tarafın da ilk toplantıya katılmaması sebebiyle sona eren arabuluculuk faaliyeti üzerine açılacak davalarda tarafların yaptıkları yargılama giderleri kendi üzerlerinde bırakılır. (HUAK m.18A/11)
+[[SZ12]][[N1]]Yukarıda belirtilen tarihte yapılacak ilk toplantıya taraflardan birinin geçerli bir mazeret göstermeksizin katılmaması sebebiyle arabuluculuk faaliyetinin sona ermesi durumunda toplantıya katılmayan taraf, son tutanakta belirtilir ve bu taraf davada kısmen veya tamamen haklı çıksa bile yargılama giderinin tamamından sorumlu tutulur. Ayrıca bu taraf lehine vekâlet ücretine hükmedilmez. Her iki tarafın da ilk toplantıya katılmaması sebebiyle sona eren arabuluculuk faaliyeti üzerine açılacak davalarda tarafların yaptıkları yargılama giderleri kendi üzerlerinde bırakılır. (HUAK m.18A/11)
 
-[[N1]]Arabuluculuk görüşmelerine, gerçek kişilerin kimlik belgesi, şirket yetkililerinin kimlik belgesi ve imza sirküleri, avukatların kimlik belgesi ve arabuluculuk görüşmelerine katılma konusunda özel yetki bulunan vekâletname ile toplantıya katılması gerekmektedir. Arabuluculuk görüşmelerinde, idarenin taraf olduğu uyuşmazlıklarda idareyi, üst yönetici tarafından belirlenen iki üye ile hukuk birimi amiri veya onun belirleyeceği bir avukat ya da hukuk müşavirinden oluşan komisyon temsil eder (HUAK m. 15/8). Komisyon kendisini vekil ile temsil ettiremez (HUAK Yönetmeliği m. 18/1).
+[[SZ12]][[N1]]Arabuluculuk görüşmelerine, gerçek kişilerin kimlik belgesi, şirket yetkililerinin kimlik belgesi ve imza sirküleri, avukatların kimlik belgesi ve arabuluculuk görüşmelerine katılma konusunda özel yetki bulunan vekâletname ile toplantıya katılması gerekmektedir. Arabuluculuk görüşmelerinde, idarenin taraf olduğu uyuşmazlıklarda idareyi, üst yönetici tarafından belirlenen iki üye ile hukuk birimi amiri veya onun belirleyeceği bir avukat ya da hukuk müşavirinden oluşan komisyon temsil eder (HUAK m. 15/8). Komisyon kendisini vekil ile temsil ettiremez (HUAK Yönetmeliği m. 18/1).
 
-Katılımınızı bekler, arabuluculuk sürecinin barışçıl bir çözümle sonuçlanmasını dilerim.`;
+[[SZ12]]Katılımınızı bekler, arabuluculuk sürecinin barışçıl bir çözümle sonuçlanmasını dilerim.`;
 
 // Davet mektubu genelde TEK bir tarafa gönderilir (davet edilen kişi
 // seçilerek). "diğerTarafAd/diğerTarafVekil" = mektubu ALMAYAN, süreci
@@ -674,40 +674,40 @@ export function buildDavetMektubu(
     ? `Tarafınızca **${v(a.arabuluculukBurosu)}**'na yapılan başvuru üzerine UYAP Arabulucu Portal tarafından görevlendirilmiş Türkiye Cumhuriyeti Adalet Bakanlığı'ndaki resmi sicile kayıtlı ${v(a.arabulucuSicilNo)} sicil numaralı arabulucuyum.`
     : `${digerTarafCumle} tarafından **${v(a.arabuluculukBurosu)}**'na yapılan başvuru üzerine UYAP Arabulucu Portal tarafından görevlendirilmiş Türkiye Cumhuriyeti Adalet Bakanlığı'ndaki resmi sicile kayıtlı ${v(a.arabulucuSicilNo)} sicil numaralı arabulucuyum.`;
 
-  return `[[C]]**ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR**
+  return `[[SZ14]][[C]]**ARABULUCULUK SÜRECİNE DAVET MEKTUBUDUR**
 
-**__DAVETTE BULUNAN__**
+[[SZ12]]**__DAVETTE BULUNAN__**
 
-\tArabulucu\t: Arb. **${v(a.name)}**
-\tTELFON\t: ${v(a.phone)}
-\tE-Mail\t: ${v(a.email)}
-\tAdres\t: ${v(a.arabulucuAdres)}
+[[SZ12]]\tArabulucu\t: Arb. **${v(a.name)}**
+[[SZ12]]\tTelefon\t: ${v(a.phone)}
+[[SZ12]]\tE-Mail\t: ${v(a.email)}
+[[SZ12]]\tAdres\t: ${v(a.arabulucuAdres)}
 
-**__DAVET EDİLEN__**
+[[SZ12]]**__DAVET EDİLEN__**
 
-\tAdı / Soyadı\t: **${v(davetEdilenAd)}**
-\tVekili\t: ${davetEdilenVekil ? `**${avLabel(davetEdilenVekil)}**` : ""}
-\tBaro / Sicil\t: ${v(davetEdilenBaroSicil, "")}
-\tTelefon\t: ${v(davetEdilenTelefon)}
+[[SZ12]]\tAdı / Soyadı\t: **${v(davetEdilenAd)}**
+[[SZ12]]\tVekili\t: ${davetEdilenVekil ? `**${avLabel(davetEdilenVekil)}**` : ""}
+[[SZ12]]\tBaro / Sicil\t: ${v(davetEdilenBaroSicil, "")}
+[[SZ12]]\tTelefon\t: ${v(davetEdilenTelefon)}
 
-**__GÜN VE SAAT\t:__** ${v(gunSaat)}
+[[SZ12]]**__GÜN VE SAAT\t:__** ${v(gunSaat)}
 
-**__TOPLANTI YERİ\t:__** ${v(toplantiYeri)}
+[[SZ12]]**__TOPLANTI YERİ\t:__** ${v(toplantiYeri)}
 
 
-**__AÇIKLAMALAR VE BİLGİLENDİRMELER: __**
+[[SZ12]]**__AÇIKLAMALAR VE BİLGİLENDİRMELER: __**
 
-Sayın **${v(davetEdilenAd)}**${davetEdilenVekil ? ` ve vekili Sayın **${avLabel(davetEdilenVekil)}**` : ""},
+[[SZ12]]Sayın **${v(davetEdilenAd)}**${davetEdilenVekil ? ` ve vekili Sayın **${avLabel(davetEdilenVekil)}**` : ""},
 
-${basvuruCumlesi}
+[[SZ12]]${basvuruCumlesi}
 
-**${v(digerTarafAd)}** ile aranızdaki uyuşmazlığın, barışçıl olarak arabuluculuk yoluyla çözümlenmesine olanak sağlamak üzere, sizi tüm tarafların katılımıyla gerçekleşmeyi dilediğimiz arabuluculuk ilk oturumuna davet ediyorum.
+[[SZ12]]**${v(digerTarafAd)}** ile aranızdaki uyuşmazlığın, barışçıl olarak arabuluculuk yoluyla çözümlenmesine olanak sağlamak üzere, sizi tüm tarafların katılımıyla gerçekleşmeyi dilediğimiz arabuluculuk ilk oturumuna davet ediyorum.
 
 ${DAVET_MEKTUBU_BILGILENDIRME}
 
-Saygılarımla… ${today}
+[[SZ12]]Saygılarımla… ${today}
 
 
-[[R]]Arb. **${v(a.name)}**
-[[R]]Sicil No: ${v(a.arabulucuSicilNo)}`;
+[[SZ12]][[R]]Arb. **${v(a.name)}**
+[[SZ12]][[R]]Sicil No: ${v(a.arabulucuSicilNo)}`;
 }
