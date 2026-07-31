@@ -12,6 +12,10 @@ function cleanCase(c: any) {
       ...p,
       ad: stripTcFromName(p.ad) || p.ad,
     })),
+    ekBasvurucular: (c.ekBasvurucular || []).map((p: any) => ({
+      ...p,
+      ad: stripTcFromName(p.ad) || p.ad,
+    })),
   };
 }
 
@@ -26,7 +30,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   const found = await prisma.mediationCase.findFirst({
     where: { id: params.id, userId },
-    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
+    include: {
+      karsiTaraflar: { orderBy: { sira: "asc" } },
+      ekBasvurucular: { orderBy: { sira: "asc" } },
+    },
   });
   if (!found) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });
   return NextResponse.json({ case: cleanCase(found) });
@@ -86,10 +93,34 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     };
   }
 
+  // Ek başvurucu listesi (Başvurucu 2, 3, ...) gönderildiyse aynı "tamamını
+  // değiştir" yaklaşımı — "Başvurucu 1" olan düz basvurucu* alanlarına
+  // HİÇ dokunulmaz, yukarıdaki döngüde zaten ayrıca güncelleniyor.
+  if (Array.isArray(body.ekBasvurucular)) {
+    await prisma.mediationApplicant.deleteMany({ where: { caseId: params.id } });
+    data.ekBasvurucular = {
+      create: body.ekBasvurucular.map((p: any, i: number) => ({
+        tip: p.tip === "tuzel" ? "tuzel" : "sahis",
+        ad: stripTcFromName(p.ad) || null,
+        tcKimlik: p.tcKimlik || null,
+        adres: p.adres || null,
+        vergiMersis: p.vergiMersis || null,
+        yetkiliAd: p.yetkiliAd || null,
+        vekilAd: p.vekilAd || null,
+        vekilBaroSicil: p.vekilBaroSicil || null,
+        telefon: p.telefon || null,
+        sira: i,
+      })),
+    };
+  }
+
   const updated = await prisma.mediationCase.update({
     where: { id: params.id },
     data,
-    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
+    include: {
+      karsiTaraflar: { orderBy: { sira: "asc" } },
+      ekBasvurucular: { orderBy: { sira: "asc" } },
+    },
   });
   return NextResponse.json({ case: cleanCase(updated) });
 }

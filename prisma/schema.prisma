@@ -435,11 +435,34 @@ model MediationCase {
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId                String
   karsiTaraflar         MediationParty[]
+  ekBasvurucular        MediationApplicant[]
 }
 
 // Karşı taraf sayısı birden fazla olabildiği için (ör. 2-3 farklı kişi/
 // şirket), her karşı taraf ayrı bir satır olarak tutulur.
 model MediationParty {
+  id           String   @id @default(cuid())
+  tip          String   @default("sahis") // "sahis" | "tuzel"
+  ad           String?  // şahıs ise Ad Soyad, tüzel ise Unvan
+  tcKimlik     String?  // şahıs ise TC Kimlik No
+  adres        String?
+  vergiMersis  String?  // tüzel kişi ise vergi/mersis no
+  yetkiliAd    String?  // tüzel kişi ise şirket yetkilisi
+  vekilAd      String?  // varsa vekili
+  vekilBaroSicil String? // vekilin baro/sicil numarası
+  telefon      String?
+  sira         Int      @default(0)
+  case         MediationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId       String
+}
+
+// Birden fazla başvurucu olduğunda (ör. 2 kardeş birlikte başvuruyorsa),
+// EK başvurucular burada tutulur — "Başvurucu 1" olan İLK başvurucu
+// GERİYE DÖNÜK UYUMLULUK için MediationCase üzerindeki basvurucu* alanlarında
+// aynen kalmaya devam eder (mevcut dosyaların verisi taşınmaz/bozulmaz);
+// bu model sadece "Başvurucu 2", "Başvurucu 3" ... için kullanılır. Alan
+// yapısı bilinçli olarak MediationParty (karşı taraf) ile BİREBİR aynı.
+model MediationApplicant {
   id           String   @id @default(cuid())
   tip          String   @default("sahis") // "sahis" | "tuzel"
   ad           String?  // şahıs ise Ad Soyad, tüzel ise Unvan

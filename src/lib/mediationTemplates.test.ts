@@ -14,6 +14,7 @@ import {
   buildKatilimTeyidiParagraph,
   buildSonTutanakGirisParagrafi,
   formatSaatTr,
+  basvurucularList,
 } from "./mediationTemplates";
 
 describe("avLabel", () => {
@@ -458,5 +459,92 @@ describe("buildUyusmazlikBasligi", () => {
   it("boş/tanımsız değerde sabit '……' fallback kullanır", () => {
     expect(buildUyusmazlikBasligi("")).toBe("…… HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA");
     expect(buildUyusmazlikBasligi(undefined)).toBe("…… HUKUKUNDAN KAYNAKLANAN UYUŞMAZLIKLARDA");
+  });
+});
+
+// Birden fazla başvurucu desteği — "Başvurucu 1" HER ZAMAN MediationCase
+// üzerindeki düz basvurucu* alanlarından gelir (geriye dönük uyumluluk:
+// mevcut TÜM dosyalar bu alanları kullanır, hiçbir veri taşınmadı), ek
+// başvurucular c.ekBasvurucular dizisinden eklenir. Karşı tarafta zaten var
+// olan "1, 2, 3 ..." numaralandırma deseni tekrar kullanılır.
+describe("çoklu başvurucu — basvurucularList()", () => {
+  it("ekBasvurucular boşsa/yoksa TEK elemanlı liste döner (mevcut tüm dosyaların durumu)", () => {
+    const c = { basvurucuAd: "Ahmet Yılmaz", basvurucuTC: "111" };
+    expect(basvurucularList(c)).toEqual([
+      { tip: undefined, ad: "Ahmet Yılmaz", tcKimlik: "111", adres: undefined, vergiMersis: undefined, yetkiliAd: undefined, vekilAd: undefined, vekilBaroSicil: undefined, telefon: undefined },
+    ]);
+  });
+
+  it("ekBasvurucular varsa, düz alanlardan gelen İLK eleman + ekBasvurucular sırasıyla birleşir", () => {
+    const c = { basvurucuAd: "Ahmet Yılmaz", ekBasvurucular: [{ ad: "Ayşe Yılmaz" }, { ad: "Fatma Yılmaz" }] };
+    const list = basvurucularList(c);
+    expect(list).toHaveLength(3);
+    expect(list.map((p) => p.ad)).toEqual(["Ahmet Yılmaz", "Ayşe Yılmaz", "Fatma Yılmaz"]);
+  });
+});
+
+describe("çoklu başvurucu — buildHeaderBlock", () => {
+  const a = { name: "Arb. Test", arabulucuSicilNo: "1", arabuluculukBurosu: "Büro" };
+
+  it("TEK başvurucuda header eski hâliyle BİREBİR aynı kalır (regresyon)", () => {
+    const c = { basvurucuAd: "Ahmet Yılmaz", basvurucuAdres: "İstanbul", karsiTaraflar: [{ ad: "Mehmet Demir" }] };
+    const text = buildHeaderBlock(c, a, "ARABULUCU");
+    expect(text).toContain("**__BAŞVURUCU\t__**\t\t");
+    expect(text).not.toContain("BAŞVURUCU 1");
+    expect(text).toContain("\tAdı Soyadı\t: Ahmet Yılmaz");
+  });
+
+  it("birden fazla başvurucuda 'BAŞVURUCU 1' / 'BAŞVURUCU 2' numaralı bloklar üretir", () => {
+    const c = {
+      basvurucuAd: "Ahmet Yılmaz",
+      ekBasvurucular: [{ ad: "Ayşe Yılmaz", telefon: "0555" }],
+      karsiTaraflar: [{ ad: "Mehmet Demir" }],
+    };
+    const text = buildHeaderBlock(c, a, "ARABULUCU");
+    expect(text).toContain("**__BAŞVURUCU 1\t__**\t\t");
+    expect(text).toContain("**__BAŞVURUCU 2\t__**\t\t");
+    expect(text).toContain("\tAdı Soyadı\t: Ahmet Yılmaz");
+    expect(text).toContain("\tAdı Soyadı\t: Ayşe Yılmaz");
+  });
+});
+
+describe("çoklu başvurucu — buildSignatureBlock", () => {
+  const a = { name: "Test", arabulucuSicilNo: "1" };
+
+  it("TEK başvurucuda imza satırı eski hâliyle BİREBİR aynı kalır (regresyon)", () => {
+    const c = { basvurucuAd: "Ahmet Yılmaz", karsiTaraflar: [{ ad: "Mehmet Demir" }] };
+    const text = buildSignatureBlock(c, a);
+    expect(text).toContain("Başvurucu");
+    expect(text).not.toContain("Başvurucu 1");
+  });
+
+  it("birden fazla başvurucuda 'Başvurucu 1' / 'Başvurucu 2' rolleriyle ayrı imza satırları üretir", () => {
+    const c = {
+      basvurucuAd: "Ahmet Yılmaz",
+      ekBasvurucular: [{ ad: "Ayşe Yılmaz" }],
+      karsiTaraflar: [{ ad: "Mehmet Demir" }],
+    };
+    const text = buildSignatureBlock(c, a);
+    expect(text).toContain("Başvurucu 1");
+    expect(text).toContain("Başvurucu 2");
+    expect(text).toContain("**Ahmet Yılmaz**");
+    expect(text).toContain("**Ayşe Yılmaz**");
+  });
+});
+
+describe("çoklu başvurucu — buildKatilimTeyidiParagraph", () => {
+  it("birden fazla başvurucuda HER biri için ayrı katılım cümlesi üretir, 'basvurucu-{i}' ile doğru kişi eşleşir", () => {
+    const c = {
+      basvurucuAd: "Ahmet Yılmaz",
+      basvurucuTelefon: "0555",
+      ekBasvurucular: [{ ad: "Ayşe Yılmaz", telefon: "0556" }],
+      karsiTaraflar: [{ ad: "Mehmet Demir" }],
+    };
+    const text = buildKatilimTeyidiParagraph(c, "basvurucu-1", "10.01.2026", "14:00");
+    expect(text).toContain("Başvurucu 1 Ahmet Yılmaz");
+    expect(text).toContain("Başvurucu 2 Ayşe Yılmaz");
+    // "basvurucu-1" (index 1 = Ayşe) telekonferans istedi, Ahmet istemedi.
+    expect(text).toContain("Ahmet Yılmaz ile yapılan görüşmede toplantıya belirlenen gün ve saat de katılacağı");
+    expect(text).toContain("Ayşe Yılmaz ile 0556 numaralı GSM hattından yapılan görüşmede toplantıya belirlenen gün ve saat de katılabileceğini ancak telekonferans");
   });
 });

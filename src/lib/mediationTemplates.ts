@@ -37,6 +37,12 @@ export type MediationCaseData = {
   basvuruTarihi?: string | null;
   gorevlendirmeTarihi?: string | null;
   karsiTaraflar?: MediationParty[];
+  // Birden fazla başvurucu olduğunda (ör. iki kardeş birlikte başvuruyorsa)
+  // EK başvurucular burada tutulur — "Başvurucu 1" HER ZAMAN yukarıdaki
+  // basvurucu* alanlarından gelir (geriye dönük uyumluluk: mevcut TÜM
+  // dosyalar bu alanları kullanıyor, hiçbir veri taşınmadı/bozulmadı),
+  // bu dizi sadece "Başvurucu 2, 3, ..." için. bkz. basvurucularList().
+  ekBasvurucular?: MediationParty[];
 };
 
 export type ArabulucuProfile = {
@@ -141,19 +147,51 @@ function partiesList(c: MediationCaseData): MediationParty[] {
   return c.karsiTaraflar && c.karsiTaraflar.length ? c.karsiTaraflar : [{}];
 }
 
-// Bir karşı taraf bloğu (birden fazlaysa numaralanır: "KARŞI TARAF 1" vb.)
-// NOT: Şahıs/tüzel ayrımına göre SADECE ilgili satırlar eklenir — ör.
-// şahısta "Vergi/Mersis No" satırı hiç YAZILMAZ (boş bırakılıp gösterilmez,
-// tamamen atlanır). Bu hem yanlış bilgi göstermeyi hem de gereksiz boşluk
-// satırlarını önler.
-function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): string {
-  const label = total > 1 ? `KARŞI TARAF ${index + 1}` : "KARŞI TARAF";
+// Başvurucu(lar) listesi — "Başvurucu 1" HER ZAMAN MediationCase üzerindeki
+// düz basvurucu* alanlarından gelir (geriye dönük uyumluluk: mevcut hiçbir
+// dosyanın verisi taşınmadı), "Başvurucu 2, 3, ..." ise ekBasvurucular
+// dizisinden. Bu fonksiyon ikisini TEK bir MediationParty[] listesine
+// birleştirir ki karşı tarafla AYNI ("Başvurucu 1", "Başvurucu 2" ...)
+// numaralandırma mantığı kullanılabilsin. Tek başvurucu olan (ekBasvurucular
+// boş) HER mevcut dosyada bu dizinin uzunluğu HER ZAMAN 1'dir.
+export function basvurucularList(c: MediationCaseData): MediationParty[] {
+  const first: MediationParty = {
+    tip: c.basvurucuTip,
+    ad: c.basvurucuAd,
+    tcKimlik: c.basvurucuTC,
+    adres: c.basvurucuAdres,
+    vergiMersis: c.basvurucuVergiMersis,
+    yetkiliAd: c.basvurucuYetkiliAd,
+    vekilAd: c.basvurucuVekilAd,
+    vekilBaroSicil: c.basvurucuBaroSicil,
+    telefon: c.basvurucuTelefon,
+  };
+  return [first, ...(c.ekBasvurucular || [])];
+}
+
+// Bir taraf bloğu (birden fazlaysa numaralanır: "KARŞI TARAF 1" / "BAŞVURUCU
+// 1" vb.) NOT: Şahıs/tüzel ayrımına göre SADECE ilgili satırlar eklenir —
+// ör. şahısta "Vergi/Mersis No" satırı hiç YAZILMAZ (boş bırakılıp
+// gösterilmez, tamamen atlanır). Bu hem yanlış bilgi göstermeyi hem de
+// gereksiz boşluk satırlarını önler. adLabel/vergiLabel parametreleri
+// karşı taraf ("Adı ve Soyadı" / "Vergi/Mersis/Detsis No") ile başvurucu
+// ("Adı Soyadı" / "Vergi/Mersis No") arasındaki, gerçek örnek belgelerden
+// gelen KÜÇÜK ama BİLİNÇLİ etiket farkını korumak için var.
+function buildTarafBlock(
+  baseLabel: string,
+  p: MediationParty,
+  index: number,
+  total: number,
+  adLabel: string,
+  vergiLabel: string
+): string {
+  const label = total > 1 ? `${baseLabel} ${index + 1}` : baseLabel;
   const isTuzel = p.tip === "tuzel";
   const lines = [
-    `\t${isTuzel ? "Unvanı" : "Adı ve Soyadı"}\t: ${v(p.ad)}`,
+    `\t${isTuzel ? "Unvanı" : adLabel}\t: ${v(p.ad)}`,
   ];
   if (isTuzel) {
-    lines.push(`\tVergi/Mersis/Detsis No\t: ${v(p.vergiMersis)}`);
+    lines.push(`\t${vergiLabel}\t: ${v(p.vergiMersis)}`);
     if (p.yetkiliAd && p.yetkiliAd.trim()) lines.push(`\tŞirket Yetkilisi\t: ${v(p.yetkiliAd)}`);
   } else {
     lines.push(`\tT.C. Kimlik No\t: ${v(p.tcKimlik)}`);
@@ -169,6 +207,17 @@ function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): 
 
 ${lines.join("\n")}
 `;
+}
+
+function buildKarsiTarafBlock(p: MediationParty, index: number, total: number): string {
+  return buildTarafBlock("KARŞI TARAF", p, index, total, "Adı ve Soyadı", "Vergi/Mersis/Detsis No");
+}
+
+// SADECE birden fazla başvurucu varken kullanılır (bkz. buildHeaderBlock) —
+// tek başvurucu olan (ezici çoğunluktaki) durumda header hâlâ ESKİ,
+// elle yazılmış satırları kullanır ki çıktı BİREBİR aynı kalsın.
+function buildBasvurucuBlockMulti(p: MediationParty, index: number, total: number): string {
+  return buildTarafBlock("BAŞVURUCU", p, index, total, "Adı Soyadı", "Vergi/Mersis No");
 }
 
 // Üç belgede de ortak olan başlık bloğu (Arabuluculuk Bürosu, Arabulucu,
@@ -212,6 +261,18 @@ export function buildHeaderBlock(
   }
   basvurucuLines.push(`\tTelefon\t: ${v(c.basvurucuTelefon)}`);
 
+  // Birden fazla başvurucu YOKSA (mevcut TÜM dosyalarda durum budur), bu
+  // bölüm eski, elle yazılmış hâliyle BİREBİR aynı kalır. Birden fazla
+  // başvurucu VARSA karşı tarafla aynı numaralı blok deseni kullanılır
+  // ("BAŞVURUCU 1", "BAŞVURUCU 2" ...).
+  const basvurucular = basvurucularList(c);
+  const basvurucuSection =
+    basvurucular.length > 1
+      ? basvurucular.map((p, i) => buildBasvurucuBlockMulti(p, i, basvurucular.length)).join("\n")
+      : `**__BAŞVURUCU\t__**\t\t
+\t
+${basvurucuLines.join("\n")}`;
+
   return `**__ARABULUCULUK BÜROSU\t__**\t\t\t
  
 \tArabuluculuk Bürosu\t: ${v(a.arabuluculukBurosu)}
@@ -225,9 +286,7 @@ export function buildHeaderBlock(
 \tUETS\t: ${v(a.arabulucuUets)}
 \tE-Posta\t: ${v(a.email)}
 
-**__BAŞVURUCU\t__**\t\t
-\t
-${basvurucuLines.join("\n")}
+${basvurucuSection}
 
 ${karsiTarafBlocks}
 **__ARABULUCULUK KONUSU UYUŞMAZLIK__**
@@ -245,12 +304,16 @@ ${karsiTarafBlocks}
 // "Başvurucu [AD] ve vekili Av. [VEKIL] tarafından yapılan "[KONU]"
 // konulu başvurudur."
 function buildUyusmazlikKonusuCumlesi(c: MediationCaseData): string {
-  const basvurucuAd = v(c.basvurucuAd);
-  const vekilCumle = c.basvurucuVekilAd && c.basvurucuVekilAd.trim()
-    ? ` ve vekili ${avLabel(c.basvurucuVekilAd)}`
-    : "";
+  const basvurucular = basvurucularList(c);
+  const basvurucuIsimleri = basvurucular
+    .map((p) => {
+      const ad = v(p.ad);
+      const vekilCumle = p.vekilAd && p.vekilAd.trim() ? ` ve vekili ${avLabel(p.vekilAd)}` : "";
+      return `${ad}${vekilCumle}`;
+    })
+    .join(", ");
   const konu = v(c.uyusmazlikKonusu, "……………");
-  return `Başvurucu ${basvurucuAd}${vekilCumle} tarafından yapılan "${konu}" konulu başvurudur.`;
+  return `Başvurucu ${basvurucuIsimleri} tarafından yapılan "${konu}" konulu başvurudur.`;
 }
 
 // Bir imzacının satırı, aynı satırdaki diğer imzacılarla birlikte dar
@@ -299,9 +362,15 @@ export type SignatureAttendance = {
 // kadar TEK satırda yan yana durur; isimler KALIN yazılır, roller değil.
 export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile, attendance?: SignatureAttendance): string {
   const basvurucuKatildi = attendance?.basvurucu !== false;
-  const basvurucuSign = c.basvurucuVekilAd
-    ? { name: c.basvurucuVekilAd, role: "Başvurucu Vekili" }
-    : { name: v(c.basvurucuAd), role: "Başvurucu" };
+  const basvurucular = basvurucularList(c);
+  const basvurucuSigns = basvurucuKatildi
+    ? basvurucular.map((p, i) => {
+        const suffix = basvurucular.length > 1 ? ` ${i + 1}` : "";
+        return p.vekilAd
+          ? { name: p.vekilAd, role: `Başvurucu${suffix} Vekili` }
+          : { name: v(p.ad), role: `Başvurucu${suffix}` };
+      })
+    : [];
 
   const parties = partiesList(c);
   const karsiSigns = parties
@@ -316,7 +385,7 @@ export function buildSignatureBlock(c: MediationCaseData, a: ArabulucuProfile, a
     .filter((s): s is { name: string; role: string } => s !== null);
 
   const arabulucuSign = { name: `Arb. ${v(a.name)}`, role: `(Sicil No: ${v(a.arabulucuSicilNo)})` };
-  const allSigns = [...(basvurucuKatildi ? [basvurucuSign] : []), ...karsiSigns, arabulucuSign];
+  const allSigns = [...basvurucuSigns, ...karsiSigns, arabulucuSign];
 
   // Önce kısa/normal isimleri (sırası korunarak) ayrı bir kümede topla ve
   // dengeli 3'lü gruplar hâlinde diz; taşacak kadar uzun isimler ise HİÇ
@@ -379,20 +448,25 @@ export function formatSaatTr(saat?: string | null): string {
 
 export function buildKatilimTeyidiParagraph(
   c: MediationCaseData,
-  telekonferansTalepEden: string | null | undefined, // "basvurucu" | "karsi-{i}" | "" | null/undefined
+  telekonferansTalepEden: string | null | undefined, // "basvurucu" (Başvurucu 1) | "basvurucu-{i}" (i>=1, ek başvurucu) | "karsi-{i}" | "" | null/undefined
   toplantiTarihiTr: string,
   toplantiSaati: string
 ): string {
-  const basvurucuTemsilciEk = c.basvurucuVekilAd
-    ? `vekili ${avLabel(c.basvurucuVekilAd)}`
-    : c.basvurucuYetkiliAd && c.basvurucuYetkiliAd.trim()
-    ? `Yetkilisi ${v(c.basvurucuYetkiliAd)}`
-    : "";
-  const basvurucuEtiket = `Başvurucu ${v(c.basvurucuAd)}${basvurucuTemsilciEk ? " " + basvurucuTemsilciEk : ""}`;
-
-  const cumleler: string[] = [
-    buildKatilimCumlesi(basvurucuEtiket, c.basvurucuTelefon, telekonferansTalepEden === "basvurucu"),
-  ];
+  const basvurucular = basvurucularList(c);
+  const cumleler: string[] = basvurucular.map((p, i) => {
+    const label = basvurucular.length > 1 ? `Başvurucu ${i + 1}` : "Başvurucu";
+    const temsilciEk = p.vekilAd
+      ? `vekili ${avLabel(p.vekilAd)}`
+      : p.yetkiliAd && p.yetkiliAd.trim()
+      ? `Yetkilisi ${v(p.yetkiliAd)}`
+      : "";
+    const etiket = `${label} ${v(p.ad)}${temsilciEk ? " " + temsilciEk : ""}`;
+    // Tek başvurucu varken "basvurucu" ile eşleşir (geriye dönük uyum);
+    // birden fazlayken i=0 olan (Başvurucu 1) "basvurucu-0" ile eşleşir.
+    const buTarafMi =
+      basvurucular.length > 1 ? telekonferansTalepEden === `basvurucu-${i}` : telekonferansTalepEden === "basvurucu";
+    return buildKatilimCumlesi(etiket, p.telefon, buTarafMi);
+  });
 
   const parties = partiesList(c);
   parties.forEach((p, i) => {
@@ -464,7 +538,7 @@ export const ANLASMA_KAPANIS = `\tTaraflara arabuluculuğun temel ilkeleri, arab
 // ŞARTLARI kullanıcının yazdığı metin BİREBİR (AI hiç değiştirmeden)
 // kullanılır — para/tarih gibi kritik detaylarda hata riski olmasın.
 export function buildAnlasmaNarrative(c: MediationCaseData, sartlarMetni: string, today: string): string {
-  const basvurucuTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
+  const basvurucuTemsilci = basvurucularList(c).map((p) => p.vekilAd || v(p.ad)).join(", ");
   const parties = partiesList(c);
   const karsiIsimler = parties.map((p) => p.vekilAd || p.yetkiliAd || v(p.ad)).join(", ");
 
@@ -486,10 +560,14 @@ ${indentParagraphs(sartlarMetni.trim())}
 // ayırt edilsin diye "hiçbir konuda" ibaresi tırnağın DIŞINA eklenir:
 // ...sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.
 export function buildAnlasamamaNarrative(c: MediationCaseData, karsiTeklifVar: boolean): string {
-  const basvurucuHasVekil = !!(c.basvurucuVekilAd && c.basvurucuVekilAd.trim());
-  const basvurucuTemsilci = basvurucuHasVekil
-    ? `Başvurucu vekili ${c.basvurucuVekilAd}`
-    : `Başvurucu ${v(c.basvurucuAd)}`;
+  const basvurucular = basvurucularList(c);
+  const basvurucuHasVekil = basvurucular.some((p) => p.vekilAd && p.vekilAd.trim());
+  const basvurucuTemsilci = basvurucular
+    .map((p, i) => {
+      const label = basvurucular.length > 1 ? `Başvurucu ${i + 1}` : "Başvurucu";
+      return p.vekilAd && p.vekilAd.trim() ? `${label} vekili ${p.vekilAd}` : `${label} ${v(p.ad)}`;
+    })
+    .join(", ");
 
   const parties = partiesList(c);
   const karsiCumleler = parties
@@ -514,8 +592,8 @@ export function buildAnlasamamaNarrative(c: MediationCaseData, karsiTeklifVar: b
     })
     .join(" ");
 
-  const basvurucuKapanisTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
-  const istedi = basvurucuHasVekil ? "istediklerini" : "istediğini";
+  const basvurucuKapanisTemsilci = basvurucular.map((p) => p.vekilAd || v(p.ad)).join(", ");
+  const istedi = basvurucuHasVekil || basvurucular.length > 1 ? "istediklerini" : "istediğini";
 
   return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili teklifini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak ${istedi} beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
 }
@@ -534,7 +612,7 @@ export function buildKismiAnlasmaNarrative(
   today: string,
   ucretCumlesi?: string
 ): string {
-  const basvurucuTemsilci = c.basvurucuVekilAd || v(c.basvurucuAd);
+  const basvurucuTemsilci = basvurucularList(c).map((p) => p.vekilAd || v(p.ad)).join(", ");
   const parties = partiesList(c);
   const karsiIsimler = parties.map((p) => p.vekilAd || p.yetkiliAd || v(p.ad)).join(", ");
 
@@ -585,7 +663,7 @@ export function buildUcretCumlesi(
 ): string {
   const parties = partiesList(c);
   const odeyenIsimler: string[] = [];
-  if (odeyenBasvurucu) odeyenIsimler.push(c.basvurucuVekilAd || v(c.basvurucuAd));
+  if (odeyenBasvurucu) basvurucularList(c).forEach((p) => odeyenIsimler.push(p.vekilAd || v(p.ad)));
   parties.forEach((p, i) => {
     if (odeyenKarsiTaraflar[i]) odeyenIsimler.push(p.vekilAd || p.yetkiliAd || v(p.ad));
   });

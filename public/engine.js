@@ -598,6 +598,37 @@ function emptyState(icon, title, desc) {
   return `<div class="empty-state"><i class="fa-solid ${icon}"></i><div class="empty-title">${title}</div>${desc ? `<div class="empty-desc">${desc}</div>` : ''}</div>`;
 }
 
+// Bir <input type="file"> elemanının SÜRÜKLE-BIRAK ile de dosya kabul
+// etmesini sağlar — tıklayıp "Dosya Seç" penceresiyle açma davranışını hiç
+// DEĞİŞTİRMEZ, sadece dosyayı üstüne sürükleyip bırakma seçeneğini EKLER.
+// dropZoneEl verilmezse inputun kendi ebeveyni (parentElement — genelde
+// ".fg" kutusu) drop alanı olarak kullanılır. Dosya bırakıldığında input'un
+// MEVCUT 'change' olay dinleyicisi (onchange veya addEventListener ile
+// bağlanmış olsun) AYNEN tetiklenir — DataTransfer ile input.files atanıp
+// gerçek bir 'change' olayı gönderilir, ayrı bir kod yolu YOKTUR; bu
+// yüzden her modülün kendi dosya-seçildiğinde-ne-olacak mantığına hiç
+// dokunmadan, tüm dosya yükleme alanlarına aynı şekilde eklenebilir.
+function enableFileDropZone(fileInput, dropZoneEl) {
+  if (!fileInput) return;
+  const zone = dropZoneEl || fileInput.parentElement;
+  if (!zone || zone.dataset.dropZoneReady) return;
+  zone.dataset.dropZoneReady = '1';
+  const highlight = (on) => {
+    zone.style.outline = on ? '2px dashed var(--gold-rule, #b08d57)' : '';
+    zone.style.outlineOffset = on ? '2px' : '';
+  };
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); highlight(true); });
+  zone.addEventListener('dragleave', (e) => { if (e.target === zone) highlight(false); });
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    highlight(false);
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (!files || !files.length) return;
+    fileInput.files = files;
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
 async function improvePrompt() {
   const inp = document.getElementById('chatIn');
   if (!inp) return;

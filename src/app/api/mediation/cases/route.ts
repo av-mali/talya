@@ -15,6 +15,10 @@ function cleanCase(c: any) {
       ...p,
       ad: stripTcFromName(p.ad) || p.ad,
     })),
+    ekBasvurucular: (c.ekBasvurucular || []).map((p: any) => ({
+      ...p,
+      ad: stripTcFromName(p.ad) || p.ad,
+    })),
   };
 }
 
@@ -28,7 +32,10 @@ export async function GET() {
 
   const cases = await prisma.mediationCase.findMany({
     where: { userId },
-    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
+    include: {
+      karsiTaraflar: { orderBy: { sira: "asc" } },
+      ekBasvurucular: { orderBy: { sira: "asc" } },
+    },
     orderBy: { updatedAt: "desc" },
   });
   return NextResponse.json({ cases: cases.map(cleanCase) });
@@ -44,6 +51,10 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   const karsiTaraflar = Array.isArray(body.karsiTaraflar) ? body.karsiTaraflar : [];
+  // "Başvurucu 1" HER ZAMAN düz basvurucu* alanlarında kalır — bu dizi
+  // SADECE "Başvurucu 2, 3, ..." için (bkz. mediationTemplates.ts'teki
+  // basvurucularList() ve şemadaki MediationApplicant açıklaması).
+  const ekBasvurucular = Array.isArray(body.ekBasvurucular) ? body.ekBasvurucular : [];
 
   const mediationCase = await prisma.mediationCase.create({
     data: {
@@ -77,8 +88,22 @@ export async function POST(req: Request) {
           sira: i,
         })),
       },
+      ekBasvurucular: {
+        create: ekBasvurucular.map((p: any, i: number) => ({
+          tip: p.tip === "tuzel" ? "tuzel" : "sahis",
+          ad: stripTcFromName(p.ad) || null,
+          tcKimlik: p.tcKimlik || null,
+          adres: p.adres || null,
+          vergiMersis: p.vergiMersis || null,
+          yetkiliAd: p.yetkiliAd || null,
+          vekilAd: p.vekilAd || null,
+          vekilBaroSicil: p.vekilBaroSicil || null,
+          telefon: p.telefon || null,
+          sira: i,
+        })),
+      },
     },
-    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
+    include: { karsiTaraflar: { orderBy: { sira: "asc" } }, ekBasvurucular: { orderBy: { sira: "asc" } } },
   });
   return NextResponse.json({ case: mediationCase });
 }

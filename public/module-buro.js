@@ -100,7 +100,7 @@ window.CURRENT_MODULE = {
         </label>
         <button class="pop-cta-btn b" style="width:100%;" onclick="mvSaveNew()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
       `,
-      onOpen: () => tblOnOpen(),
+      onOpen: () => { tblOnOpen(); enableFileDropZone(document.getElementById('mv-n-autofile')); },
       prompt: () => ''
     },
     // ── SÜRE & TAKVİM ── orta: özet açıklama, sağ: tam takvim

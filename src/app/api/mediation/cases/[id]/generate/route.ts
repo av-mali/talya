@@ -22,6 +22,7 @@ import {
   ILK_OTURUM_BILGILENDIRME,
   stripMarkup,
   indentParagraphs,
+  basvurucularList,
 } from "@/lib/mediationTemplates";
 
 export const maxDuration = 60;
@@ -72,9 +73,13 @@ async function generateNarrative(prompt: string): Promise<string> {
 }
 
 function basvurucuTemsilci(mediationCase: any): string {
-  return mediationCase.basvurucuVekilAd
-    ? `${mediationCase.basvurucuVekilAd} (başvurucu ${mediationCase.basvurucuAd} vekili)`
-    : `${mediationCase.basvurucuAd} (başvurucu)`;
+  const basvurucular = basvurucularList(mediationCase);
+  return basvurucular
+    .map((p: any, i: number) => {
+      const label = basvurucular.length > 1 ? `başvurucu ${i + 1}` : "başvurucu";
+      return p.vekilAd ? `${p.vekilAd} (${label} ${p.ad} vekili)` : `${p.ad} (${label})`;
+    })
+    .join(", ");
 }
 
 function karsiTemsilciListesi(mediationCase: any): string {
@@ -104,7 +109,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const mediationCase = await prisma.mediationCase.findFirst({
     where: { id: params.id, userId },
-    include: { karsiTaraflar: { orderBy: { sira: "asc" } } },
+    include: {
+      karsiTaraflar: { orderBy: { sira: "asc" } },
+      ekBasvurucular: { orderBy: { sira: "asc" } },
+    },
   });
   if (!mediationCase) return NextResponse.json({ error: "Dosya bulunamadı." }, { status: 404 });
 
@@ -133,11 +141,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       const { davetEdilenSecim, gunSaat, toplantiYeri } = body;
       let ad = "", vekil = "", baroSicil = "", telefon = "";
       let digerTarafAd = "", digerTarafVekil = "";
-      if (davetEdilenSecim === "basvurucu") {
-        ad = mediationCase.basvurucuAd || "";
-        vekil = mediationCase.basvurucuVekilAd || "";
-        baroSicil = mediationCase.basvurucuBaroSicil || "";
-        telefon = mediationCase.basvurucuTelefon || "";
+      // "basvurucu" (geriye dönük uyum — Başvurucu 1) veya "basvurucu-{i}"
+      // (i>=0, birden fazla başvurucu varsa — bkz. arSetDavetEdilenOptions).
+      if (davetEdilenSecim === "basvurucu" || /^basvurucu-\d+$/.test(String(davetEdilenSecim))) {
+        const basvurucular = basvurucularList(mediationCase);
+        const idx = davetEdilenSecim === "basvurucu" ? 0 : parseInt(String(davetEdilenSecim).replace("basvurucu-", ""), 10);
+        const bp = basvurucular[idx];
+        if (!bp) return NextResponse.json({ error: "Davet edilecek taraf bulunamadı." }, { status: 400 });
+        ad = bp.ad || "";
+        vekil = bp.vekilAd || "";
+        baroSicil = bp.vekilBaroSicil || "";
+        telefon = bp.telefon || "";
         digerTarafAd = (mediationCase.karsiTaraflar || []).map((p) => p.ad).filter(Boolean).join(", ") || "";
         digerTarafVekil = mediationCase.karsiTaraflar[0]?.vekilAd || "";
       } else {
@@ -148,7 +162,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         vekil = p.vekilAd || "";
         baroSicil = p.vekilBaroSicil || "";
         telefon = p.telefon || "";
-        digerTarafAd = mediationCase.basvurucuAd || "";
+        digerTarafAd = basvurucularList(mediationCase).map((bp) => bp.ad).filter(Boolean).join(", ") || "";
         digerTarafVekil = mediationCase.basvurucuVekilAd || "";
       }
 
@@ -168,7 +182,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         today,
         digerTarafAd,
         digerTarafVekil,
-        davetEdilenSecim === "basvurucu"
+        davetEdilenSecim === "basvurucu" || /^basvurucu-\d+$/.test(String(davetEdilenSecim))
       );
 
       fileName = `${safeFilePart(ad)} - Davet Mektubu.docx`;
@@ -360,7 +374,17 @@ Kullanıcının notu (oturumda neler konuşuldu, nasıl sonlandı): ${notlar}
           return NextResponse.json({ error: "Toplantıya katılmayan en az bir taraf seçmelisiniz." }, { status: 400 });
         }
         const katilmayanlar: string[] = [];
-        if (katilmayanBasvurucu) katilmayanlar.push(`Başvurucu ${mediationCase.basvurucuVekilAd || mediationCase.basvurucuAd || "……"}`);
+        if (katilmayanBasvurucu) {
+          // Tek checkbox "başvurucu tarafı katılmadı" anlamına gelir —
+          // birden fazla başvurucu varsa HEPSİ listelenir (bkz. issue: tek
+          // checkbox'ın hangi başvurucuyu kapsadığı ayrıştırılmıyor, bu
+          // yüzden "başvurucu tarafının tamamı" olarak ele alınıyor).
+          const basvurucular = basvurucularList(mediationCase);
+          basvurucular.forEach((p, i) => {
+            const suffix = basvurucular.length > 1 ? ` ${i + 1}` : "";
+            katilmayanlar.push(`Başvurucu${suffix} ${p.vekilAd || p.ad || "……"}`);
+          });
+        }
         mediationCase.karsiTaraflar.forEach((p, i) => {
           if (katilmayanKT[i]) {
             const suffix = karsiTarafSayisi > 1 ? ` ${i + 1}` : "";

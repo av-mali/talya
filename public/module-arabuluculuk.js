@@ -56,6 +56,10 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">Vekil Baro/Sicil</div><input type="text" id="ar-bas-barosicil"></div>
         <div class="fg"><div class="fl">Başvurucu Telefon</div><input type="text" id="ar-bas-tel"></div>
 
+        <div class="fg"><div class="fl">Ek Başvurucu(lar) <span class="opt">(varsa — yukarıdaki "Başvurucu 1" olur)</span></div></div>
+        <div id="ar-ekbas-list"></div>
+        <button class="pop-cta-btn b" style="width:100%;margin-bottom:14px;" onclick="arAddEkBasvurucuRow()" type="button"><i class="fa-solid fa-plus"></i><span>Başvurucu Ekle</span></button>
+
         <div class="fg"><div class="fl">Karşı Taraf(lar) <span class="opt">(birden fazla eklenebilir)</span></div></div>
         <div id="ar-karsi-list"></div>
         <button class="pop-cta-btn b" style="width:100%;margin-bottom:14px;" onclick="arAddKarsiRow()" type="button"><i class="fa-solid fa-plus"></i><span>Karşı Taraf Ekle</span></button>
@@ -93,6 +97,7 @@ window.CURRENT_MODULE = {
 let arCasesCache = [];
 let arSelectedCaseId = null;
 let arKarsiTarafRows = []; // form üzerindeki karşı taraf satırlarının verisi
+let arEkBasvurucuRows = []; // form üzerindeki EK başvurucu satırlarının verisi — "Başvurucu 1" YUKARIDAKİ ar-bas-* alanlarıdır, bu dizi "Başvurucu 2, 3, ..." içindir
 
 let arBasvurucuTip = 'sahis';
 function arSetBasvurucuTip(tip) {
@@ -154,6 +159,58 @@ function arRemoveKarsiRow(index) {
   arRenderKarsiRows();
 }
 
+// Ek başvurucu satırları — arKarsiTarafRows/arRenderKarsiRows ile AYNI
+// desen, "Başvurucu 2", "Başvurucu 3" ... olarak numaralanır ("Başvurucu 1"
+// yukarıdaki ar-bas-* alanlarında kalır).
+function arRenderEkBasvurucuRows() {
+  const box = document.getElementById('ar-ekbas-list');
+  if (!box) return;
+  box.innerHTML = arEkBasvurucuRows.map((row, i) => {
+    const tip = row.tip || 'sahis';
+    return `
+    <div style="background:var(--bg2);border-radius:var(--r);padding:10px;margin-bottom:8px;position:relative;">
+      <span style="position:absolute;top:8px;right:8px;cursor:pointer;color:var(--t3);" onclick="arRemoveEkBasvurucuRow(${i})"><i class="fa-solid fa-xmark"></i></span>
+      <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Başvurucu ${i + 2}</div>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <button type="button" onclick="arSetEkBasvurucuTip(${i},'sahis')" style="flex:1;padding:6px;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;background:${tip === 'sahis' ? 'var(--gold)' : 'var(--card)'};color:${tip === 'sahis' ? '#fff' : 'var(--t2)'};">Şahıs</button>
+        <button type="button" onclick="arSetEkBasvurucuTip(${i},'tuzel')" style="flex:1;padding:6px;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-weight:600;background:${tip === 'tuzel' ? 'var(--gold)' : 'var(--card)'};color:${tip === 'tuzel' ? '#fff' : 'var(--t2)'};">Tüzel Kişilik</button>
+      </div>
+      ${tip === 'sahis' ? `
+        <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Ad Soyad" value="${(row.ad||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].ad=this.value"></div>
+        <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="TC Kimlik No" value="${(row.tcKimlik||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].tcKimlik=this.value"></div>
+      ` : `
+        <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Unvan" value="${(row.ad||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].ad=this.value"></div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <input type="text" placeholder="Vergi/Mersis No" value="${(row.vergiMersis||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].vergiMersis=this.value" style="flex:1;">
+          <input type="text" placeholder="Şirket Yetkilisi" value="${(row.yetkiliAd||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].yetkiliAd=this.value" style="flex:1;">
+        </div>
+      `}
+      <div class="fg" style="margin-bottom:6px;"><input type="text" placeholder="Adres" value="${(row.adres||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].adres=this.value"></div>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <input type="text" placeholder="Vekili (varsa)" value="${(row.vekilAd||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].vekilAd=this.value" style="flex:1;">
+        <input type="text" placeholder="Vekil Baro/Sicil" value="${(row.vekilBaroSicil||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].vekilBaroSicil=this.value" style="flex:1;">
+      </div>
+      <div class="fg"><input type="text" placeholder="Telefon" value="${(row.telefon||'').replace(/"/g,'&quot;')}" oninput="arEkBasvurucuRows[${i}].telefon=this.value"></div>
+    </div>
+  `;
+  }).join('');
+}
+
+function arSetEkBasvurucuTip(index, tip) {
+  arEkBasvurucuRows[index].tip = tip;
+  arRenderEkBasvurucuRows();
+}
+
+function arAddEkBasvurucuRow() {
+  arEkBasvurucuRows.push({ tip: 'sahis', ad: '', tcKimlik: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', vekilBaroSicil: '', telefon: '' });
+  arRenderEkBasvurucuRows();
+}
+
+function arRemoveEkBasvurucuRow(index) {
+  arEkBasvurucuRows.splice(index, 1);
+  arRenderEkBasvurucuRows();
+}
+
 function arGetPane() {
   const empty = document.getElementById('chatEmpty');
   if (empty) empty.style.display = 'none';
@@ -162,8 +219,11 @@ function arGetPane() {
 
 async function arOnOpen() {
   arKarsiTarafRows = [{ tip: 'sahis', ad: '', tcKimlik: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', vekilBaroSicil: '', telefon: '' }];
+  arEkBasvurucuRows = [];
   arBasvurucuTip = 'sahis';
   arRenderKarsiRows();
+  arRenderEkBasvurucuRows();
+  enableFileDropZone(document.getElementById('ar-autofile'));
   arGetPane().innerHTML = skeletonLines(3);
   await arLoadCases();
 }
@@ -187,6 +247,29 @@ function arGetYear(dosyaNo) {
   return m ? m[1] : 'Diğer';
 }
 
+// Başvurucu(lar)ın kısa gösterim metni — "Başvurucu 1" HER ZAMAN
+// c.basvurucuAd'dır (geriye dönük uyum), c.ekBasvurucular varsa ("Başvurucu
+// 2, 3, ...") virgülle eklenir. Karşı tarafta zaten var olan ", " ile
+// birleştirme deseniyle tutarlı.
+function arBasvurucuOzet(c) {
+  const isimler = [c.basvurucuAd].concat((c.ekBasvurucular || []).map(p => p.ad)).filter(Boolean);
+  return isimler.length ? isimler.join(', ') : '?';
+}
+
+// Davet mektubu "Davet Edilecek Taraf" ve İlk Oturum "Telekonferans Talep
+// Eden Taraf" seçim kutuları için başvurucu seçenekleri — "basvurucu"
+// (geriye dönük uyum, tek başvurucu) veya "basvurucu-{i}" (i>=0, birden
+// fazla başvurucu varsa) — bkz. generate/route.ts ve
+// buildKatilimTeyidiParagraph'daki AYNI değer şeması.
+function arBasvurucuOptions(c) {
+  const basvurucular = [{ ad: c?.basvurucuAd || '' }].concat(c?.ekBasvurucular || []);
+  return basvurucular.map((p, i) => {
+    const value = basvurucular.length > 1 ? `basvurucu-${i}` : 'basvurucu';
+    const label = basvurucular.length > 1 ? `Başvurucu ${i + 1} — ` : 'Başvurucu — ';
+    return `<option value="${value}">${label}${p.ad || ''}</option>`;
+  });
+}
+
 function arCaseCardHtml(c) {
   const idx = arCasesCache.indexOf(c);
   return `
@@ -195,7 +278,7 @@ function arCaseCardHtml(c) {
          onclick="arSelectCase(${idx})"
          style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;">
       <div style="font-size:12.5px;">${c.buroDosyaNo ? c.buroDosyaNo + ' - ' : ''}${c.dosyaNo || 'Dosya No yok'}</div>
-      <div style="font-size:10.5px;color:var(--t3);margin-top:2px;">${c.basvurucuAd || '?'} / ${c.uyusmazlikTuru || '?'}</div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:2px;">${arBasvurucuOzet(c)} / ${c.uyusmazlikTuru || '?'}</div>
     </div>
   `;
 }
@@ -296,7 +379,7 @@ async function arSelectCase(index) {
     <div style="padding:20px 24px;overflow-y:auto;height:100%;box-sizing:border-box;">
       <div style="cursor:pointer;color:var(--t3);font-size:12px;margin-bottom:12px;" onclick="arRenderCaseList()"><i class="fa-solid fa-arrow-left"></i> Listeye Dön</div>
       <div style="font-family:'Instrument Serif',serif;font-size:16px;margin-bottom:4px;">${c.buroDosyaNo ? c.buroDosyaNo + ' - ' : ''}${c.dosyaNo || 'Dosya No yok'}</div>
-      <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${c.basvurucuAd || '?'} — ${karsiOzet}</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">${arBasvurucuOzet(c)} — ${karsiOzet}</div>
 
       <div style="border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:16px;">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:8px;">Toplantı Tarihleri</div>
@@ -408,7 +491,7 @@ function arShowGenForm(docType) {
   const c = arCasesCache.find(cc => cc.id === arSelectedCaseId);
 
   if (docType === 'davet') {
-    const options = [`<option value="basvurucu">Başvurucu — ${(c?.basvurucuAd)||''}</option>`]
+    const options = arBasvurucuOptions(c)
       .concat((c?.karsiTaraflar || []).map((p, i) => `<option value="karsi-${i}">${(c.karsiTaraflar.length > 1 ? 'Karşı Taraf ' + (i+1) + ' — ' : 'Karşı Taraf — ')}${p.ad||''}</option>`));
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">Davet Mektubu</div></div>
@@ -430,7 +513,7 @@ function arShowGenForm(docType) {
       <button class="pop-cta-btn g" style="width:100%;margin-top:6px;" onclick="arGenerate('davet')"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Oluştur</span></button>
     `;
   } else if (docType === 'ilkoturum') {
-    const telekonferansOptions = [`<option value="basvurucu">Başvurucu — ${(c?.basvurucuAd)||''}</option>`]
+    const telekonferansOptions = arBasvurucuOptions(c)
       .concat((c?.karsiTaraflar || []).map((p, i) => `<option value="karsi-${i}">${(c.karsiTaraflar.length > 1 ? 'Karşı Taraf ' + (i+1) + ' — ' : 'Karşı Taraf — ')}${p.ad||''}</option>`));
     formEl.innerHTML = `
       <div class="ic" style="margin-bottom:10px;"><div class="ic-t">İlk Oturum Tutanağı</div></div>
@@ -710,6 +793,7 @@ async function arSaveCase() {
     basvurucuBaroSicil: document.getElementById('ar-bas-barosicil').value,
     basvurucuTelefon: document.getElementById('ar-bas-tel').value,
     karsiTaraflar: arKarsiTarafRows.filter(r => r.ad && r.ad.trim()),
+    ekBasvurucular: arEkBasvurucuRows.filter(r => r.ad && r.ad.trim()),
     uyusmazlikTuru: document.getElementById('ar-uyusmazlik-tur').value === 'Diğer'
       ? document.getElementById('ar-uyusmazlik-tur-diger').value
       : document.getElementById('ar-uyusmazlik-tur').value,
@@ -780,6 +864,11 @@ function arEditCase(id) {
     ? c.karsiTaraflar.map(p => ({ tip: p.tip || 'sahis', ad: p.ad || '', tcKimlik: p.tcKimlik || '', adres: p.adres || '', vergiMersis: p.vergiMersis || '', yetkiliAd: p.yetkiliAd || '', vekilAd: p.vekilAd || '', vekilBaroSicil: p.vekilBaroSicil || '', telefon: p.telefon || '' }))
     : [{ tip: 'sahis', ad: '', tcKimlik: '', adres: '', vergiMersis: '', yetkiliAd: '', vekilAd: '', vekilBaroSicil: '', telefon: '' }];
   arRenderKarsiRows();
+
+  arEkBasvurucuRows = (c.ekBasvurucular && c.ekBasvurucular.length)
+    ? c.ekBasvurucular.map(p => ({ tip: p.tip || 'sahis', ad: p.ad || '', tcKimlik: p.tcKimlik || '', adres: p.adres || '', vergiMersis: p.vergiMersis || '', yetkiliAd: p.yetkiliAd || '', vekilAd: p.vekilAd || '', vekilBaroSicil: p.vekilBaroSicil || '', telefon: p.telefon || '' }))
+    : [];
+  arRenderEkBasvurucuRows();
 
   const saveBtn = document.getElementById('ar-save-btn');
   if (saveBtn) saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Dosyayı Güncelle</span>';

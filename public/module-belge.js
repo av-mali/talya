@@ -54,7 +54,10 @@ window.CURRENT_MODULE = {
       desc: 'Bir dosya yükleyin ya da metin yapıştırın; AI sorunuzu cevaplasın. Hiçbir dosya saklanmaz.',
       btnClass: 'g', btnIco: 'fa-file-magnifying-glass', btnLbl: '', hideCta: true,
       body: '', // JS ile dolduruluyor (bkz. buildAnalyzeWidgetHtml)
-      onOpen: () => { document.getElementById('popBody').innerHTML = buildAnalyzeWidgetHtml('da', 'Bu belgeyi özetle, kararı/kritik süreleri çıkar…'); },
+      onOpen: () => {
+        document.getElementById('popBody').innerHTML = buildAnalyzeWidgetHtml('da', 'Bu belgeyi özetle, kararı/kritik süreleri çıkar…');
+        enableFileDropZone(document.getElementById('da-file'));
+      },
       prompt: () => ''
     },
     mevzuat: {
@@ -108,6 +111,7 @@ window.CURRENT_MODULE = {
       `,
       onOpen: () => {
         const fi = document.getElementById('ds-files');
+        enableFileDropZone(fi);
         if (fi) fi.onchange = () => {
           const list = document.getElementById('ds-filelist');
           list.textContent = fi.files.length ? `${fi.files.length} dosya seçildi: ` + Array.from(fi.files).map(f => f.name).join(', ') : '';
