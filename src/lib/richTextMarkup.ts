@@ -25,9 +25,13 @@
 //     sütununun her satırda AYNI (ve etiketin sığacağı kadar geniş) yerde
 //     başlaması için ayrı/geniş bir sekme durağı kullanır
 //   satırın EN BAŞINDA "[[N1]]" / "[[N2]]" -> o paragraf NUMARALI bir
-//     liste öğesidir ("1-", "2-" şeklinde) — N1 ve N2 birbirinden
+//     liste öğesidir ("1.", "2." şeklinde) — N1 ve N2 birbirinden
 //     BAĞIMSIZ iki ayrı liste (biri 1'den, diğeri de kendi başına 1'den
 //     başlar), gerçek Word "numaralı liste" özelliğiyle (görünüşte değil)
+//   satırın EN BAŞINDA "[[N3]]" -> o paragraf N1 listesinin İÇİNE
+//     GİRİNTİLİ, HARFLİ bir alt liste öğesidir ("a)", "b)" şeklinde) —
+//     davet mektubundaki "arabuluculuğun temel ilkeleri" gibi, bir N1
+//     maddesinin altında ayrı bir alt liste açmak için kullanılır
 //   satırın EN BAŞINDA "[[B]]" -> o paragraf gerçek bir MADDE (liste
 //     öğesi) olarak işaretlenir — sadece görünüş değil, dosyanın kendi
 //     yapısında da gerçek bir liste öğesi (orijinal örnek belgelerde
@@ -49,7 +53,7 @@
 
 export type FormatRun = { start: number; length: number; bold: boolean; underline: boolean };
 
-export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; sigImage: boolean; dateRow: boolean; footer: boolean; numbered: 1 | 2 | 0; fontSize?: number } {
+export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRun[]; centered: boolean; right: boolean; bulleted: boolean; sigRow: boolean; sigImage: boolean; dateRow: boolean; footer: boolean; numbered: 1 | 2 | 3 | 0; fontSize?: number } {
   let line = rawLine;
   let centered = false;
   let right = false;
@@ -58,7 +62,7 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
   let sigImage = false;
   let dateRow = false;
   let footer = false;
-  let numbered: 1 | 2 | 0 = 0;
+  let numbered: 1 | 2 | 3 | 0 = 0;
   let fontSize: number | undefined;
   const szMatch = line.match(/^\[\[SZ(\d+)\]\]/);
   if (szMatch) {
@@ -101,6 +105,9 @@ export function parseLineMarkup(rawLine: string): { text: string; runs: FormatRu
     line = line.slice(6);
   } else if (line.startsWith("[[N2]]")) {
     numbered = 2;
+    line = line.slice(6);
+  } else if (line.startsWith("[[N3]]")) {
+    numbered = 3;
     line = line.slice(6);
   }
   if (line.startsWith("[[B]]")) {
@@ -162,6 +169,7 @@ export function stripMarkup(text: string): string {
         .replace(/^\[\[F\]\]/, "")
         .replace(/^\[\[N1\]\]/, "")
         .replace(/^\[\[N2\]\]/, "")
+        .replace(/^\[\[N3\]\]/, "")
         .replace(/^\[\[B\]\]/, "• ")
         .replace(/\*\*__(.+?)__\*\*/g, "$1")
         .replace(/\*\*(.+?)\*\*/g, "$1")

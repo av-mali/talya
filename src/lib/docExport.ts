@@ -137,7 +137,10 @@ export async function generateDocx(text: string): Promise<Buffer> {
       alignment: footer ? AlignmentType.CENTER : centered ? AlignmentType.CENTER : right ? AlignmentType.RIGHT : AlignmentType.JUSTIFIED,
       spacing: { after: 0, before: 0 },
       bullet: bulleted ? { level: 0 } : undefined,
-      numbering: numbered === 1 ? { reference: "n1-list", level: 0 } : numbered === 2 ? { reference: "n2-list", level: 0 } : undefined,
+      numbering:
+        numbered === 1 ? { reference: "n1-list", level: 0 } :
+        numbered === 2 ? { reference: "n2-list", level: 0 } :
+        numbered === 3 ? { reference: "n3-list", level: 0 } : undefined,
       // İKİ sekme noktası: 400 (basit satır başı girintisi — "Diğer
       // Hükümler" maddeleri gibi tek başına girinti isteyen satırlar
       // için) ve 3200 ("Etiket\t: değer" tarzı satırlarda değerlerin
@@ -172,7 +175,7 @@ export async function generateDocx(text: string): Promise<Buffer> {
         {
           reference: "n1-list",
           levels: [{
-            level: 0, format: LevelFormat.DECIMAL, text: "%1-", alignment: AlignmentType.START,
+            level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.START,
             style: { paragraph: { indent: { left: 500, hanging: 300 } }, run: { bold: true } },
           }],
         },
@@ -181,6 +184,17 @@ export async function generateDocx(text: string): Promise<Buffer> {
           levels: [{
             level: 0, format: LevelFormat.DECIMAL, text: "%1-", alignment: AlignmentType.START,
             style: { paragraph: { indent: { left: 500, hanging: 300 } }, run: { bold: true } },
+          }],
+        },
+        // n3-list: SADECE davet mektubundaki "arabuluculuğun temel
+        // ilkeleri" gibi bir n1 maddesinin ALTINA girintili, harfli
+        // ("a)", "b)"...) bir alt liste açmak için — n1-list'in içine
+        // girintili durur (indent n1'den daha derin).
+        {
+          reference: "n3-list",
+          levels: [{
+            level: 0, format: LevelFormat.LOWER_LETTER, text: "%1)", alignment: AlignmentType.START,
+            style: { paragraph: { indent: { left: 900, hanging: 300 } }, run: { bold: true } },
           }],
         },
       ],
