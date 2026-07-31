@@ -678,21 +678,21 @@ export function buildDavetMektubu(
 
 **__DAVETTE BULUNAN__**
 
-Arabulucu: Arb. **${v(a.name)}**
-TELFON: ${v(a.phone)}
-E-Mail: ${v(a.email)}
-Adres: ${v(a.arabulucuAdres)}
+\tArabulucu\t: Arb. **${v(a.name)}**
+\tTELFON\t: ${v(a.phone)}
+\tE-Mail\t: ${v(a.email)}
+\tAdres\t: ${v(a.arabulucuAdres)}
 
 **__DAVET EDİLEN__**
 
-Adı / Soyadı: **${v(davetEdilenAd)}**
-Vekili: ${davetEdilenVekil ? `**${avLabel(davetEdilenVekil)}**` : ""}
-Baro / Sicil: ${v(davetEdilenBaroSicil, "")}
-Telefon: ${v(davetEdilenTelefon)}
+\tAdı / Soyadı\t: **${v(davetEdilenAd)}**
+\tVekili\t: ${davetEdilenVekil ? `**${avLabel(davetEdilenVekil)}**` : ""}
+\tBaro / Sicil\t: ${v(davetEdilenBaroSicil, "")}
+\tTelefon\t: ${v(davetEdilenTelefon)}
 
-**__GÜN VE SAAT__**: ${v(gunSaat)}
+**__GÜN VE SAAT\t:__** ${v(gunSaat)}
 
-**__TOPLANTI YERİ__**: ${v(toplantiYeri)}
+**__TOPLANTI YERİ\t:__** ${v(toplantiYeri)}
 
 
 **__AÇIKLAMALAR VE BİLGİLENDİRMELER: __**
