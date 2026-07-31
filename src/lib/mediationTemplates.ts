@@ -701,7 +701,7 @@ Sayın **${v(davetEdilenAd)}**${davetEdilenVekil ? ` ve vekili Sayın **${avLabe
 
 ${basvuruCumlesi}
 
-**${v(digerTarafAd)}** ile ${uyusmazlikOzeti}, barışçıl olarak arabuluculuk yoluyla çözümlenmesine olanak sağlamak üzere, sizi tüm tarafların katılımıyla gerçekleşmeyi dilediğimiz arabuluculuk ilk oturumuna davet ediyorum.
+**${v(digerTarafAd)}** ile aranızdaki uyuşmazlığın, barışçıl olarak arabuluculuk yoluyla çözümlenmesine olanak sağlamak üzere, sizi tüm tarafların katılımıyla gerçekleşmeyi dilediğimiz arabuluculuk ilk oturumuna davet ediyorum.
 
 ${DAVET_MEKTUBU_BILGILENDIRME}
 
