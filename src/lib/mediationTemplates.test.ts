@@ -258,10 +258,10 @@ describe("buildAnlasamamaNarrative — SÜREÇ paragrafı (kullanıcı isteğiyl
 
   it("özel görüşme/risk analizi/gerçeklik testi paragrafı SONUÇ paragrafından ÖNCE, ayrı bir paragraf olarak eklenir", () => {
     const text = buildAnlasamamaNarrative(c, true);
-    expect(text).toContain("özel görüşmeler yapılmıştır");
+    expect(text).toContain("özel görüşmeler yapıldı");
     expect(text).toContain("risk analizlerini yeniden yapmaları");
-    expect(text).toContain("gerçeklik testi yapmalarına olanak sağlanmıştır");
-    const surecIdx = text.indexOf("özel görüşmeler yapılmıştır");
+    expect(text).toContain("gerçeklik testi yapmalarına olanak sağlandı");
+    const surecIdx = text.indexOf("özel görüşmeler yapıldı");
     const sonucIdx = text.indexOf("söz alarak arabuluculuğa konu uyuşmazlıkla ilgili teklifini iletti");
     expect(surecIdx).toBeGreaterThanOrEqual(0);
     expect(sonucIdx).toBeGreaterThan(surecIdx);
@@ -271,13 +271,26 @@ describe("buildAnlasamamaNarrative — SÜREÇ paragrafı (kullanıcı isteğiyl
     const text = buildAnlasamamaNarrative(c, false);
     expect(text).toContain("\n\n\tBaşvurucu Ali Veli söz alarak arabuluculuğa konu uyuşmazlıkla ilgili teklifini iletti.");
   });
+
+  it("'yeniden bir toplantı yapılması' cümlesi YOKTUR — Son Tutanak'ta çelişkili (süreç zaten sabit iki oturumlu, hemen altında kesin 'ANLAŞAMAMA' sonucu var)", () => {
+    const text = buildAnlasamamaNarrative(c, true);
+    expect(text).not.toContain("yeniden bir toplantı yapılması");
+  });
+
+  it("süreç paragrafı, belgenin geri kalanıyla TUTARLI kip (-di/-dı, görülen geçmiş) kullanır — '-mış/-miş' (rivayet) DEĞİL", () => {
+    const text = buildAnlasamamaNarrative(c, true);
+    expect(text).toContain("müzakereler yürütüldü");
+    expect(text).toContain("özel görüşmeler yapıldı");
+    expect(text).not.toContain("yürütülmüş");
+    expect(text).not.toContain("yapılmıştır");
+  });
 });
 
 describe("buildKismiAnlasmaNarrative — SÜREÇ paragrafı BURADA YOK (kullanıcı isteğiyle SADECE Anlaşamama'ya eklendi)", () => {
   it("Kısmi Anlaşma'da özel görüşme/risk analizi paragrafı YOKTUR", () => {
     const c: any = { basvurucuAd: "Ali Veli", karsiTaraflar: [{ ad: "Ayşe Yılmaz" }] };
     const text = buildKismiAnlasmaNarrative(c, "Bir kısım hususlar.", "Diğer hususlar.", "01.01.2026");
-    expect(text).not.toContain("özel görüşmeler yapılmıştır");
+    expect(text).not.toContain("özel görüşmeler yapıldı");
     expect(text).not.toContain("gerçeklik testi");
   });
 });
@@ -285,7 +298,7 @@ describe("buildKismiAnlasmaNarrative — SÜREÇ paragrafı BURADA YOK (kullanı
 describe("buildGorusmeYapilmadanNarrative — SÜREÇ paragrafı BURADA YOK (taraflar hiç bir araya gelmedi, çelişir)", () => {
   it("'Görüşme Yapılmadan Anlaşamama'da özel görüşme/risk analizi paragrafı YOKTUR", () => {
     const text = buildGorusmeYapilmadanNarrative(["Karşı Taraf Ayşe Yılmaz"], "");
-    expect(text).not.toContain("özel görüşmeler yapılmıştır");
+    expect(text).not.toContain("özel görüşmeler yapıldı");
     expect(text).not.toContain("gerçeklik testi");
   });
 });
