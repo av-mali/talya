@@ -253,6 +253,43 @@ describe("buildAnlasamamaNarrative — 'ikinci toplantı' ibaresi kaldırıldı"
   });
 });
 
+describe("buildAnlasamamaNarrative — SÜREÇ paragrafı (kullanıcı isteğiyle eklendi, SADECE Anlaşamama'da)", () => {
+  const c: any = { basvurucuAd: "Ali Veli", karsiTaraflar: [{ ad: "Ayşe Yılmaz" }] };
+
+  it("özel görüşme/risk analizi/gerçeklik testi paragrafı SONUÇ paragrafından ÖNCE, ayrı bir paragraf olarak eklenir", () => {
+    const text = buildAnlasamamaNarrative(c, true);
+    expect(text).toContain("özel görüşmeler yapılmıştır");
+    expect(text).toContain("risk analizlerini yeniden yapmaları");
+    expect(text).toContain("gerçeklik testi yapmalarına olanak sağlanmıştır");
+    const surecIdx = text.indexOf("özel görüşmeler yapılmıştır");
+    const sonucIdx = text.indexOf("söz alarak arabuluculuğa konu uyuşmazlıkla ilgili teklifini iletti");
+    expect(surecIdx).toBeGreaterThanOrEqual(0);
+    expect(sonucIdx).toBeGreaterThan(surecIdx);
+  });
+
+  it("iki paragraf birbirinden boş satırla (\\n\\n) ayrılır, mevcut isim-isim sonuç metni AYNEN korunur", () => {
+    const text = buildAnlasamamaNarrative(c, false);
+    expect(text).toContain("\n\n\tBaşvurucu Ali Veli söz alarak arabuluculuğa konu uyuşmazlıkla ilgili teklifini iletti.");
+  });
+});
+
+describe("buildKismiAnlasmaNarrative — SÜREÇ paragrafı BURADA YOK (kullanıcı isteğiyle SADECE Anlaşamama'ya eklendi)", () => {
+  it("Kısmi Anlaşma'da özel görüşme/risk analizi paragrafı YOKTUR", () => {
+    const c: any = { basvurucuAd: "Ali Veli", karsiTaraflar: [{ ad: "Ayşe Yılmaz" }] };
+    const text = buildKismiAnlasmaNarrative(c, "Bir kısım hususlar.", "Diğer hususlar.", "01.01.2026");
+    expect(text).not.toContain("özel görüşmeler yapılmıştır");
+    expect(text).not.toContain("gerçeklik testi");
+  });
+});
+
+describe("buildGorusmeYapilmadanNarrative — SÜREÇ paragrafı BURADA YOK (taraflar hiç bir araya gelmedi, çelişir)", () => {
+  it("'Görüşme Yapılmadan Anlaşamama'da özel görüşme/risk analizi paragrafı YOKTUR", () => {
+    const text = buildGorusmeYapilmadanNarrative(["Karşı Taraf Ayşe Yılmaz"], "");
+    expect(text).not.toContain("özel görüşmeler yapılmıştır");
+    expect(text).not.toContain("gerçeklik testi");
+  });
+});
+
 describe("buildKismiAnlasmaNarrative", () => {
   const c: any = { basvurucuAd: "Ali Veli", karsiTaraflar: [{ ad: "Ayşe Yılmaz" }] };
 

@@ -595,7 +595,19 @@ export function buildAnlasamamaNarrative(c: MediationCaseData, karsiTeklifVar: b
   const basvurucuKapanisTemsilci = basvurucular.map((p) => p.vekilAd || v(p.ad)).join(", ");
   const istedi = basvurucuHasVekil || basvurucular.length > 1 ? "istediklerini" : "istediğini";
 
-  return `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili teklifini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak ${istedi} beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
+  // SÜREÇ paragrafı — kullanıcının isteğiyle eklendi (SADECE "Anlaşamama"
+  // sonucunda; "Kısmi Anlaşma"da ve özellikle "Görüşme Yapılmadan
+  // Anlaşamama"da KULLANILMAZ, çünkü orada taraflar zaten hiç bir araya
+  // gelmedi — bu paragraf özel görüşme/risk analizi/gerçeklik testi gibi
+  // GERÇEKTEN yapılmış bir müzakere sürecini anlatıyor, "görüşme
+  // yapılmadan" ile çelişir). SONUÇ paragrafından (kim ne dedi) ayrı,
+  // isimsiz/sabit bir paragraf — süreç kısmını, isim-isim sonuç kısmından
+  // ÖNCE anlatır.
+  const surecParagrafi = `\tTaraflarla uyuşmazlık konusunda müzakereler yürütülmüş, süreç içerisinde taraflarla özel görüşmeler yapılmıştır. Taraflara arabuluculuğun faydaları ve olası mahkeme süreçleri hakkında bilgi verilmiş, risk analizlerini yeniden yapmaları yönünde teşvik edilmiş ve gerçeklik testi yapmalarına olanak sağlanmıştır. Uyuşmazlık konusunun müzakere edilmesi amacıyla yeniden bir toplantı yapılması hususu da değerlendirilmiştir.`;
+
+  const sonucParagrafi = `\t${basvurucuTemsilci} söz alarak arabuluculuğa konu uyuşmazlıkla ilgili teklifini iletti. ${karsiCumleler} ${basvurucuKapanisTemsilci} söz alarak karşı taraf ile arabuluculuk sürecinde anlaşmanın mümkün olmadığını, bahse konu uyuşmazlığı adli merciler vasıtasıyla çözüme kavuşturmak ${istedi} beyan etti. Taraflar ile yapılan görüşmeler sonucunda tarafların, arabulucu tarafından sunulan alternatif çözüm önerilerine yanaşmadığı görülmüş ve arabuluculuk sürecinin devam ettirilmesinin mevcut durumu değiştirmeyeceği değerlendirilmiş, bahse konu uyuşmazlık arabuluculuk sürecinde hiçbir konuda "ANLAŞAMAMA" olarak sonuçlandırılmıştır.`;
+
+  return `${surecParagrafi}\n\n${sonucParagrafi}`;
 }
 
 // KISMİ ANLAŞMA anlatısı — buildAnlasmaNarrative ile aynı üsluptaki bir
