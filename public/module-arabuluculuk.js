@@ -67,6 +67,7 @@ window.CURRENT_MODULE = {
         <div class="fg"><div class="fl">Uyuşmazlık Türü</div>
           <div class="sw">
             <select id="ar-uyusmazlik-tur" onchange="document.getElementById('ar-uyusmazlik-tur-diger').style.display = this.value === 'Diğer' ? '' : 'none'">
+              <option value="" selected disabled>Seçiniz…</option>
               <option value="İş Hukuku">İş Hukuku</option>
               <option value="Ticaret Hukuku">Ticaret Hukuku</option>
               <option value="Tüketici Hukuku">Tüketici Hukuku</option>
@@ -803,6 +804,7 @@ async function arSaveCase() {
   };
   if (!body.basvurucuAd) { toast('Başvurucu adı gerekli', 'fa-solid fa-triangle-exclamation'); return; }
   if (!body.karsiTaraflar.length) { toast('En az bir karşı taraf girmelisiniz', 'fa-solid fa-triangle-exclamation'); return; }
+  if (!body.uyusmazlikTuru) { toast('Uyuşmazlık türünü seçin', 'fa-solid fa-triangle-exclamation'); return; }
 
   const isEditing = !!arEditingCaseId;
   const url = isEditing ? '/api/mediation/cases/' + arEditingCaseId : '/api/mediation/cases';
