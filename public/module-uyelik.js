@@ -9,10 +9,7 @@ window.CURRENT_MODULE = {
     {"id": "plan", "icon": "fa-star", "name": "Planım & Abonelik"},
     {"id": "faturalar", "icon": "fa-file-invoice", "name": "Fatura Geçmişi"},
     {"id": "profil", "icon": "fa-user-circle", "name": "Profil Bilgileri"},
-    {"id": "guvenlik", "icon": "fa-shield-halved", "name": "Güvenlik & Şifre"},
-    {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"},
-    {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa Ayarları"},
-    {"id": "telegrambaglanti", "icon": "fa-paper-plane", "name": "Talya Asistan (Telegram)"},
+    {"id": "anasayfaistatistik", "icon": "fa-gear", "name": "Ayarlar"},
     {"id": "destek", "icon": "fa-headset", "name": "Destek / Öneri"},
     {"id": "kilavuz", "icon": "fa-book", "name": "Kullanım Kılavuzu"}
   ],
@@ -49,51 +46,28 @@ window.CURRENT_MODULE = {
     },
     profil: {
       badge: 'g', badgeText: 'Hesap Bilgileri', titleHtml: 'Profil <em class="g">Bilgileri</em>',
-      desc: 'Hesap bilgilerinizi görüntüleyin ve güncelleyin.',
+      desc: 'Hesap bilgilerinizi ve şifrenizi görüntüleyin, güncelleyin.',
       btnClass: 'g', btnIco: 'fa-floppy-disk', btnLbl: '', hideCta: true,
       body: `<div id="profil-box"></div>`,
       onOpen: () => profilOnOpen(),
       prompt: () => ''
     },
-    guvenlik: {
-      badge: 'g', badgeText: 'Güvenlik', titleHtml: 'Güvenlik &amp; <em class="g">Şifre</em>',
-      desc: 'Şifrenizi değiştirin.',
-      btnClass: 'g', btnIco: 'fa-shield-halved', btnLbl: '', hideCta: true,
-      body: `
-        <div class="fg"><div class="fl">Mevcut Şifre</div><input type="password" id="pw-current" placeholder="••••••••"></div>
-        <div class="fg"><div class="fl">Yeni Şifre (en az 6 karakter)</div><input type="password" id="pw-new" placeholder="••••••••"></div>
-        <div class="fg"><div class="fl">Yeni Şifre (tekrar)</div><input type="password" id="pw-new2" placeholder="••••••••"></div>
-        <button class="pop-cta-btn g" style="width:100%;" onclick="guvenlikSave()"><i class="fa-solid fa-shield-halved"></i><span>Şifreyi Güncelle</span></button>
-        <div id="guvenlik-msg" style="font-size:12px;margin-top:10px;"></div>
-      `,
-      onOpen: () => {
-        const box = document.getElementById('guvenlik-msg');
-        if (box) box.textContent = '';
-      },
-      prompt: () => ''
-    },
-    bildirim: {
-      badge: 'g', badgeText: 'Bildirimler', titleHtml: 'Bildirim <em class="g">Ayarları</em>',
-      desc: 'Hangi bildirim türlerini görmek istediğinizi seçin.',
-      btnClass: 'g', btnIco: 'fa-bell', btnLbl: '', hideCta: true,
-      body: `<div id="bildirim-box"></div>`,
-      onOpen: () => bildirimOnOpen(),
-      prompt: () => ''
-    },
     anasayfaistatistik: {
-      badge: 'g', badgeText: 'Ana Sayfa', titleHtml: 'Ana Sayfa <em class="g">Ayarları</em>',
-      desc: 'Ana sayfada hangi istatistiklerin ve araçların gösterileceğini seçin.',
-      btnClass: 'g', btnIco: 'fa-chart-simple', btnLbl: '', hideCta: true,
-      body: `<div id="homestats-box"></div><div id="homewidgets-box" style="margin-top:20px;"></div>`,
-      onOpen: () => homeStatsOnOpen(),
-      prompt: () => ''
-    },
-    telegrambaglanti: {
-      badge: 'g', badgeText: 'Talya Asistan', titleHtml: 'Telegram <em class="g">Bağlantısı</em>',
-      desc: 'Telegram\'dan "gündem" yazarak günlük özetinizi alın.',
-      btnClass: 'g', btnIco: 'fa-paper-plane', btnLbl: '', hideCta: true,
-      body: `<div id="telegram-box"></div>`,
-      onOpen: () => telegramOnOpen(),
+      badge: 'g', badgeText: 'Ayarlar', titleHtml: '<em class="g">Ayarlar</em>',
+      desc: 'Ana sayfa görünümünüzü, bildirim tercihlerinizi ve Talya Asistan bağlantınızı yönetin.',
+      btnClass: 'g', btnIco: 'fa-gear', btnLbl: '', hideCta: true,
+      body: `
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:6px;"><i class="fa-solid fa-chart-simple"></i> Ana Sayfa</div>
+        <div id="homestats-box"></div>
+        <div id="homewidgets-box" style="margin-top:20px;"></div>
+
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:24px 0 6px;padding-top:16px;border-top:1px solid var(--border);"><i class="fa-solid fa-bell"></i> Bildirimler</div>
+        <div id="bildirim-box"></div>
+
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:24px 0 6px;padding-top:16px;border-top:1px solid var(--border);"><i class="fa-solid fa-paper-plane"></i> Talya Asistan (Telegram)</div>
+        <div id="telegram-box"></div>
+      `,
+      onOpen: () => { homeStatsOnOpen(); bildirimOnOpen(); telegramOnOpen(); },
       prompt: () => ''
     },
     destek: {
@@ -145,6 +119,13 @@ async function profilOnOpen() {
 
       <button class="pop-cta-btn g" style="width:100%;" onclick="profilSave()"><i class="fa-solid fa-floppy-disk"></i><span>Kaydet</span></button>
       <div id="profil-msg" style="font-size:12px;margin-top:10px;"></div>
+
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin:24px 0 6px;padding-top:16px;border-top:1px solid var(--border);"><i class="fa-solid fa-shield-halved"></i> Güvenlik &amp; Şifre</div>
+      <div class="fg"><div class="fl">Mevcut Şifre</div><input type="password" id="pw-current" placeholder="••••••••"></div>
+      <div class="fg"><div class="fl">Yeni Şifre (en az 6 karakter)</div><input type="password" id="pw-new" placeholder="••••••••"></div>
+      <div class="fg"><div class="fl">Yeni Şifre (tekrar)</div><input type="password" id="pw-new2" placeholder="••••••••"></div>
+      <button class="pop-cta-btn g" style="width:100%;" onclick="guvenlikSave()"><i class="fa-solid fa-shield-halved"></i><span>Şifreyi Güncelle</span></button>
+      <div id="guvenlik-msg" style="font-size:12px;margin-top:10px;"></div>
     `;
     renderPalettePicker();
   } catch (e) {

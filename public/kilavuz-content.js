@@ -176,20 +176,16 @@ window.KILAVUZ_HTML = `<h1 id="talya-hukuk-ai-kullanm-klavuzu">Talya Hukuk AI �
 <h2 id="9-uyelik-hesap">9. Üyelik &amp; Hesap</h2>
 <h3 id="91-planm-abonelik-fatura-gecmisi">9.1 Planım &amp; Abonelik / Fatura Geçmişi</h3>
 <p>Mevcut aboneliğinizi ve geçmiş faturalarınızı görürsünüz.</p>
-<h3 id="92-profil-bilgileri">9.2 Profil Bilgileri</h3>
-<p>Adınız, telefon, baro/sicil numaranız, ve <strong>Büro Adresiniz</strong> (Avukatlık Ücret Sözleşmesi gibi belgelerde otomatik kullanılır) burada saklanır. Arabuluculuk yapıyorsanız, arabuluculuk büronuz/sicil/UETS bilgilerinizi de buradan girersiniz.</p>
-<h3 id="93-guvenlik-sifre">9.3 Güvenlik &amp; Şifre</h3>
-<p>Şifre değiştirme.</p>
-<h3 id="94-bildirim-ayarlar">9.4 Bildirim Ayarları</h3>
-<p>Hangi tür bildirimlerin (duruşma, ödeme, müvekkil mesajı vb.) size gösterileceğini seçersiniz.</p>
-<h3 id="95-ana-sayfa-ayarlar">9.5 Ana Sayfa Ayarları</h3>
+<h3 id="92-profil-bilgileri-guvenlik">9.2 Profil Bilgileri &amp; Güvenlik</h3>
+<p>Adınız, telefon, baro/sicil numaranız, ve <strong>Büro Adresiniz</strong> (Avukatlık Ücret Sözleşmesi gibi belgelerde otomatik kullanılır) burada saklanır. Arabuluculuk yapıyorsanız, arabuluculuk büronuz/sicil/UETS bilgilerinizi de buradan girersiniz. Aynı ekranın altındaki bölümden <strong>şifrenizi</strong> de değiştirebilirsiniz.</p>
+<h3 id="93-ayarlar">9.3 Ayarlar</h3>
 <ul>
-<li><strong>İstatistikler:</strong> Ana sayfada hangi istatistik kartlarının görüneceğini seçin (hepsi seçilebilir).</li>
-<li><strong>Hızlı Erişim:</strong> Ana sayfadaki kare kartlarda hangi araçların görüneceğini, sistemdeki <strong>tüm araçlar</strong> arasından seçin.</li>
+<li><strong>Ana Sayfa — İstatistikler:</strong> Ana sayfada hangi istatistik kartlarının görüneceğini seçin (hepsi seçilebilir).</li>
+<li><strong>Ana Sayfa — Hızlı Erişim:</strong> Ana sayfadaki kare kartlarda hangi araçların görüneceğini, sistemdeki <strong>tüm araçlar</strong> arasından seçin.</li>
+<li><strong>Bildirimler:</strong> Hangi tür bildirimlerin (duruşma, ödeme, müvekkil mesajı vb.) size gösterileceğini seçersiniz.</li>
+<li><strong>Talya Asistan (Telegram):</strong> Telegram üzerinden Talya'ya bağlanıp, günlük gündem raporu alabilir, bazı işlemleri sohbet üzerinden yapabilirsiniz. Bağlantı kurmak için buradaki adımları izleyin.</li>
 </ul>
-<h3 id="96-talya-asistan-telegram">9.6 Talya Asistan (Telegram)</h3>
-<p>Telegram üzerinden Talya'ya bağlanıp, günlük gündem raporu alabilir, bazı işlemleri sohbet üzerinden yapabilirsiniz. Bağlantı kurmak için buradaki adımları izleyin.</p>
-<h3 id="97-destek-oneri">9.7 Destek / Öneri</h3>
+<h3 id="94-destek-oneri">9.4 Destek / Öneri</h3>
 <p>Bir sorun bildirmek ya da öneride bulunmak için kullanılır; talepleriniz büro yöneticisine (admin panelinden) ulaşır.</p>
 <hr />
 <h2 id="10-muvekkil-portal">10. Müvekkil Portalı</h2>

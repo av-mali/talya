@@ -87,10 +87,7 @@ window.MODULES_INDEX = [
       {"id": "plan", "icon": "fa-star", "name": "Planım & Abonelik"},
       {"id": "faturalar", "icon": "fa-file-invoice", "name": "Fatura Geçmişi"},
       {"id": "profil", "icon": "fa-user-circle", "name": "Profil Bilgileri"},
-      {"id": "guvenlik", "icon": "fa-shield-halved", "name": "Güvenlik & Şifre"},
-      {"id": "bildirim", "icon": "fa-bell", "name": "Bildirim Ayarları"},
-      {"id": "anasayfaistatistik", "icon": "fa-chart-simple", "name": "Ana Sayfa Ayarları"},
-      {"id": "telegrambaglanti", "icon": "fa-paper-plane", "name": "Talya Asistan (Telegram)"},
+      {"id": "anasayfaistatistik", "icon": "fa-gear", "name": "Ayarlar"},
       {"id": "destek", "icon": "fa-headset", "name": "Destek / Öneri"},
       {"id": "kilavuz", "icon": "fa-book", "name": "Kullanım Kılavuzu"}
     ]

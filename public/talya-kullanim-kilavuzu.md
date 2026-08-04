@@ -51,7 +51,7 @@ Ana sayfa, günlük olarak en çok ihtiyaç duyacağınız bilgileri bir bakış
 
 ### İstatistikler
 
-Üç farklı istatistik kartından, **istediğiniz kadarını** seçip gösterebilirsiniz (Üyelik & Hesap → Ana Sayfa Ayarları'ndan değiştirilir):
+Üç farklı istatistik kartından, **istediğiniz kadarını** seçip gösterebilirsiniz (Üyelik & Hesap → Ayarlar'dan değiştirilir):
 
 - **Bu Ay Net Gelir-Gider** — aylık gelir, gider ve bekleyen alacak özeti.
 - **Toplam Müvekkil Sayısı**
@@ -59,7 +59,7 @@ Ana sayfa, günlük olarak en çok ihtiyaç duyacağınız bilgileri bir bakış
 
 ### Hızlı Erişim
 
-En sık kullandığınız araçlara, kategoriye girmeden tek tıkla ulaşmanızı sağlayan kare kartlar. Varsayılan olarak **Yeni Müvekkil**, **Dilekçe Sihirbazı** ve **Yeni Görev** gelir, ama Üyelik & Hesap → Ana Sayfa Ayarları'ndan **sistemdeki herhangi bir aracı** buraya ekleyip çıkarabilirsiniz.
+En sık kullandığınız araçlara, kategoriye girmeden tek tıkla ulaşmanızı sağlayan kare kartlar. Varsayılan olarak **Yeni Müvekkil**, **Dilekçe Sihirbazı** ve **Yeni Görev** gelir, ama Üyelik & Hesap → Ayarlar'dan **sistemdeki herhangi bir aracı** buraya ekleyip çıkarabilirsiniz.
 
 
 ---
@@ -266,28 +266,18 @@ Sekiz hazır hesap makinesi: **Kıdem Tazminatı, İhbar Tazminatı, Fazla Mesai
 
 Mevcut aboneliğinizi ve geçmiş faturalarınızı görürsünüz.
 
-### 9.2 Profil Bilgileri
+### 9.2 Profil Bilgileri & Güvenlik
 
-Adınız, telefon, baro/sicil numaranız, ve **Büro Adresiniz** (Avukatlık Ücret Sözleşmesi gibi belgelerde otomatik kullanılır) burada saklanır. Arabuluculuk yapıyorsanız, arabuluculuk büronuz/sicil/UETS bilgilerinizi de buradan girersiniz.
+Adınız, telefon, baro/sicil numaranız, ve **Büro Adresiniz** (Avukatlık Ücret Sözleşmesi gibi belgelerde otomatik kullanılır) burada saklanır. Arabuluculuk yapıyorsanız, arabuluculuk büronuz/sicil/UETS bilgilerinizi de buradan girersiniz. Aynı ekranın altındaki bölümden **şifrenizi** de değiştirebilirsiniz.
 
-### 9.3 Güvenlik & Şifre
+### 9.3 Ayarlar
 
-Şifre değiştirme.
+- **Ana Sayfa — İstatistikler:** Ana sayfada hangi istatistik kartlarının görüneceğini seçin (hepsi seçilebilir).
+- **Ana Sayfa — Hızlı Erişim:** Ana sayfadaki kare kartlarda hangi araçların görüneceğini, sistemdeki **tüm araçlar** arasından seçin.
+- **Bildirimler:** Hangi tür bildirimlerin (duruşma, ödeme, müvekkil mesajı vb.) size gösterileceğini seçersiniz.
+- **Talya Asistan (Telegram):** Telegram üzerinden Talya'ya bağlanıp, günlük gündem raporu alabilir, bazı işlemleri sohbet üzerinden yapabilirsiniz. Bağlantı kurmak için buradaki adımları izleyin.
 
-### 9.4 Bildirim Ayarları
-
-Hangi tür bildirimlerin (duruşma, ödeme, müvekkil mesajı vb.) size gösterileceğini seçersiniz.
-
-### 9.5 Ana Sayfa Ayarları
-
-- **İstatistikler:** Ana sayfada hangi istatistik kartlarının görüneceğini seçin (hepsi seçilebilir).
-- **Hızlı Erişim:** Ana sayfadaki kare kartlarda hangi araçların görüneceğini, sistemdeki **tüm araçlar** arasından seçin.
-
-### 9.6 Talya Asistan (Telegram)
-
-Telegram üzerinden Talya'ya bağlanıp, günlük gündem raporu alabilir, bazı işlemleri sohbet üzerinden yapabilirsiniz. Bağlantı kurmak için buradaki adımları izleyin.
-
-### 9.7 Destek / Öneri
+### 9.4 Destek / Öneri
 
 Bir sorun bildirmek ya da öneride bulunmak için kullanılır; talepleriniz büro yöneticisine (admin panelinden) ulaşır.
 
